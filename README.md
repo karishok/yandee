@@ -1,53 +1,40 @@
-# Смотрим вместе (coviewing_app)
+# Yandee
 
-MVP-скелет приложения совместного просмотра видео для детей ~1 года
-с обязательным участием родителя.
+Интерактивные обучающие сцены для детей 1–3 лет. Ребёнок открывает сцену
+(статичная иллюстрация с ~10 объектами) и может:
 
-## Идея
+- **«Исследовать»** — тапнуть объект, услышать его название.
+- **«Найди»** — приложение просит найти конкретный объект.
 
-Видео периодически ставится на паузу и просит родителя выполнить
-простое совместное действие с ребёнком (показать пальцем, похлопать
-и т.д.) — без этого просмотр не продолжится. Логика находится в
-`lib/services/interaction_service.dart`.
+Контент (иллюстрации, аудио) раздаётся со статического хостинга и кэшируется
+локально — приложение полностью работает офлайн после первой загрузки.
+
+Дизайн-документ: `docs/superpowers/specs/2026-08-11-yandee-interactive-scenes-design.md`.
 
 ## Структура
 
 ```
 lib/
-  main.dart                        — точка входа
-  models/video_content.dart        — модель видео + точки взаимодействия
-  services/interaction_service.dart — логика обязательных пауз
-  screens/home_screen.dart         — список видео
-  screens/video_player_screen.dart — плеер с паузами
-  widgets/parent_prompt_overlay.dart — оверлей с запросом к родителю
-assets/videos/                     — сюда положить .mp4 файлы
+  domain/
+    models/   — Scene, SceneObject, ObjectRect, SceneManifestEntry (зеркалят JSON-схему контента)
+    modes/    — SceneMode/SceneModeEffects и реализации ExploreMode, FindMode
+  data/       — ContentRepository (кэш + синхронизация с хостингом), DemoContentSeeder
+  audio/      — AudioSink/AudioPlayerService
+  presentation/
+    controllers/ — SceneController
+    screens/     — SceneListScreen, SceneScreen
+    widgets/     — SceneIllustration и др.
+assets/
+  audio/system/    — системные фразы (интро, подсказки, туш)
+  demo_content/    — офлайн демо-сцена для первого запуска/ручной проверки
+tool/
+  generate_placeholder_assets.dart — генератор плейсхолдер-арта/аудио
 ```
 
-## Как запустить
-
-Эта заготовка собрана вручную (без `flutter create`), т.к. в среде,
-где она создавалась, нет Flutter SDK. У себя на машине:
+## Запуск
 
 ```bash
-# 1. Установи Flutter SDK, если ещё нет: https://flutter.dev
-flutter --version
-
-# 2. Подтяни зависимости
 flutter pub get
-
-# 3. Положи демо-видео в assets/videos/ball_colors.mp4
-#    (в pubspec.yaml и video_content.dart уже прописан этот путь —
-#    замени на своё имя файла, если используешь другое видео)
-
-# 4. Запусти на эмуляторе/устройстве
+flutter test
 flutter run
 ```
-
-## Следующие шаги (не реализовано в этом скелете)
-
-- Экран профиля ребёнка (возраст → фильтрация контента по `minAgeMonths`)
-- Хранение прогресса/статистики просмотров (локально или на бэкенде)
-- Загрузка библиотеки видео с сервера вместо `demoLibrary`
-- Экран родительского контроля (лимиты времени, отчёты)
-- Публикация в App Store потребует Apple Developer Program ($99/год) —
-  sideloading без него ограничен 7-дневным сроком подписи.

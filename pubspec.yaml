@@ -1,5 +1,5 @@
-name: coviewing_app
-description: "Совместный просмотр видео для детей ~1 года с обязательным участием родителя"
+name: yandee
+description: "Yandee — интерактивные обучающие сцены для детей 1–3 лет"
 publish_to: 'none'
 version: 0.1.0
 
@@ -9,17 +9,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  video_player: ^2.9.1
-  provider: ^6.1.2
-  cupertino_icons: ^1.0.6
+  provider: ^6.1.5+1
+  http: ^1.6.0
+  path_provider: ^2.1.6
+  path: ^1.9.1
+  audioplayers: ^6.8.1
+  cupertino_icons: ^1.0.9
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/videos/
-    - assets/images/
