@@ -1,0 +1,13 @@
+{
+  "id": "demo",
+  "version": 1,
+  "title": "Демо",
+  "minAgeMonths": 12,
+  "background": "background.png",
+  "objects": [
+    {"id": "ball", "label": "Мяч", "audio": "ball.wav", "rect": {"x": 0.10, "y": 0.65, "width": 0.15, "height": 0.20}},
+    {"id": "cat", "label": "Кот", "audio": "cat.wav", "rect": {"x": 0.35, "y": 0.55, "width": 0.18, "height": 0.30}},
+    {"id": "tree", "label": "Дерево", "audio": "tree.wav", "rect": {"x": 0.60, "y": 0.30, "width": 0.20, "height": 0.55}},
+    {"id": "sun", "label": "Солнце", "audio": "sun.wav", "rect": {"x": 0.75, "y": 0.05, "width": 0.15, "height": 0.15}}
+  ]
+}
