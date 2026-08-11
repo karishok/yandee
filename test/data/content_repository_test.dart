@@ -239,5 +239,61 @@ void main() {
       expect(cached!.scene.version, 1); // unchanged
       expect(await Directory(p.join(cacheRoot.path, ContentRepository.cacheSubdirName, 'city__tmp')).exists(), isFalse);
     });
+
+    test('two concurrent refresh() calls for the same scene share one download instead of racing', () async {
+      var sceneJsonRequests = 0;
+      final client = MockClient((request) async {
+        final path = request.url.path;
+        if (path == '/v1/index.json') {
+          return http.Response(
+            jsonEncode({
+              'scenesVersion': 2,
+              'scenes': [
+                {'id': 'city', 'version': 2, 'title': 'Город', 'thumbnail': 'city/thumb.png'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        }
+        if (path == '/v1/city/scene.json') {
+          sceneJsonRequests++;
+          return http.Response(
+            jsonEncode({
+              'id': 'city',
+              'version': 2,
+              'title': 'Город',
+              'minAgeMonths': 12,
+              'background': 'background.png',
+              'objects': <Map<String, dynamic>>[],
+            }),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        }
+        if (path == '/v1/city/background.png') return http.Response.bytes([1, 2, 3], 200);
+        if (path == '/v1/city/thumb.png') return http.Response.bytes([4, 5], 200);
+        return http.Response('not found', 404);
+      });
+      final repo = ContentRepository(
+        httpClient: client,
+        baseUrl: Uri.parse('https://example.invalid/v1/'),
+        cacheRootProvider: () async => cacheRoot,
+      );
+
+      // Simulates a double-tap on the retry button, or initState()'s
+      // refresh() overlapping a manual retry: without dedup, the second
+      // call deletes the first call's in-progress __tmp dir out from under
+      // it, and the two writers can interleave into the recreated
+      // directory, producing a scene with files from mismatched requests.
+      await Future.wait([repo.refresh(), repo.refresh()]);
+
+      expect(sceneJsonRequests, 1);
+      final cached = await repo.loadScene('city');
+      expect(cached, isNotNull);
+      expect(cached!.scene.version, 2);
+      expect(await File(cached.backgroundPath).exists(), isTrue);
+      expect(await Directory(p.join(cacheRoot.path, ContentRepository.cacheSubdirName, 'city__tmp')).exists(), isFalse);
+    });
   });
 }

@@ -10,7 +10,7 @@ import '../controllers/scene_controller.dart';
 import '../widgets/scene_illustration.dart';
 
 class SceneScreen extends StatefulWidget {
-  SceneScreen({
+  const SceneScreen({
     super.key,
     required this.contentRepository,
     required this.sceneId,

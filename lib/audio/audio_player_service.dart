@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:developer' as developer;
 import 'package:audioplayers/audioplayers.dart';
 import '../domain/modes/scene_mode_effects.dart';
@@ -26,23 +27,31 @@ class AudioPlayerService implements AudioSink {
 
   @override
   Future<void> playSystemPhraseThenFile(SystemPhrase phrase, String objectAudioPath) async {
-    await _playAndWait(AssetSource(_systemPhraseAssets[phrase]!));
+    // Uses a dedicated, throwaway player for the intro instead of the
+    // shared `_player`: `audioplayers` only fires `onPlayerComplete` for a
+    // track that finishes naturally, not one that gets interrupted. If a
+    // wrong tap during the intro fired `playSystemPhrase`/`playFile` on the
+    // *shared* player, it would interrupt this wait's track without
+    // completing it, leaving `await completed` to resolve off some later,
+    // unrelated clip finishing instead — scrambling or dropping the name
+    // that's supposed to play next. A private player can't be interrupted
+    // by any other call, so its completion always means its own track.
+    final introPlayer = AudioPlayer();
+    try {
+      final completed = introPlayer.onPlayerComplete.first;
+      await introPlayer.play(AssetSource(_systemPhraseAssets[phrase]!));
+      await completed;
+    } catch (error, stackTrace) {
+      developer.log('Audio playback failed', name: 'AudioPlayerService', error: error, stackTrace: stackTrace);
+    } finally {
+      unawaited(introPlayer.dispose());
+    }
     await _playSafely(DeviceFileSource(objectAudioPath));
   }
 
   Future<void> _playSafely(Source source) async {
     try {
       await _player.play(source);
-    } catch (error, stackTrace) {
-      developer.log('Audio playback failed', name: 'AudioPlayerService', error: error, stackTrace: stackTrace);
-    }
-  }
-
-  Future<void> _playAndWait(Source source) async {
-    try {
-      final completed = _player.onPlayerComplete.first;
-      await _player.play(source);
-      await completed;
     } catch (error, stackTrace) {
       developer.log('Audio playback failed', name: 'AudioPlayerService', error: error, stackTrace: stackTrace);
     }
