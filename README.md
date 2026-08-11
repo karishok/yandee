@@ -22,14 +22,19 @@ lib/
   audio/      — AudioSink/AudioPlayerService
   presentation/
     controllers/ — SceneController
-    screens/     — SceneListScreen, SceneScreen
+    screens/     — SceneListScreen, SceneScreen, SettingsScreen, GuidedAccessScreen
     widgets/     — SceneIllustration и др.
+  platform/   — openGuidedAccessSettings() и другой код, завязанный на конкретную ОС
 assets/
   audio/system/    — системные фразы (интро, подсказки, туш)
   demo_content/    — офлайн демо-сцена для первого запуска/ручной проверки
 tool/
   generate_placeholder_assets.dart — генератор плейсхолдер-арта/аудио
-  record_voiceover.dart — интерактивная запись реальной озвучки с микрофона
+  record_voiceover.dart — интерактивная запись реальной озвучки с микрофона;
+    каждая сохранённая запись автоматически чистится от шума (см. ниже)
+  denoise_audio.dart — чистит фоновый шум/шуршание в уже записанных .wav
+    (`dart run tool/denoise_audio.dart [--dry-run]`); использует ту же
+    спектральную шумоподавляющую логику, что и запись в реальном времени
 ```
 
 ## Запуск

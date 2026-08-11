@@ -2,9 +2,11 @@ import 'dart:async' show unawaited;
 import 'dart:convert';
 import 'dart:io';
 
+import 'src/denoise.dart';
 import 'src/scene_vocabulary.dart';
 import 'src/voiceover_queue.dart';
 import 'src/voiceover_tasks.dart';
+import 'src/wav_io.dart';
 
 Future<void> main(List<String> args) async {
   // Output paths are relative to the repo root; running from anywhere else
@@ -141,9 +143,17 @@ Future<void> _recordOne(VoiceoverTask task, String device) async {
     if (choice == 'k') {
       final outputFile = File(task.outputPath);
       await outputFile.parent.create(recursive: true);
-      await tempFile.copy(outputFile.path);
+      // The mic on a laptop/phone reliably picks up handling noise and
+      // room hiss under a kid-word take — clean it up before it ever lands
+      // in the repo, rather than shipping raw mic noise and hoping nobody
+      // notices. The preview above plays the raw take (so re-record
+      // decisions are about the words/timing, not this), and denoising
+      // happens only once a take is actually kept.
+      final recorded = readMonoWav16(tempFile);
+      final cleaned = reduceNoise(highPass(recorded.samples, recorded.sampleRate));
+      writeMonoWav16(outputFile, WavAudio(sampleRate: recorded.sampleRate, samples: cleaned));
       await tempFile.delete();
-      stdout.writeln('Записано: ${task.outputPath}');
+      stdout.writeln('Записано (шум почищен): ${task.outputPath}');
       return;
     }
     if (choice == 's') {
