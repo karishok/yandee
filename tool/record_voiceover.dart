@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:io';
 
 import 'src/voiceover_queue.dart';
@@ -59,6 +60,10 @@ Future<void> _recordOne(VoiceoverTask task, String device) async {
       '-y',
       tempFile.path,
     ]);
+    // Drain both streams so ffmpeg's stderr/stdout writes can never back up
+    // and block it on a full pipe buffer while recording.
+    unawaited(process.stdout.drain());
+    unawaited(process.stderr.drain());
 
     stdout.write('Enter — остановить запись... ');
     stdin.readLineSync();
