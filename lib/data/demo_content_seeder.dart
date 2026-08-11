@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/services.dart' show rootBundle;
@@ -5,24 +6,16 @@ import 'package:path/path.dart' as p;
 
 import 'content_repository.dart';
 
-/// Copies the bundled placeholder demo scene into the content cache the
-/// first time the app runs with an empty cache, so there is something to
-/// see and tap before any real hosted content has been published. Once
-/// real content exists, `ContentRepository.refresh` naturally replaces it
-/// (a real scene's higher `version` wins) — no special-casing needed.
+/// Copies the bundled placeholder scenes into the content cache the first
+/// time the app runs with an empty cache, so there is something to see and
+/// tap before any real hosted content has been published. Once real content
+/// exists, `ContentRepository.refresh` naturally replaces it (a real
+/// scene's higher `version` wins) — no special-casing needed.
 class DemoContentSeeder {
   const DemoContentSeeder();
 
-  static const _bundleDir = 'assets/demo_content/demo';
-  static const _sceneFiles = [
-    'scene.json',
-    'background.png',
-    'thumb.png',
-    'ball.wav',
-    'cat.wav',
-    'tree.wav',
-    'sun.wav',
-  ];
+  static const _bundleRoot = 'assets/demo_content';
+  static const _sceneIds = ['home', 'kitchen', 'farm', 'street', 'bathroom'];
 
   Future<void> seedIfEmpty(Directory cacheRoot) async {
     final contentCacheDir = Directory(p.join(cacheRoot.path, ContentRepository.cacheSubdirName));
@@ -31,10 +24,22 @@ class DemoContentSeeder {
       if (hasAnyScene) return;
     }
 
-    final targetDir = Directory(p.join(contentCacheDir.path, 'demo'));
+    for (final sceneId in _sceneIds) {
+      await _seedScene(contentCacheDir, sceneId);
+    }
+  }
+
+  Future<void> _seedScene(Directory contentCacheDir, String sceneId) async {
+    final bundleDir = '$_bundleRoot/$sceneId';
+    final sceneJson = jsonDecode(await rootBundle.loadString('$bundleDir/scene.json')) as Map<String, dynamic>;
+    final objectAudioFiles = (sceneJson['objects'] as List<dynamic>)
+        .map((object) => (object as Map<String, dynamic>)['audio'] as String);
+    final files = ['scene.json', 'background.png', 'thumb.png', ...objectAudioFiles];
+
+    final targetDir = Directory(p.join(contentCacheDir.path, sceneId));
     await targetDir.create(recursive: true);
-    for (final fileName in _sceneFiles) {
-      final data = await rootBundle.load('$_bundleDir/$fileName');
+    for (final fileName in files) {
+      final data = await rootBundle.load('$bundleDir/$fileName');
       await File(p.join(targetDir.path, fileName))
           .writeAsBytes(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes));
     }
