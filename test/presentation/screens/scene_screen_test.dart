@@ -42,10 +42,10 @@ Future<Directory> _seedCache() async {
   return cacheRoot;
 }
 
-// A scene with a single object authored right at the bottom-left corner of
-// the illustration — the same corner the back button lives in. Regression
-// coverage for Finding 3's bottom-edge counterpart: the illustration must
-// be inset from the bottom too, not just the top, or this object's tap zone
+// A scene with a single object authored right at the top-left corner of the
+// illustration — the same corner the back button now lives in. Regression
+// coverage for the illustration's top inset: it must clear the whole top
+// bar (back button, find banner, mode switch), or this object's tap zone
 // would sit right under the back button.
 Future<Directory> _seedCacheWithCornerObject() async {
   final cacheRoot = await Directory.systemTemp.createTemp('yandee_scene_screen_corner_test_');
@@ -64,7 +64,7 @@ Future<Directory> _seedCacheWithCornerObject() async {
         'id': 'corner',
         'label': 'Угол',
         'audio': 'corner.wav',
-        'rect': {'x': 0.0, 'y': 0.85, 'width': 0.15, 'height': 0.15},
+        'rect': {'x': 0.0, 'y': 0.0, 'width': 0.15, 'height': 0.15},
       },
     ],
   }));
@@ -121,15 +121,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('find_banner')), findsOneWidget);
-    expect(find.text('Найди: Мяч'), findsOneWidget);
+    expect(find.text('Мяч'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('object_zone_cat'))); // wrong
     await tester.pump();
-    expect(find.text('Найди: Мяч'), findsOneWidget);
+    expect(find.text('Мяч'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('object_zone_ball'))); // correct
     await tester.pump();
-    expect(find.text('Найди: Кот'), findsOneWidget);
+    expect(find.text('Кот'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('object_zone_cat'))); // correct, last
     await tester.pump();
@@ -241,7 +241,7 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 
-  testWidgets('the back button never overlaps a tap zone near the bottom-left corner', (tester) async {
+  testWidgets('the back button never overlaps a tap zone near the top-left corner', (tester) async {
     late Directory cacheRoot;
     final audio = FakeAudioSink();
     late ContentRepository repository;

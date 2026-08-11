@@ -52,9 +52,10 @@ class _SceneScreenState extends State<SceneScreen> {
             children: [
               const Text('Не удалось открыть сцену'),
               const SizedBox(height: 12),
-              ElevatedButton(
+              ElevatedButton.icon(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Назад'),
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Назад'),
               ),
             ],
           ),
@@ -80,36 +81,52 @@ class _SceneView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<SceneController>();
+    final showBanner = controller.modeType == SceneModeType.find && !controller.showCongrats;
     return Scaffold(
       body: SafeArea(
         child: Stack(
           children: [
-            // Chrome (mode switch, find banner at the top; the back button
-            // at the bottom) can each be up to ~72px tall (their 16px
-            // Positioned offset + control height); insetting the
-            // illustration by 80px on both edges guarantees its rendered
+            // The top bar (back button, find banner, mode switch — see
+            // below) is up to ~64px tall plus its own 16px offset from the
+            // top edge; insetting the illustration by 96px on top and a
+            // smaller 24px on the bottom/sides guarantees its rendered
             // area — and therefore every tap zone inside it — never sits
-            // under any chrome, regardless of aspect ratio, orientation, or
-            // where in the scene an object's rect happens to be authored.
+            // under any chrome, regardless of aspect ratio or where in the
+            // scene an object's rect happens to be authored. Nothing sits
+            // at the bottom any more (the back button now lives in the top
+            // bar with everything else), so that edge only needs breathing
+            // room, not a matching chrome-sized inset.
             Positioned.fill(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 80),
+                padding: const EdgeInsets.only(top: 96, bottom: 24, left: 16, right: 16),
                 child: SceneIllustration(cachedScene: cachedScene),
               ),
             ),
-            if (controller.modeType == SceneModeType.find && !controller.showCongrats)
-              Positioned(
-                top: 16,
-                left: 16,
-                right: 88,
-                child: _FindBanner(target: controller.currentFindTarget),
-              ),
+            // A single top row — rather than independently-positioned
+            // corners — is what actually guarantees the back button, find
+            // banner, and mode switch can never overlap each other: the
+            // banner's Expanded region is only ever as wide as the space
+            // left over between the two fixed-size controls on either side
+            // of it, whatever their rendered widths turn out to be.
             Positioned(
               top: 16,
+              left: 16,
               right: 16,
-              child: _ModeSwitch(modeType: controller.modeType, onChanged: controller.setMode),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const _BackButton(),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: showBanner
+                        ? Center(child: _FindBanner(target: controller.currentFindTarget))
+                        : const SizedBox.shrink(),
+                  ),
+                  const SizedBox(width: 12),
+                  _ModeSwitch(modeType: controller.modeType, onChanged: controller.setMode),
+                ],
+              ),
             ),
-            const Positioned(bottom: 16, left: 16, child: _BackButton()),
             if (controller.showCongrats) const Positioned.fill(child: _CongratsOverlay()),
           ],
         ),
@@ -127,14 +144,30 @@ class _FindBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final target = this.target;
     if (target == null) return const SizedBox.shrink();
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       key: const ValueKey('find_banner'),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8, offset: const Offset(0, 2))],
       ),
-      child: Text('Найди: ${target.label}', style: Theme.of(context).textTheme.titleMedium),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.search, color: colorScheme.primary),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              target.label,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -147,19 +180,40 @@ class _ModeSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       key: const ValueKey('mode_switch'),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: ToggleButtons(
         isSelected: [modeType == SceneModeType.explore, modeType == SceneModeType.find],
         onPressed: (index) => onChanged(index == 0 ? SceneModeType.explore : SceneModeType.find),
+        borderWidth: 0,
+        borderRadius: BorderRadius.circular(20),
+        selectedColor: Colors.white,
+        color: colorScheme.primary,
+        fillColor: colorScheme.primary,
+        splashColor: colorScheme.primary.withValues(alpha: 0.2),
+        constraints: const BoxConstraints(minHeight: 44, minWidth: 56),
         children: const [
-          Padding(padding: EdgeInsets.all(8), child: Text('Исследовать')),
-          Padding(padding: EdgeInsets.all(8), child: Text('Найди')),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [Icon(Icons.explore, size: 20), SizedBox(width: 6), Text('Исследовать')],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [Icon(Icons.search, size: 20), SizedBox(width: 6), Text('Найди')],
+            ),
+          ),
         ],
       ),
     );
@@ -172,11 +226,14 @@ class _BackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white.withValues(alpha: 0.9),
+      color: Colors.white,
       shape: const CircleBorder(),
+      elevation: 3,
+      shadowColor: Colors.black.withValues(alpha: 0.3),
       child: IconButton(
         key: const ValueKey('scene_back_button'),
-        icon: const Icon(Icons.arrow_back),
+        icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.primary),
+        iconSize: 26,
         tooltip: 'Назад',
         onPressed: () => Navigator.of(context).pop(),
       ),
