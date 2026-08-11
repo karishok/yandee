@@ -1,451 +1,336 @@
-# Scene Voiceover (TTS) Implementation Plan
+# Scene Voiceover (Live Recording) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the 54 silent placeholder WAV files (50 object-name words + 4 system phrases) with real macOS `say` speech (voice `Milena`, `ru_RU`), without touching `scene.json` or any app code.
+**Goal:** Replace the 54 silent placeholder WAV files (50 object-name words + 4 system phrases) with real recordings of the developer's own voice, without touching `scene.json` or any app code.
 
-**Architecture:** A new dev-only script, `tool/generate_voiceover.dart`, reuses the existing scene/object vocabulary (extracted into a shared `tool/src/scene_vocabulary.dart` so it isn't duplicated with `tool/generate_placeholder_assets.dart`), maps it to a flat list of `{text, outputPath}` tasks via a pure, unit-tested function, then shells out to `say` + `afconvert` per task to write real speech directly into the existing asset paths.
+**Architecture:** Tasks 1–2 (already complete) extracted the scene vocabulary into a shared, reusable module and built a pure mapping from that vocabulary to a flat list of `{text, outputPath}` voiceover tasks. Task 3 adds an interactive CLI, `tool/record_voiceover.dart`, that walks that list one word at a time — record via `ffmpeg`/AVFoundation, play it back via `afplay`, keep/redo/skip — writing accepted takes directly to the paths the app already expects. A small pure helper module (`tool/src/voiceover_queue.dart`) decides which tasks still need recording (scene filter + "is this file still an unrecorded placeholder") and is the only part of Task 3 that gets automated unit tests — the live record/playback loop itself needs a real microphone and a real human pressing Enter, so it is exercised by the developer manually, not by an agent.
 
-**Tech Stack:** Dart (`dart:io` `Process.run`), macOS `say` + `afconvert` (both preinstalled, no new dependencies), `flutter_test` for the pure-function unit tests.
+**Tech Stack:** Dart (`dart:io` `Process`/`Process.start`), `ffmpeg` with the `avfoundation` input device (already installed, records the Mac's microphone) + `afplay` (preinstalled, plays the take back for review), `flutter_test` for the pure-function unit tests.
 
 ## Global Constraints
 
-- Voice: `Milena` (`ru_RU`) — the only Russian voice available via `say` on this machine
-- Speech rate: `-r 150` (words/minute) — slower than the ~175–200 default, for toddler audience
-- Output audio format: WAV, 16-bit little-endian PCM, mono, 22050 Hz (`afconvert -f WAVE -d LEI16@22050 -c 1`)
+- Output audio format for new recordings: WAV, 16-bit PCM, mono, **44100 Hz**
 - Output paths are unchanged from today: `assets/demo_content/<scene_id>/<object_id>.wav`, `assets/audio/system/<phrase>.wav`
-- System phrase text (agreed, verbatim):
-  - `find_intro` → `Найди:`
-  - `wrong_hint` → `Попробуй ещё раз`
-  - `correct` → `Молодец!`
-  - `round_complete` → `Ура, ты всё нашёл!`
-- No changes to `scene.json`, `lib/`, or any app runtime code — this plan only touches `tool/`, `test/`, and regenerates binary assets under `assets/`
+- Placeholder marker: every not-yet-recorded WAV is exactly **6444 bytes** (0.4s of silence at 8000 Hz, 16-bit mono — see `tool/src/placeholder_wav.dart`). A file at any other size already has a real recording.
+- Interactive controls: Enter to start recording, Enter to stop, then `K` (keep) / `R` (re-record) / `S` (skip) — no other keybindings
+- `--dry-run` must never touch `ffmpeg`, the microphone, or `stdin` — it only prints the filtered queue and returns
+- No changes to `scene.json`, `lib/`, or any app runtime code — this plan only touches `tool/`, `test/`, and (once the developer actually records, by hand, after this plan ships) binary assets under `assets/`
 - No CI/build-time hook — this is a manually-run dev tool, same as the existing `tool/generate_placeholder_assets.dart`
+- **The actual recording session (54 live takes) is out of scope for any agent** — Task 3 builds and mechanically verifies the tool; running it to completion with a real voice is a manual follow-up the developer does herself
 
 ---
 
-### Task 1: Extract shared scene vocabulary
+### Task 1: Extract shared scene vocabulary — ✅ COMPLETE
 
-**Files:**
-- Create: `tool/src/scene_vocabulary.dart`
-- Modify: `tool/generate_placeholder_assets.dart`
-- Test: `test/tool/scene_vocabulary_test.dart`
-
-**Interfaces:**
-- Produces: `class ObjectSpec { const ObjectSpec(this.id, this.label); final String id; final String label; }`
-- Produces: `class SceneSpec { const SceneSpec(this.id, this.title, this.backgroundRgb, this.objects); final String id; final String title; final List<int> backgroundRgb; final List<ObjectSpec> objects; }`
-- Produces: `const List<SceneSpec> scenes` — 5 scenes (`home`, `kitchen`, `farm`, `street`, `bathroom`), 10 objects each, identical content to today's private `_scenes` in `tool/generate_placeholder_assets.dart`
-
-This task moves the existing private `_ObjectSpec`/`_SceneSpec`/`_scenes` out of `tool/generate_placeholder_assets.dart` into a shared, public file so Task 2's voiceover script can reuse the same vocabulary without duplicating 50 hand-typed labels.
-
-- [ ] **Step 1: Write the failing test**
-
-Create `test/tool/scene_vocabulary_test.dart`:
-
-```dart
-import 'package:flutter_test/flutter_test.dart';
-
-import '../../tool/src/scene_vocabulary.dart';
-
-void main() {
-  test('defines exactly 5 scenes with 10 objects each', () {
-    expect(scenes.length, 5);
-    for (final scene in scenes) {
-      expect(scene.objects.length, 10, reason: 'scene ${scene.id}');
-    }
-  });
-
-  test('kitchen scene includes the expected vocabulary', () {
-    final kitchen = scenes.firstWhere((s) => s.id == 'kitchen');
-    expect(kitchen.title, 'Кухня');
-    final apple = kitchen.objects.firstWhere((o) => o.id == 'apple');
-    expect(apple.label, 'Яблоко');
-  });
-
-  test('every object id is unique within its scene', () {
-    for (final scene in scenes) {
-      final ids = scene.objects.map((o) => o.id).toSet();
-      expect(ids.length, scene.objects.length, reason: 'scene ${scene.id}');
-    }
-  });
-}
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `flutter test test/tool/scene_vocabulary_test.dart`
-Expected: FAIL — `tool/src/scene_vocabulary.dart` does not exist (import error)
-
-- [ ] **Step 3: Create `tool/src/scene_vocabulary.dart`**
-
-Move the vocabulary out of `tool/generate_placeholder_assets.dart` verbatim, only dropping the leading underscores to make it public:
-
-```dart
-/// One tappable object in a scene: its content-facing id/label (the real,
-/// agreed-on vocabulary for that scene). Shared between
-/// `generate_placeholder_assets.dart` (art) and `generate_voiceover.dart`
-/// (audio) so the word list lives in exactly one place.
-class ObjectSpec {
-  const ObjectSpec(this.id, this.label);
-  final String id;
-  final String label;
-}
-
-class SceneSpec {
-  const SceneSpec(this.id, this.title, this.backgroundRgb, this.objects);
-  final String id;
-  final String title;
-  final List<int> backgroundRgb;
-  final List<ObjectSpec> objects;
-}
-
-// The app's first 5 real content scenes (see
-// docs/superpowers/plans/2026-08-11-yandee-interactive-scenes.md).
-const scenes = [
-  SceneSpec('home', 'Дом', [235, 222, 200], [
-    ObjectSpec('bed', 'Кровать'),
-    ObjectSpec('table', 'Стол'),
-    ObjectSpec('chair', 'Стул'),
-    ObjectSpec('lamp', 'Лампа'),
-    ObjectSpec('book', 'Книга'),
-    ObjectSpec('clock', 'Часы'),
-    ObjectSpec('window', 'Окно'),
-    ObjectSpec('door', 'Дверь'),
-    ObjectSpec('sofa', 'Диван'),
-    ObjectSpec('rug', 'Ковёр'),
-  ]),
-  SceneSpec('kitchen', 'Кухня', [255, 240, 200], [
-    ObjectSpec('plate', 'Тарелка'),
-    ObjectSpec('cup', 'Чашка'),
-    ObjectSpec('spoon', 'Ложка'),
-    ObjectSpec('fork', 'Вилка'),
-    ObjectSpec('fridge', 'Холодильник'),
-    ObjectSpec('stove', 'Плита'),
-    ObjectSpec('kettle', 'Чайник'),
-    ObjectSpec('apple', 'Яблоко'),
-    ObjectSpec('bread', 'Хлеб'),
-    ObjectSpec('pot', 'Кастрюля'),
-  ]),
-  SceneSpec('farm', 'Ферма', [200, 230, 180], [
-    ObjectSpec('cow', 'Корова'),
-    ObjectSpec('pig', 'Свинья'),
-    ObjectSpec('chicken', 'Курица'),
-    ObjectSpec('rooster', 'Петух'),
-    ObjectSpec('horse', 'Лошадь'),
-    ObjectSpec('sheep', 'Овца'),
-    ObjectSpec('goat', 'Коза'),
-    ObjectSpec('duck', 'Утка'),
-    ObjectSpec('dog', 'Собака'),
-    ObjectSpec('tractor', 'Трактор'),
-  ]),
-  SceneSpec('street', 'Улица', [210, 215, 220], [
-    ObjectSpec('car', 'Машина'),
-    ObjectSpec('bus', 'Автобус'),
-    ObjectSpec('bicycle', 'Велосипед'),
-    ObjectSpec('traffic_light', 'Светофор'),
-    ObjectSpec('tree', 'Дерево'),
-    ObjectSpec('bench', 'Скамейка'),
-    ObjectSpec('lamppost', 'Фонарь'),
-    ObjectSpec('scooter', 'Самокат'),
-    ObjectSpec('truck', 'Грузовик'),
-    ObjectSpec('road_sign', 'Дорожный знак'),
-  ]),
-  SceneSpec('bathroom', 'Ванная', [210, 235, 245], [
-    ObjectSpec('soap', 'Мыло'),
-    ObjectSpec('toothbrush', 'Зубная щётка'),
-    ObjectSpec('toothpaste', 'Зубная паста'),
-    ObjectSpec('towel', 'Полотенце'),
-    ObjectSpec('bathtub', 'Ванна'),
-    ObjectSpec('sink', 'Раковина'),
-    ObjectSpec('shampoo', 'Шампунь'),
-    ObjectSpec('duck_toy', 'Уточка'),
-    ObjectSpec('mirror', 'Зеркало'),
-    ObjectSpec('comb', 'Расчёска'),
-  ]),
-];
-```
-
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `flutter test test/tool/scene_vocabulary_test.dart`
-Expected: PASS (3 tests)
-
-- [ ] **Step 5: Update `tool/generate_placeholder_assets.dart` to use the shared vocabulary**
-
-Remove the now-duplicated private declarations and import the shared file instead, then rename every use of `_ObjectSpec`/`_SceneSpec`/`_scenes` to `ObjectSpec`/`SceneSpec`/`scenes`.
-
-At the top of the file, change:
-
-```dart
-import 'dart:convert';
-import 'dart:io';
-
-import 'src/placeholder_png.dart';
-import 'src/placeholder_wav.dart';
-
-/// One tappable object in a placeholder scene: its content-facing id/label
-/// (the real, agreed-on vocabulary for that scene) plus generated
-/// placeholder art/audio, same as everything else in this tool.
-class _ObjectSpec {
-  const _ObjectSpec(this.id, this.label);
-  final String id;
-  final String label;
-}
-
-class _SceneSpec {
-  const _SceneSpec(this.id, this.title, this.backgroundRgb, this.objects);
-  final String id;
-  final String title;
-  final List<int> backgroundRgb;
-  final List<_ObjectSpec> objects;
-}
-```
-
-to:
-
-```dart
-import 'dart:convert';
-import 'dart:io';
-
-import 'src/placeholder_png.dart';
-import 'src/placeholder_wav.dart';
-import 'src/scene_vocabulary.dart';
-```
-
-Then delete the entire `final _scenes = [ ... ];` block (the 5 `_SceneSpec(...)` entries — now living in `tool/src/scene_vocabulary.dart` instead), and update every remaining reference in the file:
-
-- `List<PlaceholderMarker> _layoutMarkers(List<_ObjectSpec> objects)` → `List<PlaceholderMarker> _layoutMarkers(List<ObjectSpec> objects)`
-- `Map<String, dynamic> _buildSceneJson(_SceneSpec scene, ...)` → `Map<String, dynamic> _buildSceneJson(SceneSpec scene, ...)`
-- `for (final scene in _scenes) {` (in `main()`) → `for (final scene in scenes) {`
-
-- [ ] **Step 6: Verify the placeholder generator still produces identical output**
-
-Run: `dart run tool/generate_placeholder_assets.dart && git status --short`
-Expected: the command prints its usual 59 "wrote ..." lines, and `git status --short` shows **no changes** under `assets/` (byte-identical output — only the vocabulary's *location* moved, not its content). If anything under `assets/` shows as modified, the vocabulary was copied incorrectly — diff it against the original `_scenes` block before continuing.
-
-Run: `flutter analyze`
-Expected: `No issues found!`
-
-- [ ] **Step 7: Commit**
-
-```bash
-git add tool/src/scene_vocabulary.dart tool/generate_placeholder_assets.dart test/tool/scene_vocabulary_test.dart
-git commit -m "refactor: extract shared scene vocabulary from placeholder generator"
-```
+Already implemented and reviewed clean (commits `e5bc0a5..8ca56ff`). See `tool/src/scene_vocabulary.dart` (`ObjectSpec`, `SceneSpec`, `const scenes`) and `test/tool/scene_vocabulary_test.dart`. No further action.
 
 ---
 
-### Task 2: Pure mapping from vocabulary to voiceover tasks
+### Task 2: Pure mapping from vocabulary to voiceover tasks — ✅ COMPLETE
+
+Already implemented and reviewed clean (commits `8ca56ff..9bf7069`). See `tool/src/voiceover_tasks.dart` (`VoiceoverTask`, `buildVoiceoverTasks()`) and `test/tool/voiceover_tasks_test.dart`. No further action.
+
+---
+
+### Task 3: Interactive recording tool
 
 **Files:**
-- Create: `tool/src/voiceover_tasks.dart`
-- Test: `test/tool/voiceover_tasks_test.dart`
+- Create: `tool/src/voiceover_queue.dart`
+- Create: `tool/record_voiceover.dart`
+- Test: `test/tool/voiceover_queue_test.dart`
 
 **Interfaces:**
-- Consumes: `scenes` (`List<SceneSpec>`) from `tool/src/scene_vocabulary.dart` (Task 1)
-- Produces: `class VoiceoverTask { const VoiceoverTask({required this.text, required this.outputPath}); final String text; final String outputPath; }`
-- Produces: `List<VoiceoverTask> buildVoiceoverTasks()` — pure function, no I/O; Task 3's script consumes this list
+- Consumes: `VoiceoverTask` (`text`, `outputPath`) and `buildVoiceoverTasks()` from `tool/src/voiceover_tasks.dart` (Task 2)
+- Produces (from `voiceover_queue.dart`): `const placeholderWavSizeBytes = 6444`; `bool isUnrecorded(File file)`; `bool taskMatchesFilter(VoiceoverTask task, String? sceneFilter)`; `List<VoiceoverTask> buildRecordingQueue(List<VoiceoverTask> tasks, {String? sceneFilter, bool Function(String path) isUnrecordedAt})`
+- `tool/record_voiceover.dart`'s `main()` consumes `buildRecordingQueue` and is not itself unit-tested (see rationale above) — verified instead by the non-interactive `--dry-run` steps below, which exercise the real queue-building logic end to end without touching `ffmpeg`/`stdin`
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Write the failing tests for the queue logic**
 
-Create `test/tool/voiceover_tasks_test.dart`:
+Create `test/tool/voiceover_queue_test.dart`:
 
 ```dart
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../tool/src/voiceover_queue.dart';
 import '../../tool/src/voiceover_tasks.dart';
 
 void main() {
-  test('includes all 4 system phrases with the agreed text', () {
-    final tasks = buildVoiceoverTasks();
-    final byPath = {for (final t in tasks) t.outputPath: t.text};
+  group('isUnrecorded', () {
+    late Directory tempDir;
 
-    expect(byPath['assets/audio/system/find_intro.wav'], 'Найди:');
-    expect(byPath['assets/audio/system/wrong_hint.wav'], 'Попробуй ещё раз');
-    expect(byPath['assets/audio/system/correct.wav'], 'Молодец!');
-    expect(byPath['assets/audio/system/round_complete.wav'], 'Ура, ты всё нашёл!');
+    setUp(() {
+      tempDir = Directory.systemTemp.createTempSync('voiceover_queue_test_');
+    });
+
+    tearDown(() {
+      tempDir.deleteSync(recursive: true);
+    });
+
+    test('true for a missing file', () {
+      final file = File('${tempDir.path}/missing.wav');
+      expect(isUnrecorded(file), isTrue);
+    });
+
+    test('true for a file at exactly the placeholder size', () {
+      final file = File('${tempDir.path}/placeholder.wav')
+        ..writeAsBytesSync(List.filled(placeholderWavSizeBytes, 0));
+      expect(isUnrecorded(file), isTrue);
+    });
+
+    test('false for a file at any other size', () {
+      final file = File('${tempDir.path}/recorded.wav')
+        ..writeAsBytesSync(List.filled(placeholderWavSizeBytes + 500, 0));
+      expect(isUnrecorded(file), isFalse);
+    });
   });
 
-  test('includes one task per scene object, at the path scene.json expects', () {
-    final tasks = buildVoiceoverTasks();
-    final byPath = {for (final t in tasks) t.outputPath: t.text};
+  group('taskMatchesFilter', () {
+    const kitchenTask = VoiceoverTask(text: 'Яблоко', outputPath: 'assets/demo_content/kitchen/apple.wav');
+    const farmTask = VoiceoverTask(text: 'Корова', outputPath: 'assets/demo_content/farm/cow.wav');
+    const systemTask = VoiceoverTask(text: 'Найди:', outputPath: 'assets/audio/system/find_intro.wav');
 
-    expect(byPath['assets/demo_content/kitchen/apple.wav'], 'Яблоко');
-    expect(byPath['assets/demo_content/street/road_sign.wav'], 'Дорожный знак');
-    expect(byPath['assets/demo_content/bathroom/duck_toy.wav'], 'Уточка');
+    test('null filter matches everything', () {
+      expect(taskMatchesFilter(kitchenTask, null), isTrue);
+      expect(taskMatchesFilter(systemTask, null), isTrue);
+    });
+
+    test('scene filter matches only that scene\'s objects', () {
+      expect(taskMatchesFilter(kitchenTask, 'kitchen'), isTrue);
+      expect(taskMatchesFilter(farmTask, 'kitchen'), isFalse);
+      expect(taskMatchesFilter(systemTask, 'kitchen'), isFalse);
+    });
+
+    test('"system" filter matches only system phrases', () {
+      expect(taskMatchesFilter(systemTask, 'system'), isTrue);
+      expect(taskMatchesFilter(kitchenTask, 'system'), isFalse);
+    });
   });
 
-  test('produces exactly 54 tasks with no duplicate output paths', () {
-    final tasks = buildVoiceoverTasks();
-    expect(tasks.length, 54);
-    expect(tasks.map((t) => t.outputPath).toSet().length, 54);
+  group('buildRecordingQueue', () {
+    test('combines scene filter and unrecorded-check', () {
+      const tasks = [
+        VoiceoverTask(text: 'Яблоко', outputPath: 'assets/demo_content/kitchen/apple.wav'),
+        VoiceoverTask(text: 'Хлеб', outputPath: 'assets/demo_content/kitchen/bread.wav'),
+        VoiceoverTask(text: 'Корова', outputPath: 'assets/demo_content/farm/cow.wav'),
+      ];
+
+      final queue = buildRecordingQueue(
+        tasks,
+        sceneFilter: 'kitchen',
+        isUnrecordedAt: (path) => path == 'assets/demo_content/kitchen/bread.wav',
+      );
+
+      expect(queue.map((t) => t.outputPath), ['assets/demo_content/kitchen/bread.wav']);
+    });
+
+    test('with no filter and everything unrecorded, returns all tasks', () {
+      const tasks = [
+        VoiceoverTask(text: 'Яблоко', outputPath: 'assets/demo_content/kitchen/apple.wav'),
+        VoiceoverTask(text: 'Корова', outputPath: 'assets/demo_content/farm/cow.wav'),
+      ];
+
+      final queue = buildRecordingQueue(tasks, isUnrecordedAt: (_) => true);
+
+      expect(queue.length, 2);
+    });
   });
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Step 2: Run tests to verify they fail**
 
-Run: `flutter test test/tool/voiceover_tasks_test.dart`
-Expected: FAIL — `tool/src/voiceover_tasks.dart` does not exist (import error)
+Run: `flutter test test/tool/voiceover_queue_test.dart`
+Expected: FAIL — `tool/src/voiceover_queue.dart` does not exist (import error)
 
-- [ ] **Step 3: Write the implementation**
+- [ ] **Step 3: Write the queue logic**
 
-Create `tool/src/voiceover_tasks.dart`:
-
-```dart
-import 'scene_vocabulary.dart';
-
-/// One word or phrase to synthesize, and where the resulting WAV belongs —
-/// the exact same relative path `scene.json` (for objects) or
-/// `AudioPlayerService` (for system phrases) already expects.
-class VoiceoverTask {
-  const VoiceoverTask({required this.text, required this.outputPath});
-  final String text;
-  final String outputPath;
-}
-
-const _systemPhrases = [
-  VoiceoverTask(text: 'Найди:', outputPath: 'assets/audio/system/find_intro.wav'),
-  VoiceoverTask(text: 'Попробуй ещё раз', outputPath: 'assets/audio/system/wrong_hint.wav'),
-  VoiceoverTask(text: 'Молодец!', outputPath: 'assets/audio/system/correct.wav'),
-  VoiceoverTask(text: 'Ура, ты всё нашёл!', outputPath: 'assets/audio/system/round_complete.wav'),
-];
-
-/// The full list of voiceover tasks: 4 system phrases, then every scene
-/// object's name, in scene/object declaration order.
-List<VoiceoverTask> buildVoiceoverTasks() {
-  final tasks = <VoiceoverTask>[..._systemPhrases];
-  for (final scene in scenes) {
-    for (final object in scene.objects) {
-      tasks.add(VoiceoverTask(
-        text: object.label,
-        outputPath: 'assets/demo_content/${scene.id}/${object.id}.wav',
-      ));
-    }
-  }
-  return tasks;
-}
-```
-
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `flutter test test/tool/voiceover_tasks_test.dart`
-Expected: PASS (3 tests)
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add tool/src/voiceover_tasks.dart test/tool/voiceover_tasks_test.dart
-git commit -m "feat: add pure mapping from scene vocabulary to voiceover tasks"
-```
-
----
-
-### Task 3: Voiceover generator script — synthesize and replace the silent assets
-
-**Files:**
-- Create: `tool/generate_voiceover.dart`
-- Modify (regenerated binary assets, not hand-edited): `assets/demo_content/*/*.wav` (50 files), `assets/audio/system/*.wav` (4 files)
-
-**Interfaces:**
-- Consumes: `buildVoiceoverTasks()` (`List<VoiceoverTask>`) from `tool/src/voiceover_tasks.dart` (Task 2)
-
-This task shells out to macOS `say` and `afconvert`, so — matching the existing `tool/generate_placeholder_assets.dart`, which is also untested — it has no automated unit test. Its correctness is verified by actually running it and inspecting the resulting files.
-
-- [ ] **Step 1: Write the script**
-
-Create `tool/generate_voiceover.dart`:
+Create `tool/src/voiceover_queue.dart`:
 
 ```dart
 import 'dart:io';
 
+import 'voiceover_tasks.dart';
+
+/// Placeholder WAVs written by `generate_placeholder_assets.dart` are
+/// always exactly this many bytes (0.4s of silence at 8000 Hz, 16-bit
+/// mono — see `tool/src/placeholder_wav.dart`). A file at any other size
+/// has already been recorded over.
+const placeholderWavSizeBytes = 6444;
+
+/// True if nobody has recorded over [file] yet — it's missing, or still
+/// exactly the placeholder's byte size.
+bool isUnrecorded(File file) {
+  if (!file.existsSync()) return true;
+  return file.lengthSync() == placeholderWavSizeBytes;
+}
+
+/// True if [task] belongs to the requested recording session. `null`
+/// matches everything; `'system'` matches only the 4 system phrases; any
+/// scene id matches only that scene's objects.
+bool taskMatchesFilter(VoiceoverTask task, String? sceneFilter) {
+  if (sceneFilter == null) return true;
+  if (sceneFilter == 'system') return task.outputPath.startsWith('assets/audio/system/');
+  return task.outputPath.startsWith('assets/demo_content/$sceneFilter/');
+}
+
+bool _isUnrecordedAt(String path) => isUnrecorded(File(path));
+
+/// The ordered queue of tasks still needing a real recording: [tasks]
+/// (normally `buildVoiceoverTasks()`) filtered by scene/system and by
+/// whether their output file is still an unrecorded placeholder.
+/// [isUnrecordedAt] defaults to a real filesystem check; tests inject a
+/// fake to stay off disk.
+List<VoiceoverTask> buildRecordingQueue(
+  List<VoiceoverTask> tasks, {
+  String? sceneFilter,
+  bool Function(String path) isUnrecordedAt = _isUnrecordedAt,
+}) {
+  return tasks
+      .where((t) => taskMatchesFilter(t, sceneFilter))
+      .where((t) => isUnrecordedAt(t.outputPath))
+      .toList();
+}
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
+
+Run: `flutter test test/tool/voiceover_queue_test.dart`
+Expected: PASS (7 tests)
+
+- [ ] **Step 5: Write the interactive recording script**
+
+Create `tool/record_voiceover.dart`:
+
+```dart
+import 'dart:io';
+
+import 'src/voiceover_queue.dart';
 import 'src/voiceover_tasks.dart';
 
-const _voice = 'Milena';
-const _rateWpm = 150;
-const _sampleRateHz = 22050;
+Future<void> main(List<String> args) async {
+  final dryRun = args.remove('--dry-run');
+  final sceneFilter = args.isNotEmpty ? args.first : null;
 
-Future<void> main() async {
-  final tempDir = await Directory.systemTemp.createTemp('yandee_voiceover_');
-  var failures = 0;
-  try {
-    for (final task in buildVoiceoverTasks()) {
-      final tempAiff = File('${tempDir.path}/tts.aiff');
+  final queue = buildRecordingQueue(buildVoiceoverTasks(), sceneFilter: sceneFilter);
 
-      final sayResult = await Process.run('say', [
-        '-v', _voice,
-        '-r', '$_rateWpm',
-        '-o', tempAiff.path,
-        task.text,
-      ]);
-      if (sayResult.exitCode != 0) {
-        stderr.writeln('say failed for "${task.text}" (${task.outputPath}): ${sayResult.stderr}');
-        failures++;
-        continue;
-      }
-
-      final outputFile = File(task.outputPath);
-      await outputFile.parent.create(recursive: true);
-      final convertResult = await Process.run('afconvert', [
-        '-f', 'WAVE',
-        '-d', 'LEI16@$_sampleRateHz',
-        '-c', '1',
-        tempAiff.path,
-        outputFile.path,
-      ]);
-      if (convertResult.exitCode != 0) {
-        stderr.writeln('afconvert failed for "${task.outputPath}": ${convertResult.stderr}');
-        failures++;
-        continue;
-      }
-
-      final bytes = await outputFile.length();
-      stdout.writeln('wrote ${task.outputPath} ($bytes bytes)');
-      await tempAiff.delete();
-    }
-  } finally {
-    await tempDir.delete(recursive: true);
+  if (queue.isEmpty) {
+    stdout.writeln('Нечего записывать — все подходящие слова уже озвучены.');
+    return;
   }
 
-  if (failures > 0) {
-    stderr.writeln('$failures task(s) failed — see above.');
-    exitCode = 1;
+  if (dryRun) {
+    stdout.writeln('${queue.length} слов(о/а) будет записано:');
+    for (final task in queue) {
+      stdout.writeln('  ${task.text} -> ${task.outputPath}');
+    }
+    return;
+  }
+
+  final device = await _pickDevice();
+
+  for (var i = 0; i < queue.length; i++) {
+    final task = queue[i];
+    stdout.writeln('\nСкажи: «${task.text}» (${i + 1}/${queue.length})');
+    await _recordOne(task, device);
+  }
+
+  stdout.writeln('\nГотово!');
+}
+
+Future<String> _pickDevice() async {
+  final listing = await Process.run('ffmpeg', ['-f', 'avfoundation', '-list_devices', 'true', '-i', '']);
+  // ffmpeg prints the device list to stderr regardless of exit code.
+  stdout.writeln(listing.stderr);
+  stdout.write('Номер микрофона (audio device index): ');
+  final input = stdin.readLineSync();
+  return input?.trim() ?? '0';
+}
+
+Future<void> _recordOne(VoiceoverTask task, String device) async {
+  while (true) {
+    stdout.write('Enter — начать запись... ');
+    stdin.readLineSync();
+
+    final tempFile = File('${Directory.systemTemp.path}/yandee_record_${DateTime.now().microsecondsSinceEpoch}.wav');
+    final process = await Process.start('ffmpeg', [
+      '-f', 'avfoundation',
+      '-i', ':$device',
+      '-ar', '44100',
+      '-ac', '1',
+      '-y',
+      tempFile.path,
+    ]);
+
+    stdout.write('Enter — остановить запись... ');
+    stdin.readLineSync();
+    process.kill(ProcessSignal.sigint);
+    await process.exitCode;
+
+    await Process.run('afplay', [tempFile.path]);
+
+    stdout.write('[K]eep / [R]e-record / [S]kip: ');
+    final choice = stdin.readLineSync()?.trim().toLowerCase();
+
+    if (choice == 'k') {
+      final outputFile = File(task.outputPath);
+      await outputFile.parent.create(recursive: true);
+      await tempFile.copy(outputFile.path);
+      await tempFile.delete();
+      stdout.writeln('Записано: ${task.outputPath}');
+      return;
+    }
+    if (choice == 's') {
+      await tempFile.delete();
+      stdout.writeln('Пропущено.');
+      return;
+    }
+    // Anything else (including 'r'): delete the take and loop to re-record.
+    await tempFile.delete();
   }
 }
 ```
 
-- [ ] **Step 2: Run the script**
+- [ ] **Step 6: Run the non-interactive smoke checks**
 
-Run: `dart run tool/generate_voiceover.dart`
-Expected: 54 lines of `wrote assets/.../....wav (N bytes)`, exit code 0, no lines on stderr
+These exercise the real `buildRecordingQueue` logic end to end without touching `ffmpeg`, the microphone, or `stdin` — safe to run directly.
 
-- [ ] **Step 3: Spot-check the output**
+Run: `dart run tool/record_voiceover.dart --dry-run`
+Expected: prints `54 слов(о/а) будет записано:` followed by 54 `  <text> -> <path>` lines (every placeholder WAV in the repo is still exactly 6444 bytes at this point, so nothing is filtered out)
 
-Run: `file assets/demo_content/kitchen/apple.wav assets/audio/system/find_intro.wav`
-Expected: both report `WAVE audio, Microsoft PCM, 16 bit, mono 22050 Hz` (not the old silent placeholders, which were 8000 Hz)
+Run: `dart run tool/record_voiceover.dart kitchen --dry-run`
+Expected: prints `10 слов(о/а) будет записано:` followed by exactly the 10 `assets/demo_content/kitchen/*.wav` lines
 
-Run: `afplay assets/demo_content/kitchen/apple.wav` and `afplay assets/audio/system/correct.wav`
-Expected: audibly hear "Яблоко" and "Молодец!" spoken in Russian
+Run: `dart run tool/record_voiceover.dart system --dry-run`
+Expected: prints `4 слов(о/а) будет записано:` followed by exactly the 4 `assets/audio/system/*.wav` lines
 
-- [ ] **Step 4: Run the full app verification**
+- [ ] **Step 7: Run the full app verification**
 
 Run: `flutter analyze`
 Expected: `No issues found!`
 
 Run: `flutter test`
-Expected: all tests pass (app code and `scene.json` are unchanged, so this confirms the asset swap didn't break anything — `content_repository_test.dart` and `demo_content_seeder_test.dart` in particular exercise the asset-loading path)
+Expected: all tests pass (this step only adds new files under `tool/` and `test/` — no app code or existing assets change, so this confirms nothing broke)
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add tool/generate_voiceover.dart assets/demo_content assets/audio/system
-git commit -m "feat: generate real TTS voiceover for scene objects and system phrases"
+git add tool/src/voiceover_queue.dart tool/record_voiceover.dart test/tool/voiceover_queue_test.dart
+git commit -m "feat: add interactive live-voice recording tool for scene voiceover"
 ```
+
+- [ ] **Step 9: Hand off the manual recording session**
+
+This step is performed by the developer, not an agent — note it as the plan's final deliverable rather than executing it:
+
+> Run `dart run tool/record_voiceover.dart <scene-id-or-system, or nothing for everything>` from a real terminal with a working microphone. Work through the prompts (Enter to start/stop, listen to the playback, K/R/S). Safe to stop anytime and resume later — already-recorded words are skipped automatically. Once done, `git add assets/ && git commit` the recorded `.wav` files.
 
 ---
 
 ## Self-Review Notes
 
-- **Spec coverage:** §2 (architecture/script) → Tasks 1–3; §3 (voice/text) → Global Constraints + Task 2's phrase texts; §4 (hybrid status note) → already recorded in the spec doc itself, no code artifact needed; §5 (run/verify) → Task 3 Steps 2–4.
+- **Spec coverage:** §2 (architecture) → Task 3 Steps 1–5; §3 (format/interaction) → Global Constraints + Task 3 Step 5's code; §4 (manual vs. automated split) → Task 3's framing note + Step 9; §5 (run/verify) → Task 3 Steps 6–8, with Step 9 as the explicit manual handoff.
 - **No placeholders:** every step has literal code/commands, no "TBD" or "handle errors appropriately".
-- **Type consistency:** `ObjectSpec`/`SceneSpec` (Task 1) → consumed by `voiceover_tasks.dart` (Task 2) via `scenes: List<SceneSpec>`; `VoiceoverTask` (Task 2) → consumed by `generate_voiceover.dart` (Task 3) via `buildVoiceoverTasks(): List<VoiceoverTask>`. Names match exactly across all three tasks.
+- **Type consistency:** `VoiceoverTask`/`buildVoiceoverTasks()` (Task 2, already built) → consumed by `voiceover_queue.dart`'s `buildRecordingQueue` (Task 3) and by `record_voiceover.dart`'s `main()`. `isUnrecorded`/`taskMatchesFilter`/`buildRecordingQueue` names match exactly between the implementation and the test file above.
