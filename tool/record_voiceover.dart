@@ -1,15 +1,33 @@
 import 'dart:async' show unawaited;
+import 'dart:convert';
 import 'dart:io';
 
+import 'src/scene_vocabulary.dart';
 import 'src/voiceover_queue.dart';
 import 'src/voiceover_tasks.dart';
 
 Future<void> main(List<String> args) async {
+  // Output paths are relative to the repo root; running from anywhere else
+  // would silently create a fresh `assets/` tree and re-record everything.
+  if (!File('pubspec.yaml').existsSync()) {
+    stderr.writeln('Запусти из корня репозитория.');
+    exitCode = 1;
+    return;
+  }
+
   // `dart run` passes a fixed-length list, so mutate a copy rather than
   // calling args.remove() directly (which throws UnsupportedError).
   final remaining = args.toList()..remove('--dry-run');
   final dryRun = remaining.length != args.length;
   final sceneFilter = remaining.isNotEmpty ? remaining.first : null;
+
+  if (!isValidSceneFilter(sceneFilter)) {
+    final validValues = [...scenes.map((s) => s.id), 'system'];
+    stderr.writeln('Неизвестный фильтр сцены: "$sceneFilter".');
+    stderr.writeln('Допустимые значения: ${validValues.join(', ')}.');
+    exitCode = 1;
+    return;
+  }
 
   final queue = buildRecordingQueue(buildVoiceoverTasks(), sceneFilter: sceneFilter);
 
@@ -37,6 +55,18 @@ Future<void> main(List<String> args) async {
   stdout.writeln('\nГотово!');
 }
 
+/// Reads one line from stdin, or exits the whole process if stdin has hit
+/// EOF (e.g. launched non-interactively/piped) — without this, a `null`
+/// read would otherwise spin an unbounded loop that keeps spawning ffmpeg.
+String _readLineOrExit() {
+  final line = stdin.readLineSync();
+  if (line == null) {
+    stderr.writeln('Похоже, нет интерактивного ввода — выхожу.');
+    exit(1);
+  }
+  return line;
+}
+
 Future<String> _pickDevice() async {
   final listing = await Process.run('ffmpeg', ['-f', 'avfoundation', '-list_devices', 'true', '-i', '']);
   // ffmpeg prints the device list to stderr regardless of exit code.
@@ -49,7 +79,7 @@ Future<String> _pickDevice() async {
 Future<void> _recordOne(VoiceoverTask task, String device) async {
   while (true) {
     stdout.write('Enter — начать запись... ');
-    stdin.readLineSync();
+    _readLineOrExit();
 
     final tempFile = File('${Directory.systemTemp.path}/yandee_record_${DateTime.now().microsecondsSinceEpoch}.wav');
     final process = await Process.start('ffmpeg', [
@@ -60,20 +90,47 @@ Future<void> _recordOne(VoiceoverTask task, String device) async {
       '-y',
       tempFile.path,
     ]);
-    // Drain both streams so ffmpeg's stderr/stdout writes can never back up
-    // and block it on a full pipe buffer while recording.
+    // Drain stdout (unneeded) so it can never back up and block ffmpeg, but
+    // buffer stderr so we have something to show the developer if the
+    // recording fails — ffmpeg writes its progress/errors there.
     unawaited(process.stdout.drain());
-    unawaited(process.stderr.drain());
+    final stderrLines = <String>[];
+    final stderrDone = process.stderr
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen(stderrLines.add)
+        .asFuture<void>();
 
     stdout.write('Enter — остановить запись... ');
-    stdin.readLineSync();
+    _readLineOrExit();
     process.kill(ProcessSignal.sigint);
     await process.exitCode;
+    await stderrDone;
+
+    // ffmpeg terminated by our own SIGINT exits non-zero (255) even on a
+    // clean recording, so exit code is not the success signal here — file
+    // existence/size is. A bare WAV header with no audio is ~44 bytes.
+    final recordedOk = tempFile.existsSync() && tempFile.lengthSync() > 44;
+    if (!recordedOk) {
+      stdout.writeln('Не удалось записать звук (нет файла или он пустой).');
+      if (stderrLines.isNotEmpty) {
+        stdout.writeln('Последние строки вывода ffmpeg:');
+        final tail = stderrLines.length > 20 ? stderrLines.sublist(stderrLines.length - 20) : stderrLines;
+        for (final line in tail) {
+          stdout.writeln('  $line');
+        }
+      }
+      if (tempFile.existsSync()) {
+        await tempFile.delete();
+      }
+      stdout.writeln('Повторяем это же слово.');
+      continue;
+    }
 
     await Process.run('afplay', [tempFile.path]);
 
     stdout.write('[K]eep / [R]e-record / [S]kip: ');
-    final choice = stdin.readLineSync()?.trim().toLowerCase();
+    final choice = _readLineOrExit().trim().toLowerCase();
 
     if (choice == 'k') {
       final outputFile = File(task.outputPath);

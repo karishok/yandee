@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'scene_vocabulary.dart';
 import 'voiceover_tasks.dart';
 
 /// Placeholder WAVs written by `generate_placeholder_assets.dart` are
@@ -22,6 +23,15 @@ bool taskMatchesFilter(VoiceoverTask task, String? sceneFilter) {
   if (sceneFilter == null) return true;
   if (sceneFilter == 'system') return task.outputPath.startsWith('assets/audio/system/');
   return task.outputPath.startsWith('assets/demo_content/$sceneFilter/');
+}
+
+/// True if [filter] is a value `taskMatchesFilter` can actually match
+/// against: `null` (everything), `'system'`, or a real scene id. Guards
+/// against a typo'd/mis-cased scene filter silently matching nothing and
+/// being reported as "already fully recorded".
+bool isValidSceneFilter(String? filter) {
+  if (filter == null || filter == 'system') return true;
+  return scenes.any((s) => s.id == filter);
 }
 
 bool _isUnrecordedAt(String path) => isUnrecorded(File(path));

@@ -2,10 +2,15 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../tool/src/placeholder_wav.dart';
 import '../../tool/src/voiceover_queue.dart';
 import '../../tool/src/voiceover_tasks.dart';
 
 void main() {
+  test('placeholderWavSizeBytes matches the actual placeholder WAV builder', () {
+    expect(buildSilentWav().length, placeholderWavSizeBytes);
+  });
+
   group('isUnrecorded', () {
     late Directory tempDir;
 
@@ -83,6 +88,28 @@ void main() {
       final queue = buildRecordingQueue(tasks, isUnrecordedAt: (_) => true);
 
       expect(queue.length, 2);
+    });
+  });
+
+  group('isValidSceneFilter', () {
+    test('null is valid', () {
+      expect(isValidSceneFilter(null), isTrue);
+    });
+
+    test('"system" is valid', () {
+      expect(isValidSceneFilter('system'), isTrue);
+    });
+
+    test('a real scene id is valid', () {
+      expect(isValidSceneFilter('kitchen'), isTrue);
+    });
+
+    test('a typo\'d or unknown id is invalid', () {
+      expect(isValidSceneFilter('kitchn'), isFalse);
+    });
+
+    test('wrong case is invalid', () {
+      expect(isValidSceneFilter('Kitchen'), isFalse);
     });
   });
 }

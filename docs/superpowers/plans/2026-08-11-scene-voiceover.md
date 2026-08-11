@@ -326,6 +326,8 @@ git commit -m "feat: add interactive live-voice recording tool for scene voiceov
 This step is performed by the developer, not an agent — note it as the plan's final deliverable rather than executing it:
 
 > Run `dart run tool/record_voiceover.dart <scene-id-or-system, or nothing for everything>` from a real terminal with a working microphone. Work through the prompts (Enter to start/stop, listen to the playback, K/R/S). Safe to stop anytime and resume later — already-recorded words are skipped automatically. Once done, `git add assets/ && git commit` the recorded `.wav` files.
+>
+> Note: `DemoContentSeeder.seedIfEmpty` only copies bundled assets into the content cache when that cache is empty, and playback reads from the cache, not the bundle — so on an already-installed app, freshly recorded object audio won't play until app data is cleared or the app is reinstalled. (System phrases update immediately, since those play from the asset bundle directly.)
 
 ---
 

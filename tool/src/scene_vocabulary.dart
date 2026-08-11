@@ -1,7 +1,8 @@
 /// One tappable object in a scene: its content-facing id/label (the real,
 /// agreed-on vocabulary for that scene). Shared between
-/// `generate_placeholder_assets.dart` (art) and `generate_voiceover.dart`
-/// (audio) so the word list lives in exactly one place.
+/// `generate_placeholder_assets.dart` (art) and the voiceover tooling
+/// (`voiceover_tasks.dart`, `record_voiceover.dart`) so the word list lives
+/// in exactly one place.
 class ObjectSpec {
   const ObjectSpec(this.id, this.label);
   final String id;
