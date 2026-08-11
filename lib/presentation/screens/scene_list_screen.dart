@@ -82,7 +82,16 @@ class _SceneListScreenState extends State<SceneListScreen> {
         clipBehavior: Clip.antiAlias,
         child: Column(
           children: [
-            Expanded(child: Image.file(File(scene.thumbnailPath), fit: BoxFit.cover)),
+            Expanded(
+              child: Image.file(
+                File(scene.thumbnailPath),
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => const ColoredBox(
+                  color: Color(0xFFE0E0E0),
+                  child: Center(child: Icon(Icons.image_not_supported, color: Colors.grey)),
+                ),
+              ),
+            ),
             Padding(padding: const EdgeInsets.all(8), child: Text(scene.title)),
           ],
         ),

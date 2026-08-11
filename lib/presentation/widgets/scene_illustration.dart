@@ -19,15 +19,24 @@ class _SceneIllustrationState extends State<SceneIllustration> {
   late final ImageProvider _imageProvider;
   ImageStreamListener? _listener;
   Size? _imageSize;
+  bool _hasError = false;
 
   @override
   void initState() {
     super.initState();
     _imageProvider = FileImage(File(widget.cachedScene.backgroundPath));
-    _listener = ImageStreamListener((info, _) {
-      if (!mounted) return;
-      setState(() => _imageSize = Size(info.image.width.toDouble(), info.image.height.toDouble()));
-    });
+    _listener = ImageStreamListener(
+      (info, _) {
+        if (!mounted) return;
+        setState(() => _imageSize = Size(info.image.width.toDouble(), info.image.height.toDouble()));
+      },
+      onError: (exception, stackTrace) {
+        // A missing/corrupt background.png must not spin forever with no
+        // user-visible feedback — surface a simple error state instead.
+        if (!mounted) return;
+        setState(() => _hasError = true);
+      },
+    );
     _imageProvider.resolve(const ImageConfiguration()).addListener(_listener!);
   }
 
@@ -39,6 +48,18 @@ class _SceneIllustrationState extends State<SceneIllustration> {
 
   @override
   Widget build(BuildContext context) {
+    if (_hasError) {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.broken_image, size: 64, color: Colors.grey),
+            SizedBox(height: 8),
+            Text('Не удалось загрузить изображение'),
+          ],
+        ),
+      );
+    }
     final imageSize = _imageSize;
     if (imageSize == null) {
       return const Center(child: CircularProgressIndicator());

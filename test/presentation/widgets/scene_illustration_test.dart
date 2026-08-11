@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import 'package:yandee/data/cached_scene.dart';
 import 'package:yandee/domain/models/object_rect.dart';
@@ -98,5 +99,52 @@ void main() {
     await tester.tap(zoneFinder);
     await tester.pump();
     expect(audio.playedFiles, [cachedScene.audioPathFor(ball)]);
+  });
+
+  testWidgets('shows an error state instead of spinning forever when the background fails to decode', (
+    tester,
+  ) async {
+    late Directory tempDir;
+    late CachedScene cachedScene;
+    final audio = FakeAudioSink();
+
+    // Same zone requirement as above: the corrupt-image decode failure
+    // (like the successful-decode callback) only fires the listener when
+    // the whole setup + pumpWidget() runs inside a single runAsync() block.
+    await tester.runAsync(() async {
+      tempDir = await Directory.systemTemp.createTemp('yandee_illustration_error_test_');
+      // Deliberately invalid PNG bytes: this must be caught by
+      // ImageStreamListener's onError (which SceneIllustration now
+      // provides), not left to crash the test via FlutterError.reportError.
+      await File(p.join(tempDir.path, 'background.png')).writeAsBytes([1, 2, 3]);
+
+      cachedScene = CachedScene(
+        scene: Scene(
+          id: 'demo',
+          version: 1,
+          title: 'Демо',
+          minAgeMonths: 12,
+          background: 'background.png',
+          objects: [ball],
+        ),
+        directoryPath: tempDir.path,
+      );
+
+      await tester.pumpWidget(MaterialApp(
+        home: ChangeNotifierProvider(
+          create: (_) => SceneController(cachedScene: cachedScene, audioSink: audio),
+          child: SceneIllustration(cachedScene: cachedScene),
+        ),
+      ));
+
+      for (var i = 0; i < 20 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await tester.pump();
+      }
+    });
+    addTearDown(() => tempDir.delete(recursive: true));
+
+    expect(find.byIcon(Icons.broken_image), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
   });
 }

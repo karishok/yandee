@@ -144,4 +144,40 @@ void main() {
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget); // SceneScreen's own loading state
   });
+
+  testWidgets('shows a placeholder instead of the default red error box for a corrupt thumbnail', (tester) async {
+    late Directory cacheRoot;
+
+    await tester.runAsync(() async {
+      cacheRoot = await Directory.systemTemp.createTemp('yandee_list_test_corrupt_thumb_');
+      final dir = Directory(p.join(cacheRoot.path, ContentRepository.cacheSubdirName, 'bad'));
+      await dir.create(recursive: true);
+      // Deliberately invalid PNG bytes: exercises Image.file's errorBuilder
+      // instead of a successful decode.
+      await File(p.join(dir.path, 'thumb.png')).writeAsBytes([1, 2, 3]);
+      await File(p.join(dir.path, 'scene.json')).writeAsString(jsonEncode({
+        'id': 'bad',
+        'version': 1,
+        'title': 'Плохая',
+        'minAgeMonths': 12,
+        'background': 'background.png',
+        'objects': <Map<String, dynamic>>[],
+      }));
+
+      final repository = ContentRepository(
+        httpClient: MockClient((_) async => throw const SocketException('offline')),
+        baseUrl: Uri.parse('https://example.invalid/v1/'),
+        cacheRootProvider: () async => cacheRoot,
+      );
+
+      await tester.pumpWidget(MaterialApp(home: SceneListScreen(contentRepository: repository)));
+      await _pumpAndSettleReal(tester);
+    });
+    addTearDown(() => cacheRoot.delete(recursive: true));
+
+    await tester.pump();
+
+    expect(find.text('Плохая'), findsOneWidget);
+    expect(find.byIcon(Icons.image_not_supported), findsOneWidget);
+  });
 }
