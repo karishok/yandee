@@ -10,6 +10,13 @@ abstract class AudioSink {
   /// Play a bundled system phrase asset.
   Future<void> playSystemPhrase(SystemPhrase phrase);
 
+  /// Play a bundled system phrase, cutting off whatever this same call
+  /// already has playing rather than queueing behind it. Used for prompts
+  /// that can legitimately fire faster than they take to say (e.g. a child
+  /// mistapping several times in a row) — repeats should replace each
+  /// other, not pile up into a long backlog of the same phrase.
+  Future<void> playInterruptibleSystemPhrase(SystemPhrase phrase);
+
   /// Play a system phrase, wait for it to finish, then play the object
   /// audio file — used for Find mode's "Find: `<name>`" prompt.
   Future<void> playSystemPhraseThenFile(SystemPhrase phrase, String objectAudioPath);

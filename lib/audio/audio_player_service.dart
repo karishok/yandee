@@ -14,15 +14,29 @@ const Map<SystemPhrase, String> _systemPhraseAssets = {
 /// Thin `audioplayers` wrapper. Playback errors are logged and swallowed —
 /// per spec, sound must never block gameplay.
 class AudioPlayerService implements AudioSink {
-  AudioPlayerService({AudioPlayer? player}) : _player = player ?? AudioPlayer();
+  AudioPlayerService({AudioPlayer? player, AudioPlayer? interruptiblePlayer})
+      : _player = player ?? AudioPlayer(),
+        _interruptiblePlayer = interruptiblePlayer ?? AudioPlayer();
 
   final AudioPlayer _player;
+
+  // A player dedicated to `playInterruptibleSystemPhrase`, kept separate
+  // from `_player` (object taps / find-target audio) so a rapid string of
+  // wrong-answer hints can never cut off unrelated audio, or be cut off by
+  // it. `AudioPlayer.play()` stops whatever that same player instance is
+  // currently playing before starting the new source, which is exactly the
+  // "latest call wins" behavior this method promises.
+  final AudioPlayer _interruptiblePlayer;
 
   @override
   Future<void> playFile(String absolutePath) => _playSafely(DeviceFileSource(absolutePath));
 
   @override
   Future<void> playSystemPhrase(SystemPhrase phrase) => _playPhraseAndWait(phrase);
+
+  @override
+  Future<void> playInterruptibleSystemPhrase(SystemPhrase phrase) =>
+      _playSafely(AssetSource(_systemPhraseAssets[phrase]!), player: _interruptiblePlayer);
 
   @override
   Future<void> playSystemPhraseThenFile(SystemPhrase phrase, String objectAudioPath) async {
@@ -55,14 +69,17 @@ class AudioPlayerService implements AudioSink {
     }
   }
 
-  Future<void> _playSafely(Source source) async {
+  Future<void> _playSafely(Source source, {AudioPlayer? player}) async {
     try {
-      await _player.play(source);
+      await (player ?? _player).play(source);
     } catch (error, stackTrace) {
       developer.log('Audio playback failed', name: 'AudioPlayerService', error: error, stackTrace: stackTrace);
     }
   }
 
   @override
-  void dispose() => _player.dispose();
+  void dispose() {
+    unawaited(_player.dispose());
+    unawaited(_interruptiblePlayer.dispose());
+  }
 }

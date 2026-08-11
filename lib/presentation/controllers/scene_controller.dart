@@ -76,6 +76,16 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
 
   @override
   void playSystemPhrase(SystemPhrase phrase) {
+    if (phrase == SystemPhrase.wrongHint) {
+      // A child mistapping several times in a row fires this repeatedly,
+      // faster than one "try again" take is to say. Routing it through the
+      // interruptible path (instead of the serialized _voiceQueue below)
+      // means each new mistap cuts off the previous hint instead of queuing
+      // behind it — otherwise a 5-tap streak would leave the hint droning
+      // on for many seconds after the child has moved on.
+      unawaited(_audio.playInterruptibleSystemPhrase(phrase));
+      return;
+    }
     _voiceQueue = _voiceQueue.then((_) => _audio.playSystemPhrase(phrase));
   }
 

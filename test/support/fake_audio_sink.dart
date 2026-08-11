@@ -6,6 +6,7 @@ import 'package:yandee/domain/modes/scene_mode_effects.dart';
 class FakeAudioSink implements AudioSink {
   final List<String> playedFiles = [];
   final List<SystemPhrase> playedSystemPhrases = [];
+  final List<SystemPhrase> playedInterruptibleSystemPhrases = [];
   final List<(SystemPhrase, String)> playedSequences = [];
   bool disposeCalled = false;
 
@@ -32,6 +33,10 @@ class FakeAudioSink implements AudioSink {
   @override
   Future<void> playSystemPhraseThenFile(SystemPhrase phrase, String objectAudioPath) async =>
       playedSequences.add((phrase, objectAudioPath));
+
+  @override
+  Future<void> playInterruptibleSystemPhrase(SystemPhrase phrase) async =>
+      playedInterruptibleSystemPhrases.add(phrase);
 
   @override
   void dispose() => disposeCalled = true;

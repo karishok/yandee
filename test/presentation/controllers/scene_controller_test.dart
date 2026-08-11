@@ -97,6 +97,27 @@ void main() {
     expect(controller.modeType, SceneModeType.explore);
   });
 
+  test('wrong-hint prompts go through the interruptible path, not the serialized voice queue', () async {
+    final audio = FakeAudioSink();
+    final controller = SceneController(cachedScene: cachedScene, audioSink: audio);
+    controller.setMode(SceneModeType.find);
+    await Future<void>.delayed(Duration.zero); // let the first find prompt land
+
+    // Mistapping repeatedly and quickly (e.g. a child tapping 5 times in a
+    // row) must not queue up 5 full "try again" plays back to back — each
+    // new one should simply replace whatever's still playing.
+    controller.onObjectTapped(cat); // wrong: target is ball
+    controller.onObjectTapped(cat); // wrong again, immediately
+    controller.onObjectTapped(cat); // and again
+    await Future<void>.delayed(Duration.zero);
+
+    expect(
+      audio.playedInterruptibleSystemPhrases,
+      [SystemPhrase.wrongHint, SystemPhrase.wrongHint, SystemPhrase.wrongHint],
+    );
+    expect(audio.playedSystemPhrases, isEmpty); // never touches the serialized queue
+  });
+
   test('setMode with the current type is a no-op', () {
     final audio = FakeAudioSink();
     final controller = SceneController(cachedScene: cachedScene, audioSink: audio);
