@@ -58,9 +58,15 @@ Future<void> main(List<String> args) async {
 /// Reads one line from stdin, or exits the whole process if stdin has hit
 /// EOF (e.g. launched non-interactively/piped) — without this, a `null`
 /// read would otherwise spin an unbounded loop that keeps spawning ffmpeg.
-String _readLineOrExit() {
+///
+/// If [processToCleanUpOnExit] is given, it is killed before exiting — used
+/// at the "stop recording" read site, where a live ffmpeg child would
+/// otherwise be orphaned (mic left open, temp file left growing) if stdin
+/// hits EOF while a recording is in progress.
+String _readLineOrExit({Process? processToCleanUpOnExit}) {
   final line = stdin.readLineSync();
   if (line == null) {
+    processToCleanUpOnExit?.kill(ProcessSignal.sigint);
     stderr.writeln('Похоже, нет интерактивного ввода — выхожу.');
     exit(1);
   }
@@ -102,7 +108,7 @@ Future<void> _recordOne(VoiceoverTask task, String device) async {
         .asFuture<void>();
 
     stdout.write('Enter — остановить запись... ');
-    _readLineOrExit();
+    _readLineOrExit(processToCleanUpOnExit: process);
     process.kill(ProcessSignal.sigint);
     await process.exitCode;
     await stderrDone;
