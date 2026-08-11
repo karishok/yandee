@@ -48,5 +48,6 @@ class AudioPlayerService implements AudioSink {
     }
   }
 
+  @override
   void dispose() => _player.dispose();
 }

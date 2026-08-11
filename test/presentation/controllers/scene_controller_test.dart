@@ -74,4 +74,12 @@ void main() {
     controller.setMode(SceneModeType.explore);
     expect(notifications, 0);
   });
+
+  test('dispose releases the audio sink', () {
+    final audio = FakeAudioSink();
+    final controller = SceneController(cachedScene: cachedScene, audioSink: audio);
+    expect(audio.disposeCalled, isFalse);
+    controller.dispose();
+    expect(audio.disposeCalled, isTrue);
+  });
 }

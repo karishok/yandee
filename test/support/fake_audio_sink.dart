@@ -5,6 +5,7 @@ class FakeAudioSink implements AudioSink {
   final List<String> playedFiles = [];
   final List<SystemPhrase> playedSystemPhrases = [];
   final List<(SystemPhrase, String)> playedSequences = [];
+  bool disposeCalled = false;
 
   @override
   Future<void> playFile(String absolutePath) async => playedFiles.add(absolutePath);
@@ -15,4 +16,7 @@ class FakeAudioSink implements AudioSink {
   @override
   Future<void> playSystemPhraseThenFile(SystemPhrase phrase, String objectAudioPath) async =>
       playedSequences.add((phrase, objectAudioPath));
+
+  @override
+  void dispose() => disposeCalled = true;
 }

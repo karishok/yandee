@@ -79,6 +79,7 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   @override
   void dispose() {
     _congratsTimer?.cancel();
+    _audio.dispose();
     super.dispose();
   }
 }

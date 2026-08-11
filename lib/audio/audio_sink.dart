@@ -13,4 +13,9 @@ abstract class AudioSink {
   /// Play a system phrase, wait for it to finish, then play the object
   /// audio file — used for Find mode's "Find: `<name>`" prompt.
   Future<void> playSystemPhraseThenFile(SystemPhrase phrase, String objectAudioPath);
+
+  /// Release any native resources held by this sink (native player, event
+  /// channel registration, etc). Must be called exactly once when the sink
+  /// is no longer needed.
+  void dispose();
 }
