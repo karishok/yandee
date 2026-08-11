@@ -28,6 +28,12 @@ class ContentRepository {
   final Uri _baseUrl;
   final Future<Directory> Function() _cacheRootProvider;
 
+  /// Downloads currently in progress, keyed by scene id. Lets overlapping
+  /// `refresh()` calls (e.g. a double-tapped retry button) join an
+  /// already-running download instead of racing a second one that would
+  /// delete the first's in-progress `__tmp` directory out from under it.
+  final Map<String, Future<void>> _inFlightDownloads = {};
+
   Future<Directory> _cacheRoot() async {
     final dir = Directory(p.join((await _cacheRootProvider()).path, cacheSubdirName));
     if (!await dir.exists()) await dir.create(recursive: true);
@@ -90,10 +96,24 @@ class ContentRepository {
     }
 
     final root = await _cacheRoot();
+    final pending = <Future<void>>[];
     for (final entry in remoteEntries) {
       final localVersion = (await _readSceneJson(Directory(p.join(root.path, entry.id))))?.version;
       if (localVersion != null && localVersion >= entry.version) continue;
-      await _downloadScene(root, entry);
+      pending.add(_downloadSceneDeduped(root, entry));
+    }
+    await Future.wait(pending);
+  }
+
+  Future<void> _downloadSceneDeduped(Directory root, SceneManifestEntry entry) async {
+    final existing = _inFlightDownloads[entry.id];
+    if (existing != null) return existing;
+    final future = _downloadScene(root, entry);
+    _inFlightDownloads[entry.id] = future;
+    try {
+      await future;
+    } finally {
+      _inFlightDownloads.remove(entry.id);
     }
   }
 
