@@ -8,3 +8,6 @@ ios/.symlinks/
 android/.gradle/
 *.iml
 .idea/
+
+# Superpowers brainstorming visual-companion sessions
+.superpowers/

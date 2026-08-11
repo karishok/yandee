@@ -20,6 +20,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
@@ -30,3 +31,13 @@ flutter:
     - assets/demo_content/farm/
     - assets/demo_content/street/
     - assets/demo_content/bathroom/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  macos:
+    generate: true
+  image_path: assets/branding/app_icon.png
+  adaptive_icon_background: "#FFF3E3"
+  adaptive_icon_foreground: assets/branding/app_icon_foreground.png
