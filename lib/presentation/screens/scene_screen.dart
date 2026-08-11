@@ -27,18 +27,40 @@ class SceneScreen extends StatefulWidget {
 
 class _SceneScreenState extends State<SceneScreen> {
   CachedScene? _cachedScene;
+  bool _loadFailed = false;
 
   @override
   void initState() {
     super.initState();
     widget.contentRepository.loadScene(widget.sceneId).then((scene) {
       if (!mounted) return;
+      if (scene == null) {
+        setState(() => _loadFailed = true);
+        return;
+      }
       setState(() => _cachedScene = scene);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_loadFailed) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Не удалось открыть сцену'),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Назад'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     final cachedScene = _cachedScene;
     if (cachedScene == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -62,7 +84,18 @@ class _SceneView extends StatelessWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            Positioned.fill(child: SceneIllustration(cachedScene: cachedScene)),
+            // Chrome (mode switch, find banner) sits above the illustration
+            // and can be up to ~72px tall (top: 16 offset + banner/switch
+            // height); insetting the illustration by 80px guarantees its
+            // rendered area — and therefore every tap zone inside it — never
+            // sits under the chrome, regardless of aspect ratio or
+            // orientation.
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 80),
+                child: SceneIllustration(cachedScene: cachedScene),
+              ),
+            ),
             if (controller.modeType == SceneModeType.find && !controller.showCongrats)
               Positioned(
                 top: 16,
@@ -75,6 +108,7 @@ class _SceneView extends StatelessWidget {
               right: 16,
               child: _ModeSwitch(modeType: controller.modeType, onChanged: controller.setMode),
             ),
+            const Positioned(bottom: 16, left: 16, child: _BackButton()),
             if (controller.showCongrats) const Positioned.fill(child: _CongratsOverlay()),
           ],
         ),
@@ -126,6 +160,24 @@ class _ModeSwitch extends StatelessWidget {
           Padding(padding: EdgeInsets.all(8), child: Text('Исследовать')),
           Padding(padding: EdgeInsets.all(8), child: Text('Найди')),
         ],
+      ),
+    );
+  }
+}
+
+class _BackButton extends StatelessWidget {
+  const _BackButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.9),
+      shape: const CircleBorder(),
+      child: IconButton(
+        key: const ValueKey('scene_back_button'),
+        icon: const Icon(Icons.arrow_back),
+        tooltip: 'Назад',
+        onPressed: () => Navigator.of(context).pop(),
       ),
     );
   }

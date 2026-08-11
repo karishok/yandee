@@ -114,4 +114,101 @@ void main() {
     final toggle = tester.widget<ToggleButtons>(find.byType(ToggleButtons));
     expect(toggle.isSelected, [true, false]); // back to Explore
   });
+
+  testWidgets('back button pops the route', (tester) async {
+    late Directory cacheRoot;
+    final audio = FakeAudioSink();
+    late ContentRepository repository;
+
+    // Same zone caveat as the test above: SceneScreen's initState (real
+    // loadScene()) and SceneIllustration's FileImage listener registration
+    // both need to run inside the same runAsync() zone as the setup I/O, so
+    // the push that mounts SceneScreen happens inside runAsync() too.
+    await tester.runAsync(() async {
+      cacheRoot = await _seedCache();
+      repository = ContentRepository(
+        httpClient: http.Client(),
+        baseUrl: Uri.parse('https://example.invalid/v1/'),
+        cacheRootProvider: () async => cacheRoot,
+      );
+
+      await tester.pumpWidget(MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => SceneScreen(
+                    contentRepository: repository,
+                    sceneId: 'demo',
+                    audioSinkFactory: () => audio,
+                  ),
+                )),
+                child: const Text('Open'),
+              ),
+            ),
+          ),
+        ),
+      ));
+
+      // Not pumpAndSettle(): SceneScreen briefly shows an indeterminate
+      // CircularProgressIndicator while loadScene() resolves, and that
+      // never lets pumpAndSettle's "no more scheduled frames" condition
+      // become true. A bare pump() lands the push transition's first frame,
+      // then advancing by the transition duration completes it (same
+      // pattern as scene_list_screen_test.dart's navigation test).
+      await tester.tap(find.text('Open'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      for (var i = 0; i < 40 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await tester.pump();
+      }
+    });
+    addTearDown(() => cacheRoot.delete(recursive: true));
+
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('scene_back_button')), findsOneWidget);
+    expect(find.text('Open'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('scene_back_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Open'), findsOneWidget);
+  });
+
+  testWidgets('a scene missing from the cache shows an error state instead of spinning forever', (tester) async {
+    late Directory cacheRoot;
+
+    await tester.runAsync(() async {
+      cacheRoot = await Directory.systemTemp.createTemp('yandee_scene_screen_missing_test_');
+      final repository = ContentRepository(
+        httpClient: http.Client(),
+        baseUrl: Uri.parse('https://example.invalid/v1/'),
+        cacheRootProvider: () async => cacheRoot,
+      );
+
+      await tester.pumpWidget(MaterialApp(
+        home: SceneScreen(
+          contentRepository: repository,
+          sceneId: 'missing', // never seeded: loadScene resolves to null
+          audioSinkFactory: () => FakeAudioSink(),
+        ),
+      ));
+
+      for (var i = 0; i < 40 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await tester.pump();
+      }
+    });
+    addTearDown(() => cacheRoot.delete(recursive: true));
+
+    await tester.pump();
+
+    expect(find.text('Не удалось открыть сцену'), findsOneWidget);
+    expect(find.text('Назад'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
 }
