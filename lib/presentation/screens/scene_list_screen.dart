@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../data/cached_scene.dart';
 import '../../data/content_repository.dart';
 import 'scene_screen.dart';
+import 'settings_screen.dart';
 
 class SceneListScreen extends StatefulWidget {
   const SceneListScreen({super.key, required this.contentRepository});
@@ -48,26 +49,42 @@ class _SceneListScreenState extends State<SceneListScreen> {
     final scenes = _scenes!;
     if (scenes.isEmpty) {
       return Scaffold(
+        appBar: AppBar(title: const Text('Yandee'), actions: [_settingsButton(context)]),
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text('Нет подключения'),
               const SizedBox(height: 12),
-              ElevatedButton(onPressed: _load, child: const Text('Повторить')),
+              ElevatedButton.icon(
+                onPressed: _load,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Повторить'),
+              ),
             ],
           ),
         ),
       );
     }
     return Scaffold(
-      appBar: AppBar(title: const Text('Yandee')),
+      appBar: AppBar(title: const Text('Yandee'), actions: [_settingsButton(context)]),
       body: GridView.count(
         crossAxisCount: 2,
         padding: const EdgeInsets.all(16),
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
         children: scenes.map(_buildCard).toList(),
+      ),
+    );
+  }
+
+  Widget _settingsButton(BuildContext context) {
+    return IconButton(
+      key: const ValueKey('settings_button'),
+      icon: const Icon(Icons.settings),
+      tooltip: 'Настройки',
+      onPressed: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const SettingsScreen()),
       ),
     );
   }

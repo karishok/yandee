@@ -7,6 +7,7 @@ import 'package:http/testing.dart';
 import 'package:path/path.dart' as p;
 import 'package:yandee/data/content_repository.dart';
 import 'package:yandee/presentation/screens/scene_list_screen.dart';
+import 'package:yandee/presentation/screens/settings_screen.dart';
 
 import '../../support/fixture_assets.dart';
 
@@ -78,6 +79,31 @@ void main() {
 
     expect(find.text('Город'), findsOneWidget);
     expect(find.text('Ферма'), findsOneWidget);
+  });
+
+  testWidgets('the settings button opens the settings screen', (tester) async {
+    late Directory cacheRoot;
+
+    await tester.runAsync(() async {
+      cacheRoot = await Directory.systemTemp.createTemp('yandee_list_test_settings_');
+      await _seedScene(cacheRoot, 'city', 'Город');
+      final repository = ContentRepository(
+        httpClient: MockClient((_) async => throw const SocketException('offline')),
+        baseUrl: Uri.parse('https://example.invalid/v1/'),
+        cacheRootProvider: () async => cacheRoot,
+      );
+
+      await tester.pumpWidget(MaterialApp(home: SceneListScreen(contentRepository: repository)));
+      await _pumpAndSettleReal(tester);
+    });
+    addTearDown(() => cacheRoot.delete(recursive: true));
+
+    await tester.pump();
+
+    await tester.tap(find.byKey(const ValueKey('settings_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SettingsScreen), findsOneWidget);
   });
 
   testWidgets('shows a retry screen when the cache is empty and offline', (tester) async {
