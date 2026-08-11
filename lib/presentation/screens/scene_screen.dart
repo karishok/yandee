@@ -84,15 +84,16 @@ class _SceneView extends StatelessWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            // Chrome (mode switch, find banner) sits above the illustration
-            // and can be up to ~72px tall (top: 16 offset + banner/switch
-            // height); insetting the illustration by 80px guarantees its
-            // rendered area — and therefore every tap zone inside it — never
-            // sits under the chrome, regardless of aspect ratio or
-            // orientation.
+            // Chrome (mode switch, find banner at the top; the back button
+            // at the bottom) can each be up to ~72px tall (their 16px
+            // Positioned offset + control height); insetting the
+            // illustration by 80px on both edges guarantees its rendered
+            // area — and therefore every tap zone inside it — never sits
+            // under any chrome, regardless of aspect ratio, orientation, or
+            // where in the scene an object's rect happens to be authored.
             Positioned.fill(
               child: Padding(
-                padding: const EdgeInsets.only(top: 80),
+                padding: const EdgeInsets.symmetric(vertical: 80),
                 child: SceneIllustration(cachedScene: cachedScene),
               ),
             ),
