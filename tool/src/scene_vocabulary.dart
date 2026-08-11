@@ -31,6 +31,9 @@ const scenes = [
     ObjectSpec('door', 'Дверь'),
     ObjectSpec('sofa', 'Диван'),
     ObjectSpec('rug', 'Ковёр'),
+    // Added to match the new objects drawn into the updated background art.
+    ObjectSpec('flower', 'Цветок'),
+    ObjectSpec('pillow', 'Подушка'),
   ]),
   SceneSpec('kitchen', 'Кухня', [255, 240, 200], [
     ObjectSpec('plate', 'Тарелка'),
@@ -43,6 +46,11 @@ const scenes = [
     ObjectSpec('apple', 'Яблоко'),
     ObjectSpec('bread', 'Хлеб'),
     ObjectSpec('pot', 'Кастрюля'),
+    // Added to match the new objects drawn into the updated background art.
+    ObjectSpec('window', 'Окно'),
+    ObjectSpec('table', 'Стол'),
+    ObjectSpec('chair', 'Стул'),
+    ObjectSpec('hood', 'Вытяжка'),
   ]),
   SceneSpec('farm', 'Ферма', [200, 230, 180], [
     ObjectSpec('cow', 'Корова'),
@@ -55,6 +63,11 @@ const scenes = [
     ObjectSpec('duck', 'Утка'),
     ObjectSpec('dog', 'Собака'),
     ObjectSpec('tractor', 'Трактор'),
+    // Added to match the new objects drawn into the updated background art.
+    ObjectSpec('house', 'Дом'),
+    ObjectSpec('barn', 'Сарай'),
+    ObjectSpec('pond', 'Пруд'),
+    ObjectSpec('doghouse', 'Будка'),
   ]),
   SceneSpec('street', 'Улица', [210, 215, 220], [
     ObjectSpec('car', 'Машина'),
@@ -67,6 +80,9 @@ const scenes = [
     ObjectSpec('scooter', 'Самокат'),
     ObjectSpec('truck', 'Грузовик'),
     ObjectSpec('road_sign', 'Дорожный знак'),
+    // Added to match the new objects drawn into the updated background art.
+    ObjectSpec('house', 'Дом'),
+    ObjectSpec('road', 'Дорога'),
   ]),
   SceneSpec('bathroom', 'Ванная', [210, 235, 245], [
     ObjectSpec('soap', 'Мыло'),
@@ -79,5 +95,11 @@ const scenes = [
     ObjectSpec('duck_toy', 'Уточка'),
     ObjectSpec('mirror', 'Зеркало'),
     ObjectSpec('comb', 'Расчёска'),
+    // Added to match the new objects drawn into the updated background art.
+    // "Полотенце" and "Ванна" were requested too, but both already exist
+    // above with recorded audio, so they're not duplicated here.
+    ObjectSpec('shower', 'Душ'),
+    ObjectSpec('curtain', 'Занавеска'),
+    ObjectSpec('bath_mat', 'Коврик'),
   ]),
 ];

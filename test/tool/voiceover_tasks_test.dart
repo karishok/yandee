@@ -22,9 +22,9 @@ void main() {
     expect(byPath['assets/demo_content/bathroom/duck_toy.wav'], 'Уточка');
   });
 
-  test('produces exactly 54 tasks with no duplicate output paths', () {
+  test('produces exactly 69 tasks with no duplicate output paths', () {
     final tasks = buildVoiceoverTasks();
-    expect(tasks.length, 54);
-    expect(tasks.map((t) => t.outputPath).toSet().length, 54);
+    expect(tasks.length, 69);
+    expect(tasks.map((t) => t.outputPath).toSet().length, 69);
   });
 }

@@ -3,10 +3,19 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../tool/src/scene_vocabulary.dart';
 
 void main() {
-  test('defines exactly 5 scenes with 10 objects each', () {
+  test('defines exactly 5 scenes with the expected object count each', () {
+    // Started at 10 objects each; extra objects were added per scene to
+    // match new items drawn into the updated background art.
+    const expectedCounts = {
+      'home': 12,
+      'kitchen': 14,
+      'farm': 14,
+      'street': 12,
+      'bathroom': 13,
+    };
     expect(scenes.length, 5);
     for (final scene in scenes) {
-      expect(scene.objects.length, 10, reason: 'scene ${scene.id}');
+      expect(scene.objects.length, expectedCounts[scene.id], reason: 'scene ${scene.id}');
     }
   });
 
