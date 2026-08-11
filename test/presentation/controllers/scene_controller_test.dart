@@ -37,13 +37,42 @@ void main() {
     expect(audio.playedFiles, [cachedScene.audioPathFor(ball)]);
   });
 
-  test('switching to find mode prompts the first object', () {
+  test('switching to find mode prompts the first object', () async {
     final audio = FakeAudioSink();
     final controller = SceneController(cachedScene: cachedScene, audioSink: audio);
     controller.setMode(SceneModeType.find);
     expect(controller.modeType, SceneModeType.find);
     expect(controller.currentFindTarget, ball);
+
+    // The prompt is dispatched through the voice queue, so it lands on the
+    // sink a microtask after being requested rather than synchronously.
+    await Future<void>.delayed(Duration.zero);
     expect(audio.playedSequences, [(SystemPhrase.findIntro, cachedScene.audioPathFor(ball))]);
+  });
+
+  test('find mode: the "correct" phrase finishes before the next find prompt starts', () async {
+    final audio = FakeAudioSink();
+    final controller = SceneController(cachedScene: cachedScene, audioSink: audio);
+    controller.setMode(SceneModeType.find);
+    await Future<void>.delayed(Duration.zero); // let the first find prompt land
+
+    audio.holdPhrase(SystemPhrase.correct);
+
+    controller.onObjectTapped(ball); // correct, advances target to cat
+    await Future<void>.delayed(Duration.zero);
+
+    // "correct" has started playing but hasn't finished — the next find
+    // prompt must not have been dispatched to the sink yet.
+    expect(audio.playedSystemPhrases, [SystemPhrase.correct]);
+    expect(audio.playedSequences, [(SystemPhrase.findIntro, cachedScene.audioPathFor(ball))]);
+
+    audio.releasePhrase(SystemPhrase.correct);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(audio.playedSequences, [
+      (SystemPhrase.findIntro, cachedScene.audioPathFor(ball)),
+      (SystemPhrase.findIntro, cachedScene.audioPathFor(cat)),
+    ]);
   });
 
   test('completing a find round shows congrats then reverts to explore', () async {
@@ -57,10 +86,12 @@ void main() {
     controller.onObjectTapped(ball);
     controller.onObjectTapped(cat);
 
+    // showCongrats is set synchronously by FindMode itself, independent of
+    // the voice queue's playback timing.
     expect(controller.showCongrats, isTrue);
-    expect(audio.playedSystemPhrases, contains(SystemPhrase.roundComplete));
 
     await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(audio.playedSystemPhrases, contains(SystemPhrase.roundComplete));
 
     expect(controller.showCongrats, isFalse);
     expect(controller.modeType, SceneModeType.explore);

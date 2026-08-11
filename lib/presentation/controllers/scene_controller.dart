@@ -34,6 +34,14 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   bool _showCongrats = false;
   Timer? _congratsTimer;
 
+  // Serializes the "spoken" effects (system phrases and Find prompts) so
+  // each one waits for the previous to actually finish before starting —
+  // e.g. the "correct" phrase must finish before the next "find: <object>"
+  // prompt begins, or they play on top of each other. `playObjectAudio`
+  // (Explore-mode taps) deliberately stays off this queue: a new tap should
+  // interrupt whatever's playing immediately, not wait its turn.
+  Future<void> _voiceQueue = Future.value();
+
   SceneModeType get modeType => _modeType;
   bool get showCongrats => _showCongrats;
 
@@ -60,13 +68,15 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
 
   @override
   void promptFind(SceneObject target) {
-    unawaited(_audio.playSystemPhraseThenFile(SystemPhrase.findIntro, cachedScene.audioPathFor(target)));
+    _voiceQueue = _voiceQueue.then(
+      (_) => _audio.playSystemPhraseThenFile(SystemPhrase.findIntro, cachedScene.audioPathFor(target)),
+    );
     notifyListeners();
   }
 
   @override
   void playSystemPhrase(SystemPhrase phrase) {
-    unawaited(_audio.playSystemPhrase(phrase));
+    _voiceQueue = _voiceQueue.then((_) => _audio.playSystemPhrase(phrase));
   }
 
   @override
