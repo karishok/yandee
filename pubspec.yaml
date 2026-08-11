@@ -25,4 +25,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/audio/system/
-    - assets/demo_content/demo/
+    - assets/demo_content/home/
+    - assets/demo_content/kitchen/
+    - assets/demo_content/farm/
+    - assets/demo_content/street/
+    - assets/demo_content/bathroom/

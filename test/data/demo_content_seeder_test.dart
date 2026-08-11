@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +11,8 @@ void main() {
 
   late Directory cacheRoot;
 
+  const sceneIds = ['home', 'kitchen', 'farm', 'street', 'bathroom'];
+
   setUp(() async {
     cacheRoot = await Directory.systemTemp.createTemp('yandee_seeder_test_');
   });
@@ -18,15 +21,23 @@ void main() {
     if (await cacheRoot.exists()) await cacheRoot.delete(recursive: true);
   });
 
-  test('seeds the bundled demo scene into an empty cache', () async {
+  test('seeds every bundled scene into an empty cache', () async {
     await const DemoContentSeeder().seedIfEmpty(cacheRoot);
 
-    final demoDir = Directory(p.join(cacheRoot.path, ContentRepository.cacheSubdirName, 'demo'));
-    expect(await File(p.join(demoDir.path, 'scene.json')).exists(), isTrue);
-    expect(await File(p.join(demoDir.path, 'background.png')).exists(), isTrue);
-    expect(await File(p.join(demoDir.path, 'thumb.png')).exists(), isTrue);
-    for (final name in ['ball', 'cat', 'tree', 'sun']) {
-      expect(await File(p.join(demoDir.path, '$name.wav')).exists(), isTrue);
+    for (final sceneId in sceneIds) {
+      final sceneDir = Directory(p.join(cacheRoot.path, ContentRepository.cacheSubdirName, sceneId));
+      expect(await File(p.join(sceneDir.path, 'scene.json')).exists(), isTrue);
+      expect(await File(p.join(sceneDir.path, 'background.png')).exists(), isTrue);
+      expect(await File(p.join(sceneDir.path, 'thumb.png')).exists(), isTrue);
+
+      final sceneJson =
+          jsonDecode(await File(p.join(sceneDir.path, 'scene.json')).readAsString()) as Map<String, dynamic>;
+      final objects = sceneJson['objects'] as List<dynamic>;
+      expect(objects, hasLength(10));
+      for (final object in objects) {
+        final audio = (object as Map<String, dynamic>)['audio'] as String;
+        expect(await File(p.join(sceneDir.path, audio)).exists(), isTrue);
+      }
     }
   });
 
@@ -37,7 +48,9 @@ void main() {
 
     await const DemoContentSeeder().seedIfEmpty(cacheRoot);
 
-    final demoDir = Directory(p.join(cacheRoot.path, ContentRepository.cacheSubdirName, 'demo'));
-    expect(await demoDir.exists(), isFalse);
+    for (final sceneId in sceneIds) {
+      final sceneDir = Directory(p.join(cacheRoot.path, ContentRepository.cacheSubdirName, sceneId));
+      expect(await sceneDir.exists(), isFalse);
+    }
   });
 }
