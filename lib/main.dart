@@ -1,4 +1,7 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
@@ -17,6 +20,11 @@ final kContentBaseUrl = Uri.parse('https://content.yandee.app/v1/');
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  // The app is designed for one orientation only (see the fixed portrait
+  // illustration/chrome layout in SceneScreen) — a young child rotating the
+  // device shouldn't spin the whole UI. Locking here (rather than only via
+  // platform manifests) also covers desktop/web debug runs.
+  unawaited(SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]));
   runApp(const YandeeApp());
 }
 
@@ -32,10 +40,29 @@ class YandeeApp extends StatelessWidget {
     );
     return MaterialApp(
       title: 'Yandee',
-      theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.orange),
+      theme: _buildTheme(),
       home: _StartupScreen(contentRepository: contentRepository),
     );
   }
+}
+
+// One shared, rounded, generously-padded button look for the whole app —
+// the default Material text-only buttons read as flat and easy to miss for
+// the app's audience (young children and the parent handing them the
+// device). Every ElevatedButton (the "Повторить"/"Назад" recovery actions,
+// the settings screen's actions) picks this up automatically.
+ThemeData _buildTheme() {
+  final base = ThemeData(useMaterial3: true, colorSchemeSeed: Colors.orange);
+  return base.copyWith(
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+        elevation: 2,
+      ),
+    ),
+  );
 }
 
 class _StartupScreen extends StatefulWidget {
