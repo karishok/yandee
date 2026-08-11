@@ -13,6 +13,10 @@ void main() {
 
   const sceneIds = ['home', 'kitchen', 'farm', 'street', 'bathroom'];
 
+  // Started at 10 objects each; extra objects were added per scene to
+  // match new items drawn into the updated background art.
+  const expectedObjectCounts = {'home': 12, 'kitchen': 14, 'farm': 14, 'street': 12, 'bathroom': 13};
+
   setUp(() async {
     cacheRoot = await Directory.systemTemp.createTemp('yandee_seeder_test_');
   });
@@ -33,7 +37,7 @@ void main() {
       final sceneJson =
           jsonDecode(await File(p.join(sceneDir.path, 'scene.json')).readAsString()) as Map<String, dynamic>;
       final objects = sceneJson['objects'] as List<dynamic>;
-      expect(objects, hasLength(10));
+      expect(objects, hasLength(expectedObjectCounts[sceneId]!), reason: 'scene $sceneId');
       for (final object in objects) {
         final audio = (object as Map<String, dynamic>)['audio'] as String;
         expect(await File(p.join(sceneDir.path, audio)).exists(), isTrue);
