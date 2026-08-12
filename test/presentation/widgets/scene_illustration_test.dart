@@ -31,6 +31,20 @@ void main() {
     rect: ObjectRect(x: 0.5, y: 0.5, width: 0.1, height: 0.2),
   );
 
+  const back = SceneObject(
+    id: 'back',
+    label: 'Задний',
+    audio: 'back.wav',
+    rect: ObjectRect(x: 0.2, y: 0.4, width: 0.4, height: 0.4),
+  );
+
+  const front = SceneObject(
+    id: 'front',
+    label: 'Передний',
+    audio: 'front.wav',
+    rect: ObjectRect(x: 0.4, y: 0.4, width: 0.2, height: 0.2),
+  );
+
   testWidgets('positions a tap zone at the object rect and dispatches taps', (tester) async {
     // `testWidgets` runs the whole test body inside a FakeAsync zone (that's
     // what makes pump()/pumpAndSettle() able to fast-forward animations).
@@ -338,6 +352,68 @@ void main() {
       expect(audio.playedFiles, [
         cachedScene.audioPathFor(ball),
         cachedScene.audioPathFor(cat),
+      ]);
+    },
+  );
+
+  testWidgets(
+    'when two objects overlap, the later one in scene.objects wins on the overlap, and the earlier one still responds outside the overlap',
+    (tester) async {
+      late Directory tempDir;
+      late CachedScene cachedScene;
+      final audio = FakeAudioSink();
+
+      await tester.binding.setSurfaceSize(const Size(800, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.runAsync(() async {
+        tempDir = await Directory.systemTemp.createTemp('yandee_illustration_overlap_test_');
+        await writeFixturePng(tempDir, 'background.png', width: 400, height: 300);
+
+        cachedScene = CachedScene(
+          scene: Scene(
+            id: 'demo',
+            version: 1,
+            title: 'Демо',
+            minAgeMonths: 12,
+            background: 'background.png',
+            objects: [back, front],
+          ),
+          directoryPath: tempDir.path,
+        );
+
+        await tester.pumpWidget(MaterialApp(
+          home: SizedBox(
+            width: 800,
+            height: 800,
+            child: ChangeNotifierProvider(
+              create: (_) => SceneController(cachedScene: cachedScene, audioSink: audio),
+              child: SceneIllustration(cachedScene: cachedScene),
+            ),
+          ),
+        ));
+
+        for (var i = 0; i < 20 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          await tester.pump();
+        }
+      });
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      final gesture = await tester.createGesture();
+      await gesture.down(const Offset(400, 400)); // inside both back and front's overlap
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+      expect(audio.playedFiles, [cachedScene.audioPathFor(front)]); // front wins the overlap
+
+      await gesture.down(const Offset(200, 500)); // inside back only, outside front
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+      expect(audio.playedFiles, [
+        cachedScene.audioPathFor(front),
+        cachedScene.audioPathFor(back),
       ]);
     },
   );
