@@ -86,44 +86,51 @@ class _SceneView extends StatelessWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            // The top bar (back button, find banner, mode switch — see
-            // below) is up to ~64px tall plus its own 16px offset from the
-            // top edge; insetting the illustration by 96px on top and a
+            // The top chrome (see below) is at most two rows tall — back
+            // button/mode switch, plus the find banner underneath when it's
+            // showing — up to ~120px including its own 16px offset from the
+            // top edge; insetting the illustration by 152px on top and a
             // smaller 24px on the bottom/sides guarantees its rendered
             // area — and therefore every tap zone inside it — never sits
-            // under any chrome, regardless of aspect ratio or where in the
-            // scene an object's rect happens to be authored. Nothing sits
-            // at the bottom any more (the back button now lives in the top
-            // bar with everything else), so that edge only needs breathing
-            // room, not a matching chrome-sized inset.
+            // under any chrome, regardless of aspect ratio, mode, or where
+            // in the scene an object's rect happens to be authored. Nothing
+            // sits at the bottom any more (the back button now lives in the
+            // top bar with everything else), so that edge only needs
+            // breathing room, not a matching chrome-sized inset.
             Positioned.fill(
               child: Padding(
-                padding: const EdgeInsets.only(top: 96, bottom: 24, left: 16, right: 16),
+                padding: const EdgeInsets.only(top: 152, bottom: 24, left: 16, right: 16),
                 child: SceneIllustration(cachedScene: cachedScene),
               ),
             ),
-            // A single top row — rather than independently-positioned
-            // corners — is what actually guarantees the back button, find
-            // banner, and mode switch can never overlap each other: the
-            // banner's Expanded region is only ever as wide as the space
-            // left over between the two fixed-size controls on either side
-            // of it, whatever their rendered widths turn out to be.
+            // Back button and mode switch share one row (left/right); the
+            // find banner sits in a row of its own underneath, right-aligned
+            // so it reads as belonging to the mode switch above it — the
+            // space below the switch has nothing else in it. Putting it in
+            // its own row (rather than squeezed between the two other
+            // controls) is also what guarantees it can never overlap either
+            // of them, whatever its content's width turns out to be.
             Positioned(
               top: 16,
               left: 16,
               right: 16,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const _BackButton(),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: showBanner
-                        ? Center(child: _FindBanner(target: controller.currentFindTarget))
-                        : const SizedBox.shrink(),
+                  Row(
+                    children: [
+                      const _BackButton(),
+                      const Spacer(),
+                      _ModeSwitch(modeType: controller.modeType, onChanged: controller.setMode),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  _ModeSwitch(modeType: controller.modeType, onChanged: controller.setMode),
+                  if (showBanner) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [Flexible(child: _FindBanner(target: controller.currentFindTarget))],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -211,7 +218,7 @@ class _ModeSwitch extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: [Icon(Icons.search, size: 20), SizedBox(width: 6), Text('Найди')],
+              children: [Icon(Icons.search, size: 20), SizedBox(width: 6), Text('Найти')],
             ),
           ),
         ],
