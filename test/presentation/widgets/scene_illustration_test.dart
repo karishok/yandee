@@ -96,7 +96,7 @@ void main() {
     expect(size.width, moreOrLessEquals(0.1 * 800));
     expect(size.height, moreOrLessEquals(0.2 * 600));
 
-    await tester.tap(zoneFinder);
+    await tester.tapAt(tester.getCenter(zoneFinder));
     await tester.pump();
     expect(audio.playedFiles, [cachedScene.audioPathFor(ball)]);
   });
