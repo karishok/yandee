@@ -31,7 +31,7 @@ Future<void> main(List<String> args) async {
   stdout.writeln('Найдено ${files.length} файл(ов).${dryRun ? ' (сухой прогон — ничего не меняем)' : ''}\n');
   for (final file in files) {
     final audio = readMonoWav16(file);
-    final cleaned = reduceNoise(highPass(audio.samples, audio.sampleRate));
+    final cleaned = cleanRecording(audio.samples, audio.sampleRate);
     final beforeDb = _rmsDb(audio.samples);
     final afterDb = _rmsDb(cleaned);
     final relativePath = file.path.startsWith('${Directory.current.path}/')

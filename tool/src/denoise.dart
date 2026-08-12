@@ -25,6 +25,37 @@ Float64List highPass(Float64List samples, int sampleRate, {double cutoffHz = 90}
   return out;
 }
 
+/// Ramps the first/last [fadeMs] of [samples] to/from zero with a
+/// half-cosine (equal-power) curve, so a clip starting or ending mid-wave —
+/// which is exactly what happens when a recording is manually stopped, or
+/// when spectral gating leaves a non-zero residual right at the edge —
+/// doesn't produce an audible click/pop on playback. A hard cut to silence
+/// is itself a sharp discontinuity; nothing about denoising removes that,
+/// which is why this runs last, after [highPass]/[reduceNoise].
+Float64List fadeEdges(Float64List samples, int sampleRate, {double fadeMs = 8}) {
+  final fadeSamples = math.min(samples.length ~/ 2, (sampleRate * fadeMs / 1000).round());
+  if (fadeSamples <= 0) return samples;
+
+  final out = Float64List.fromList(samples);
+  for (var i = 0; i < fadeSamples; i++) {
+    // 0 at the very edge, 1 by the end of the fade window.
+    final gain = 0.5 - 0.5 * math.cos(math.pi * i / fadeSamples);
+    out[i] *= gain;
+    out[out.length - 1 - i] *= gain;
+  }
+  return out;
+}
+
+/// The full per-take cleanup pipeline, in the order it should always run:
+/// cut low rumble, gate out steady background noise, then fade the very
+/// edges so neither step (nor however the original recording ended) leaves
+/// a clicky discontinuity. Shared by `record_voiceover.dart` (new takes)
+/// and `denoise_audio.dart` (reprocessing what's already committed) so the
+/// two can't drift out of sync.
+Float64List cleanRecording(Float64List samples, int sampleRate) {
+  return fadeEdges(reduceNoise(highPass(samples, sampleRate)), sampleRate);
+}
+
 Float64List _hannWindow(int n) {
   final w = Float64List(n);
   for (var i = 0; i < n; i++) {

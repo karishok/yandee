@@ -150,7 +150,7 @@ Future<void> _recordOne(VoiceoverTask task, String device) async {
       // decisions are about the words/timing, not this), and denoising
       // happens only once a take is actually kept.
       final recorded = readMonoWav16(tempFile);
-      final cleaned = reduceNoise(highPass(recorded.samples, recorded.sampleRate));
+      final cleaned = cleanRecording(recorded.samples, recorded.sampleRate);
       writeMonoWav16(outputFile, WavAudio(sampleRate: recorded.sampleRate, samples: cleaned));
       await tempFile.delete();
       stdout.writeln('Записано (шум почищен): ${task.outputPath}');

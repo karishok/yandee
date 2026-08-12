@@ -112,4 +112,61 @@ void main() {
       expect(result, same(shortClip));
     });
   });
+
+  group('fadeEdges', () {
+    const sampleRate = 44100;
+
+    test('ramps a clip that starts/ends mid-wave down to exactly zero at both ends', () {
+      // A clip truncated mid-waveform (e.g. a manually-stopped recording)
+      // — constant amplitude, so without fading it starts and ends on a
+      // sharp, audible discontinuity.
+      final signal = Float64List(2000)..fillRange(0, 2000, 0.6);
+
+      final faded = fadeEdges(signal, sampleRate, fadeMs: 8);
+
+      expect(faded.first, closeTo(0.0, 1e-9));
+      expect(faded.last, closeTo(0.0, 1e-9));
+      // The middle, well outside either fade window, is untouched.
+      expect(faded[1000], closeTo(0.6, 1e-9));
+    });
+
+    test('leaves the interior alone and only touches the edge windows', () {
+      final signal = Float64List(2000)..fillRange(0, 2000, 0.6);
+      final faded = fadeEdges(signal, sampleRate, fadeMs: 8);
+      final fadeSamples = (sampleRate * 8 / 1000).round();
+
+      for (var i = fadeSamples; i < signal.length - fadeSamples; i++) {
+        expect(faded[i], closeTo(0.6, 1e-9));
+      }
+    });
+
+    test('a fade window longer than half the clip is clamped instead of erasing it entirely', () {
+      final signal = Float64List(50)..fillRange(0, 50, 0.6);
+      final faded = fadeEdges(signal, sampleRate, fadeMs: 100); // would be 4410 samples, way over 50
+
+      expect(faded.first, closeTo(0.0, 1e-9));
+      expect(faded.last, closeTo(0.0, 1e-9));
+      expect(faded.any((s) => s.abs() > 1e-6), isTrue); // not silenced altogether
+    });
+  });
+
+  group('cleanRecording', () {
+    test('runs the full pipeline: quieter noise floor and no click at the edges', () {
+      const sampleRate = 44100;
+      const n = sampleRate;
+      final random = math.Random(99);
+      // A clip that both has steady background noise and, unlike
+      // buildNoisyWordClip above, ends abruptly at non-zero amplitude —
+      // exactly the shape a manually-stopped recording has.
+      final signal = Float64List(n);
+      for (var i = 0; i < n; i++) {
+        signal[i] = 0.03 * (random.nextDouble() * 2 - 1) + 0.3 * math.sin(2 * math.pi * 440 * i / sampleRate);
+      }
+
+      final cleaned = cleanRecording(signal, sampleRate);
+
+      expect(cleaned.first, closeTo(0.0, 1e-6));
+      expect(cleaned.last, closeTo(0.0, 1e-6));
+    });
+  });
 }
