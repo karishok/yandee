@@ -42,6 +42,13 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   // interrupt whatever's playing immediately, not wait its turn.
   Future<void> _voiceQueue = Future.value();
 
+  // True while a "correct" phrase is somewhere between being queued and
+  // actually finishing playback. Guards against a burst of rapid correct
+  // taps each queueing their own full "Молодец" — the child has already
+  // moved on to the next target by the time they'd all finish, so only the
+  // first one (per busy stretch) actually plays; see playSystemPhrase.
+  bool _correctPending = false;
+
   SceneModeType get modeType => _modeType;
   bool get showCongrats => _showCongrats;
 
@@ -67,9 +74,11 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   }
 
   @override
-  void promptFind(SceneObject target) {
+  void promptFind(SceneObject target, {bool announceIntro = true}) {
     _voiceQueue = _voiceQueue.then(
-      (_) => _audio.playSystemPhraseThenFile(SystemPhrase.findIntro, cachedScene.audioPathFor(target)),
+      (_) => announceIntro
+          ? _audio.playSystemPhraseThenFile(SystemPhrase.findIntro, cachedScene.audioPathFor(target))
+          : _audio.playFile(cachedScene.audioPathFor(target)),
     );
     notifyListeners();
   }
@@ -84,6 +93,21 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
       // behind it — otherwise a 5-tap streak would leave the hint droning
       // on for many seconds after the child has moved on.
       unawaited(_audio.playInterruptibleSystemPhrase(phrase));
+      return;
+    }
+    if (phrase == SystemPhrase.correct) {
+      if (_correctPending) {
+        // Still saying (or waiting to say) an earlier "Молодец" from a
+        // previous rapid tap — a second one would just repeat right on top
+        // of/behind it, so drop this one instead of queueing another full
+        // play. The next find prompt (or the round-complete fanfare) still
+        // follows right after, unaffected — this only skips the phrase.
+        return;
+      }
+      _correctPending = true;
+      _voiceQueue = _voiceQueue.then((_) => _audio.playSystemPhrase(phrase)).whenComplete(() {
+        _correctPending = false;
+      });
       return;
     }
     _voiceQueue = _voiceQueue.then((_) => _audio.playSystemPhrase(phrase));

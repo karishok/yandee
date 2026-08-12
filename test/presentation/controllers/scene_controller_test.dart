@@ -65,14 +65,46 @@ void main() {
     // prompt must not have been dispatched to the sink yet.
     expect(audio.playedSystemPhrases, [SystemPhrase.correct]);
     expect(audio.playedSequences, [(SystemPhrase.findIntro, cachedScene.audioPathFor(ball))]);
+    expect(audio.playedFiles, isEmpty);
 
     audio.releasePhrase(SystemPhrase.correct);
     await Future<void>.delayed(Duration.zero);
 
-    expect(audio.playedSequences, [
-      (SystemPhrase.findIntro, cachedScene.audioPathFor(ball)),
-      (SystemPhrase.findIntro, cachedScene.audioPathFor(cat)),
-    ]);
+    // The second (and every later) target in a round plays its name
+    // directly — no repeated "Найди:" intro.
+    expect(audio.playedSequences, [(SystemPhrase.findIntro, cachedScene.audioPathFor(ball))]);
+    expect(audio.playedFiles, [cachedScene.audioPathFor(cat)]);
+  });
+
+  test('a correct tap while the previous "correct" phrase is still playing does not repeat it', () async {
+    final audio = FakeAudioSink();
+    final controller = SceneController(cachedScene: cachedScene, audioSink: audio);
+    controller.setMode(SceneModeType.find);
+    await Future<void>.delayed(Duration.zero); // let the first find prompt land (ball)
+
+    audio.holdPhrase(SystemPhrase.correct);
+
+    controller.onObjectTapped(ball); // correct: queues "correct", starts playing (held)
+    await Future<void>.delayed(Duration.zero);
+    expect(audio.playedSystemPhrases, [SystemPhrase.correct]);
+
+    // Target is now cat. Tap it correctly too, before the first "Молодец"
+    // has actually finished playing — this also happens to be the round's
+    // last object.
+    controller.onObjectTapped(cat);
+    await Future<void>.delayed(Duration.zero);
+
+    // Still only the one "correct" in flight: the second was dropped, not
+    // queued up behind it.
+    expect(audio.playedSystemPhrases, [SystemPhrase.correct]);
+
+    audio.releasePhrase(SystemPhrase.correct);
+    await Future<void>.delayed(Duration.zero);
+
+    // No further "correct" ever plays for the second tap — but the round
+    // still completes normally (the fanfare isn't gated by this at all).
+    expect(audio.playedSystemPhrases, [SystemPhrase.correct, SystemPhrase.roundComplete]);
+    expect(controller.showCongrats, isTrue);
   });
 
   test('completing a find round shows congrats then reverts to explore', () async {

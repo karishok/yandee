@@ -13,11 +13,12 @@ void main() {
   const tree = SceneObject(id: 'tree', label: 'Дерево', audio: 'tree.mp3', rect: rect);
   final objects = [ball, cat, tree];
 
-  test('activate() prompts the first object', () {
+  test('activate() prompts the first object, with the intro word', () {
     final effects = FakeSceneModeEffects();
     final mode = FindMode(objects: objects, effects: effects)..activate();
     expect(mode.currentTarget, ball);
     expect(effects.promptFindCalls, [ball]);
+    expect(effects.promptFindAnnounceIntroCalls, [true]);
   });
 
   test('wrong tap gives a hint and does not advance', () {
@@ -29,13 +30,14 @@ void main() {
     expect(effects.promptFindCalls, [ball]); // no new prompt
   });
 
-  test('correct tap on a non-final target advances to the next object', () {
+  test('correct tap on a non-final target advances to the next object, without the intro word', () {
     final effects = FakeSceneModeEffects();
     final mode = FindMode(objects: objects, effects: effects)..activate();
     mode.onObjectTapped(ball);
     expect(effects.systemPhraseCalls, [SystemPhrase.correct]);
     expect(mode.currentTarget, cat);
     expect(effects.promptFindCalls, [ball, cat]);
+    expect(effects.promptFindAnnounceIntroCalls, [true, false]);
     expect(effects.roundCompletedCalls, 0);
   });
 

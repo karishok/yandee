@@ -27,7 +27,7 @@ class FindMode implements SceneMode {
   void activate() {
     _targetIndex = 0;
     _foundCount = 0;
-    effects.promptFind(_objects[_targetIndex]);
+    effects.promptFind(_objects[_targetIndex]); // first target of the round: announce "Найди:"
   }
 
   @override
@@ -50,6 +50,6 @@ class FindMode implements SceneMode {
     }
 
     _targetIndex++;
-    effects.promptFind(_objects[_targetIndex]);
+    effects.promptFind(_objects[_targetIndex], announceIntro: false); // same round: skip the intro word
   }
 }
