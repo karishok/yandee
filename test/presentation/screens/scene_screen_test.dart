@@ -153,15 +153,15 @@ void main() {
     expect(find.byKey(const ValueKey('find_banner')), findsOneWidget);
     expect(find.text('Мяч'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('object_zone_cat'))); // wrong
+    await tester.tapAt(tester.getCenter(find.byKey(const ValueKey('object_zone_cat')))); // wrong
     await tester.pump();
     expect(find.text('Мяч'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('object_zone_ball'))); // correct
+    await tester.tapAt(tester.getCenter(find.byKey(const ValueKey('object_zone_ball')))); // correct
     await tester.pump();
     expect(find.text('Кот'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('object_zone_cat'))); // correct, last
+    await tester.tapAt(tester.getCenter(find.byKey(const ValueKey('object_zone_cat')))); // correct, last
     await tester.pump();
 
     expect(find.byKey(const ValueKey('congrats_overlay')), findsOneWidget);
@@ -318,7 +318,7 @@ void main() {
     // Also confirm the tap zone is genuinely reachable (not just
     // geometrically clear): tapping it must still dispatch to the
     // controller, not silently hit the back button underneath it.
-    await tester.tap(cornerZoneFinder);
+    await tester.tapAt(tester.getCenter(cornerZoneFinder));
     await tester.pump();
     final expectedAudioPath =
         p.join(cacheRoot.path, ContentRepository.cacheSubdirName, 'demo', 'corner.wav');
@@ -384,7 +384,7 @@ void main() {
       // And genuinely reachable, not silently swallowed by chrome on top:
       // the scene's only object is the current Find target, so a real tap
       // reaching the controller completes the round immediately.
-      await tester.tap(cornerZoneFinder);
+      await tester.tapAt(tester.getCenter(cornerZoneFinder));
       await tester.pump();
       expect(find.byKey(const ValueKey('congrats_overlay')), findsOneWidget);
     },

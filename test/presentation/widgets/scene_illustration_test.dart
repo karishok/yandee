@@ -24,6 +24,27 @@ void main() {
     rect: ObjectRect(x: 0.25, y: 0.5, width: 0.1, height: 0.2),
   );
 
+  const cat = SceneObject(
+    id: 'cat',
+    label: 'Кот',
+    audio: 'cat.wav',
+    rect: ObjectRect(x: 0.5, y: 0.5, width: 0.1, height: 0.2),
+  );
+
+  const back = SceneObject(
+    id: 'back',
+    label: 'Задний',
+    audio: 'back.wav',
+    rect: ObjectRect(x: 0.2, y: 0.4, width: 0.4, height: 0.4),
+  );
+
+  const front = SceneObject(
+    id: 'front',
+    label: 'Передний',
+    audio: 'front.wav',
+    rect: ObjectRect(x: 0.4, y: 0.4, width: 0.2, height: 0.2),
+  );
+
   testWidgets('positions a tap zone at the object rect and dispatches taps', (tester) async {
     // `testWidgets` runs the whole test body inside a FakeAsync zone (that's
     // what makes pump()/pumpAndSettle() able to fast-forward animations).
@@ -96,7 +117,7 @@ void main() {
     expect(size.width, moreOrLessEquals(0.1 * 800));
     expect(size.height, moreOrLessEquals(0.2 * 600));
 
-    await tester.tap(zoneFinder);
+    await tester.tapAt(tester.getCenter(zoneFinder));
     await tester.pump();
     expect(audio.playedFiles, [cachedScene.audioPathFor(ball)]);
   });
@@ -147,4 +168,253 @@ void main() {
     expect(find.byIcon(Icons.broken_image), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
   });
+
+  testWidgets(
+    "a finger sliding through several objects without lifting plays each one's audio in order",
+    (tester) async {
+      late Directory tempDir;
+      late CachedScene cachedScene;
+      final audio = FakeAudioSink();
+
+      await tester.binding.setSurfaceSize(const Size(800, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.runAsync(() async {
+        tempDir = await Directory.systemTemp.createTemp('yandee_illustration_slide_test_');
+        await writeFixturePng(tempDir, 'background.png', width: 400, height: 300);
+
+        cachedScene = CachedScene(
+          scene: Scene(
+            id: 'demo',
+            version: 1,
+            title: 'Демо',
+            minAgeMonths: 12,
+            background: 'background.png',
+            objects: [ball, cat],
+          ),
+          directoryPath: tempDir.path,
+        );
+
+        await tester.pumpWidget(MaterialApp(
+          home: SizedBox(
+            width: 800,
+            height: 800,
+            child: ChangeNotifierProvider(
+              create: (_) => SceneController(cachedScene: cachedScene, audioSink: audio),
+              child: SceneIllustration(cachedScene: cachedScene),
+            ),
+          ),
+        ));
+
+        for (var i = 0; i < 20 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          await tester.pump();
+        }
+      });
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      final gesture = await tester.createGesture();
+      await gesture.down(const Offset(240, 460)); // inside ball
+      await tester.pump();
+      await gesture.moveTo(const Offset(340, 460)); // empty gap between the two
+      await tester.pump();
+      await gesture.moveTo(const Offset(440, 460)); // inside cat
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+
+      expect(audio.playedFiles, [
+        cachedScene.audioPathFor(ball),
+        cachedScene.audioPathFor(cat),
+      ]);
+    },
+  );
+
+  testWidgets(
+    'leaving an object and coming back to it plays its audio again, but moving within it does not repeat',
+    (tester) async {
+      late Directory tempDir;
+      late CachedScene cachedScene;
+      final audio = FakeAudioSink();
+
+      await tester.binding.setSurfaceSize(const Size(800, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.runAsync(() async {
+        tempDir = await Directory.systemTemp.createTemp('yandee_illustration_reentry_test_');
+        await writeFixturePng(tempDir, 'background.png', width: 400, height: 300);
+
+        cachedScene = CachedScene(
+          scene: Scene(
+            id: 'demo',
+            version: 1,
+            title: 'Демо',
+            minAgeMonths: 12,
+            background: 'background.png',
+            objects: [ball],
+          ),
+          directoryPath: tempDir.path,
+        );
+
+        await tester.pumpWidget(MaterialApp(
+          home: SizedBox(
+            width: 800,
+            height: 800,
+            child: ChangeNotifierProvider(
+              create: (_) => SceneController(cachedScene: cachedScene, audioSink: audio),
+              child: SceneIllustration(cachedScene: cachedScene),
+            ),
+          ),
+        ));
+
+        for (var i = 0; i < 20 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          await tester.pump();
+        }
+      });
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      final gesture = await tester.createGesture();
+      await gesture.down(const Offset(240, 460)); // inside ball
+      await tester.pump();
+      await gesture.moveTo(const Offset(260, 460)); // still inside ball
+      await tester.pump();
+      expect(audio.playedFiles, [cachedScene.audioPathFor(ball)]); // only once so far
+
+      await gesture.moveTo(const Offset(340, 460)); // outside, empty space
+      await tester.pump();
+      await gesture.moveTo(const Offset(240, 460)); // back inside ball
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+
+      expect(audio.playedFiles, [
+        cachedScene.audioPathFor(ball),
+        cachedScene.audioPathFor(ball),
+      ]);
+    },
+  );
+
+  testWidgets(
+    'two fingers touching different objects at the same time both play their audio',
+    (tester) async {
+      late Directory tempDir;
+      late CachedScene cachedScene;
+      final audio = FakeAudioSink();
+
+      await tester.binding.setSurfaceSize(const Size(800, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.runAsync(() async {
+        tempDir = await Directory.systemTemp.createTemp('yandee_illustration_multitouch_test_');
+        await writeFixturePng(tempDir, 'background.png', width: 400, height: 300);
+
+        cachedScene = CachedScene(
+          scene: Scene(
+            id: 'demo',
+            version: 1,
+            title: 'Демо',
+            minAgeMonths: 12,
+            background: 'background.png',
+            objects: [ball, cat],
+          ),
+          directoryPath: tempDir.path,
+        );
+
+        await tester.pumpWidget(MaterialApp(
+          home: SizedBox(
+            width: 800,
+            height: 800,
+            child: ChangeNotifierProvider(
+              create: (_) => SceneController(cachedScene: cachedScene, audioSink: audio),
+              child: SceneIllustration(cachedScene: cachedScene),
+            ),
+          ),
+        ));
+
+        for (var i = 0; i < 20 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          await tester.pump();
+        }
+      });
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      final leftHand = await tester.createGesture(pointer: 1);
+      final rightHand = await tester.createGesture(pointer: 2);
+      await leftHand.down(const Offset(240, 460)); // inside ball
+      await tester.pump();
+      await rightHand.down(const Offset(440, 460)); // inside cat, simultaneously
+      await tester.pump();
+      await leftHand.up();
+      await rightHand.up();
+      await tester.pump();
+
+      expect(audio.playedFiles, [
+        cachedScene.audioPathFor(ball),
+        cachedScene.audioPathFor(cat),
+      ]);
+    },
+  );
+
+  testWidgets(
+    'when two objects overlap, the later one in scene.objects wins on the overlap, and the earlier one still responds outside the overlap',
+    (tester) async {
+      late Directory tempDir;
+      late CachedScene cachedScene;
+      final audio = FakeAudioSink();
+
+      await tester.binding.setSurfaceSize(const Size(800, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.runAsync(() async {
+        tempDir = await Directory.systemTemp.createTemp('yandee_illustration_overlap_test_');
+        await writeFixturePng(tempDir, 'background.png', width: 400, height: 300);
+
+        cachedScene = CachedScene(
+          scene: Scene(
+            id: 'demo',
+            version: 1,
+            title: 'Демо',
+            minAgeMonths: 12,
+            background: 'background.png',
+            objects: [back, front],
+          ),
+          directoryPath: tempDir.path,
+        );
+
+        await tester.pumpWidget(MaterialApp(
+          home: SizedBox(
+            width: 800,
+            height: 800,
+            child: ChangeNotifierProvider(
+              create: (_) => SceneController(cachedScene: cachedScene, audioSink: audio),
+              child: SceneIllustration(cachedScene: cachedScene),
+            ),
+          ),
+        ));
+
+        for (var i = 0; i < 20 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty; i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          await tester.pump();
+        }
+      });
+      addTearDown(() => tempDir.delete(recursive: true));
+
+      final gesture = await tester.createGesture();
+      await gesture.down(const Offset(400, 400)); // inside both back and front's overlap
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+      expect(audio.playedFiles, [cachedScene.audioPathFor(front)]); // front wins the overlap
+
+      await gesture.down(const Offset(200, 500)); // inside back only, outside front
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+      expect(audio.playedFiles, [
+        cachedScene.audioPathFor(front),
+        cachedScene.audioPathFor(back),
+      ]);
+    },
+  );
 }
