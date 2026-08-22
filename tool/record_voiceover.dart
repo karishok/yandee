@@ -2,6 +2,7 @@ import 'dart:async' show unawaited;
 import 'dart:convert';
 import 'dart:io';
 
+import 'src/click_detector.dart';
 import 'src/denoise.dart';
 import 'src/scene_vocabulary.dart';
 import 'src/voiceover_queue.dart';
@@ -136,6 +137,13 @@ Future<void> _recordOne(VoiceoverTask task, String device) async {
     }
 
     await Process.run('afplay', [tempFile.path]);
+
+    final rawAudio = readMonoWav16(tempFile);
+    final clickTimes = detectClickArtifact(rawAudio.samples, rawAudio.sampleRate);
+    if (clickTimes.isNotEmpty) {
+      final times = clickTimes.map((t) => '~${t.toStringAsFixed(2)}с').join(', ');
+      stdout.writeln('⚠ Похоже на щелчок на $times — прислушайся ещё раз.');
+    }
 
     stdout.write('[K]eep / [R]e-record / [S]kip: ');
     final choice = _readLineOrExit().trim().toLowerCase();
