@@ -151,17 +151,26 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('find_banner')), findsOneWidget);
-    expect(find.text('Мяч'), findsOneWidget);
 
-    await tester.tapAt(tester.getCenter(find.byKey(const ValueKey('object_zone_cat')))); // wrong
+    // FindMode now picks the round's order at random (see find_mode.dart),
+    // so which of the two objects is prompted first isn't fixed — read it
+    // off the rendered banner instead of assuming "Мяч" goes first.
+    const zoneIdForLabel = {'Мяч': 'ball', 'Кот': 'cat'};
+    final firstLabel = find.text('Мяч').evaluate().isNotEmpty ? 'Мяч' : 'Кот';
+    final secondLabel = firstLabel == 'Мяч' ? 'Кот' : 'Мяч';
+    expect(find.text(firstLabel), findsOneWidget);
+
+    await tester.tapAt(tester.getCenter(find.byKey(ValueKey('object_zone_${zoneIdForLabel[secondLabel]}')))); // wrong
     await tester.pump();
-    expect(find.text('Мяч'), findsOneWidget);
+    expect(find.text(firstLabel), findsOneWidget);
 
-    await tester.tapAt(tester.getCenter(find.byKey(const ValueKey('object_zone_ball')))); // correct
+    await tester.tapAt(tester.getCenter(find.byKey(ValueKey('object_zone_${zoneIdForLabel[firstLabel]}')))); // correct
     await tester.pump();
-    expect(find.text('Кот'), findsOneWidget);
+    expect(find.text(secondLabel), findsOneWidget);
 
-    await tester.tapAt(tester.getCenter(find.byKey(const ValueKey('object_zone_cat')))); // correct, last
+    await tester.tapAt(
+      tester.getCenter(find.byKey(ValueKey('object_zone_${zoneIdForLabel[secondLabel]}'))),
+    ); // correct, last
     await tester.pump();
 
     expect(find.byKey(const ValueKey('congrats_overlay')), findsOneWidget);

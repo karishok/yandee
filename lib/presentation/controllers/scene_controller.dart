@@ -21,12 +21,18 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
     required this.cachedScene,
     required AudioSink audioSink,
     this.congratsDuration = const Duration(seconds: 2),
+    this.findModeShuffle = shuffleFindOrder,
   }) : _audio = audioSink {
     _mode = ExploreMode(effects: this)..activate();
   }
 
   final CachedScene cachedScene;
   final Duration congratsDuration;
+  // Passed straight through to FindMode; defaults to an actual shuffle.
+  // Tests override it with an identity (or otherwise fixed) function to
+  // keep Find rounds deterministic and assertable — see FindMode's own doc
+  // for why this same override lives at both levels.
+  final List<SceneObject> Function(List<SceneObject>) findModeShuffle;
   final AudioSink _audio;
 
   late SceneMode _mode;
@@ -61,7 +67,7 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
     _modeType = type;
     _mode = type == SceneModeType.explore
         ? ExploreMode(effects: this)
-        : FindMode(objects: cachedScene.scene.objects, effects: this);
+        : FindMode(objects: cachedScene.scene.objects, effects: this, shuffle: findModeShuffle);
     _mode.activate();
     notifyListeners();
   }

@@ -39,7 +39,11 @@ void main() {
 
   test('switching to find mode prompts the first object', () async {
     final audio = FakeAudioSink();
-    final controller = SceneController(cachedScene: cachedScene, audioSink: audio);
+    final controller = SceneController(
+      cachedScene: cachedScene,
+      audioSink: audio,
+      findModeShuffle: (list) => list,
+    );
     controller.setMode(SceneModeType.find);
     expect(controller.modeType, SceneModeType.find);
     expect(controller.currentFindTarget, ball);
@@ -50,9 +54,24 @@ void main() {
     expect(audio.playedSequences, [(SystemPhrase.findIntro, cachedScene.audioPathFor(ball))]);
   });
 
+  test('passes findModeShuffle through to the FindMode it creates', () {
+    final audio = FakeAudioSink();
+    final controller = SceneController(
+      cachedScene: cachedScene,
+      audioSink: audio,
+      findModeShuffle: (list) => list.reversed.toList(),
+    );
+    controller.setMode(SceneModeType.find);
+    expect(controller.currentFindTarget, cat);
+  });
+
   test('find mode: the "correct" phrase finishes before the next find prompt starts', () async {
     final audio = FakeAudioSink();
-    final controller = SceneController(cachedScene: cachedScene, audioSink: audio);
+    final controller = SceneController(
+      cachedScene: cachedScene,
+      audioSink: audio,
+      findModeShuffle: (list) => list,
+    );
     controller.setMode(SceneModeType.find);
     await Future<void>.delayed(Duration.zero); // let the first find prompt land
 
@@ -78,7 +97,11 @@ void main() {
 
   test('a correct tap while the previous "correct" phrase is still playing does not repeat it', () async {
     final audio = FakeAudioSink();
-    final controller = SceneController(cachedScene: cachedScene, audioSink: audio);
+    final controller = SceneController(
+      cachedScene: cachedScene,
+      audioSink: audio,
+      findModeShuffle: (list) => list,
+    );
     controller.setMode(SceneModeType.find);
     await Future<void>.delayed(Duration.zero); // let the first find prompt land (ball)
 
@@ -113,6 +136,7 @@ void main() {
       cachedScene: cachedScene,
       audioSink: audio,
       congratsDuration: const Duration(milliseconds: 5),
+      findModeShuffle: (list) => list,
     );
     controller.setMode(SceneModeType.find);
     controller.onObjectTapped(ball);
@@ -131,7 +155,11 @@ void main() {
 
   test('wrong-hint prompts go through the interruptible path, not the serialized voice queue', () async {
     final audio = FakeAudioSink();
-    final controller = SceneController(cachedScene: cachedScene, audioSink: audio);
+    final controller = SceneController(
+      cachedScene: cachedScene,
+      audioSink: audio,
+      findModeShuffle: (list) => list,
+    );
     controller.setMode(SceneModeType.find);
     await Future<void>.delayed(Duration.zero); // let the first find prompt land
 

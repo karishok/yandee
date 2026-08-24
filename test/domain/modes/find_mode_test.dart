@@ -15,7 +15,7 @@ void main() {
 
   test('activate() prompts the first object, with the intro word', () {
     final effects = FakeSceneModeEffects();
-    final mode = FindMode(objects: objects, effects: effects)..activate();
+    final mode = FindMode(objects: objects, effects: effects, shuffle: (list) => list)..activate();
     expect(mode.currentTarget, ball);
     expect(effects.promptFindCalls, [ball]);
     expect(effects.promptFindAnnounceIntroCalls, [true]);
@@ -23,7 +23,7 @@ void main() {
 
   test('wrong tap gives a hint and does not advance', () {
     final effects = FakeSceneModeEffects();
-    final mode = FindMode(objects: objects, effects: effects)..activate();
+    final mode = FindMode(objects: objects, effects: effects, shuffle: (list) => list)..activate();
     mode.onObjectTapped(cat);
     expect(effects.systemPhraseCalls, [SystemPhrase.wrongHint]);
     expect(mode.currentTarget, ball);
@@ -32,7 +32,7 @@ void main() {
 
   test('correct tap on a non-final target advances to the next object, without the intro word', () {
     final effects = FakeSceneModeEffects();
-    final mode = FindMode(objects: objects, effects: effects)..activate();
+    final mode = FindMode(objects: objects, effects: effects, shuffle: (list) => list)..activate();
     mode.onObjectTapped(ball);
     expect(effects.systemPhraseCalls, [SystemPhrase.correct]);
     expect(mode.currentTarget, cat);
@@ -43,7 +43,7 @@ void main() {
 
   test('finding the last object plays the fanfare and completes the round', () {
     final effects = FakeSceneModeEffects();
-    final mode = FindMode(objects: objects, effects: effects)..activate();
+    final mode = FindMode(objects: objects, effects: effects, shuffle: (list) => list)..activate();
     mode.onObjectTapped(ball);
     mode.onObjectTapped(cat);
     mode.onObjectTapped(tree);
@@ -57,7 +57,7 @@ void main() {
 
   test('taps after the round is complete are ignored', () {
     final effects = FakeSceneModeEffects();
-    final mode = FindMode(objects: objects, effects: effects)..activate();
+    final mode = FindMode(objects: objects, effects: effects, shuffle: (list) => list)..activate();
     mode.onObjectTapped(ball);
     mode.onObjectTapped(cat);
     mode.onObjectTapped(tree);
@@ -66,9 +66,36 @@ void main() {
     expect(effects.systemPhraseCalls, isEmpty);
   });
 
+  test('orders the round using the injected shuffle', () {
+    final effects = FakeSceneModeEffects();
+    final mode = FindMode(
+      objects: objects,
+      effects: effects,
+      shuffle: (list) => list.reversed.toList(),
+    )..activate();
+
+    expect(mode.currentTarget, tree);
+    expect(effects.promptFindCalls, [tree]);
+  });
+
+  test('defaults to shuffling the round order instead of always using scene order', () {
+    // Not a statistical proof — a real Random() could in principle produce
+    // the identity permutation — but with 3! = 6 equally likely orderings,
+    // 200 independent rounds landing on the exact input order every single
+    // time has probability (1/6)^200, i.e. this only fails from an actual
+    // regression (shuffle silently turned into a no-op), never from bad luck.
+    final sawNonIdentityOrder = List.generate(200, (_) {
+      final effects = FakeSceneModeEffects();
+      FindMode(objects: objects, effects: effects).activate();
+      return effects.promptFindCalls;
+    }).any((calls) => calls.single != ball);
+
+    expect(sawNonIdentityOrder, isTrue);
+  });
+
   test('a scene with exactly one object completes on the first correct tap', () {
     final effects = FakeSceneModeEffects();
-    final mode = FindMode(objects: [ball], effects: effects)..activate();
+    final mode = FindMode(objects: [ball], effects: effects, shuffle: (list) => list)..activate();
 
     expect(mode.currentTarget, ball);
     expect(effects.promptFindCalls, [ball]);

@@ -2,13 +2,30 @@ import '../models/scene_object.dart';
 import 'scene_mode.dart';
 import 'scene_mode_effects.dart';
 
-/// The app asks for one object at a time, in the scene's own list order.
-/// Only the current target registers as a correct tap, so found objects
-/// are always exactly the objects before the current target's index — a
-/// wrong tap never changes state, and there is no way to skip ahead.
+/// The default [FindMode] round order: an actual shuffle. A top-level
+/// function (rather than private to [FindMode]) so `SceneController` can
+/// use this exact same default for its own pass-through override, instead
+/// of duplicating "what counts as the real, non-test ordering".
+List<SceneObject> shuffleFindOrder(List<SceneObject> objects) => List.of(objects)..shuffle();
+
+/// The app asks for one object at a time, in a fresh random order each
+/// round (a new round is a new `FindMode` instance — see
+/// `SceneController.setMode`) — so a child can't just learn the fixed
+/// sequence and tap along without actually finding each word. Only the
+/// current target registers as a correct tap, so found objects are always
+/// exactly the objects before the current target's index — a wrong tap
+/// never changes state, and there is no way to skip ahead.
 class FindMode implements SceneMode {
-  FindMode({required List<SceneObject> objects, required this.effects})
-      : _objects = List.unmodifiable(objects) {
+  /// [shuffle] picks the round's order from the scene's objects; defaults
+  /// to [shuffleFindOrder] (an actual shuffle). Tests — and
+  /// `SceneController`, which exposes its own override for the same
+  /// reason — inject an identity (or otherwise fixed) function to keep
+  /// round order deterministic and assertable.
+  FindMode({
+    required List<SceneObject> objects,
+    required this.effects,
+    List<SceneObject> Function(List<SceneObject>) shuffle = shuffleFindOrder,
+  }) : _objects = List.unmodifiable(shuffle(objects)) {
     assert(_objects.isNotEmpty, 'FindMode requires at least one object');
   }
 
