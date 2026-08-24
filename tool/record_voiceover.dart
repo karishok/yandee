@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'src/click_detector.dart';
+import 'src/declick.dart';
 import 'src/denoise.dart';
 import 'src/scene_vocabulary.dart';
 import 'src/voiceover_queue.dart';
@@ -135,6 +136,17 @@ Future<void> _recordOne(VoiceoverTask task, String device) async {
       stdout.writeln('Повторяем это же слово.');
       continue;
     }
+
+    // avfoundation's audio capture silently drops or duplicates a buffer's
+    // worth of samples at CoreAudio I/O boundaries every so often — ffmpeg
+    // doesn't compensate, so the two sides of the recording end up
+    // slightly out of alignment, which plays back as a click. That's a
+    // capture-layer defect ffmpeg gives no way to fix at the source, so
+    // it's repaired here, before the take is even previewed, rather than
+    // shipping it through to the kept file.
+    final captured = readMonoWav16(tempFile);
+    final repairedSamples = repairClickArtifact(captured.samples, captured.sampleRate);
+    writeMonoWav16(tempFile, WavAudio(sampleRate: captured.sampleRate, samples: repairedSamples));
 
     await Process.run('afplay', [tempFile.path]);
 
