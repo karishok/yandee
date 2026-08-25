@@ -21,11 +21,15 @@ const _androidSteps = [
 
 /// Plain-language, platform-aware instructions for turning on the OS's
 /// "lock to just this app" feature — Guided Access on iOS, app pinning on
-/// Android — plus a best-effort "Открыть настройки" shortcut. Neither OS
-/// lets a third-party app finish the job itself (see
-/// [openGuidedAccessSettings]), so the final toggle and gesture are always
-/// left to whoever reads these steps; that's stated plainly rather than
-/// silently failing to "just turn it on".
+/// Android — plus a best-effort "Открыть настройки" shortcut on Android,
+/// where it lands on the right screen (Security). It's left out on iOS:
+/// the only public deep link there (`app-settings:`, see
+/// [openGuidedAccessSettings]) always opens this app's own Settings page,
+/// never Accessibility, so a button promising to jump to the right place
+/// would just mislead. Neither OS lets a third-party app finish the job
+/// itself, so the final toggle and gesture are always left to whoever
+/// reads these steps; that's stated plainly rather than silently failing
+/// to "just turn it on".
 class GuidedAccessScreen extends StatefulWidget {
   const GuidedAccessScreen({super.key, Future<bool> Function()? openSettings})
       : openSettings = openSettings ?? openGuidedAccessSettings;
@@ -101,19 +105,25 @@ class _GuidedAccessScreenState extends State<GuidedAccessScreen> {
             'выполняется вручную, это сделано специально из соображений безопасности.',
             style: textTheme.bodySmall?.copyWith(color: Colors.grey[700]),
           ),
-          const SizedBox(height: 20),
-          ElevatedButton.icon(
-            key: const ValueKey('open_system_settings_button'),
-            onPressed: _opening ? null : _openSettings,
-            icon: _opening
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Icon(Icons.settings),
-            label: const Text('Открыть настройки'),
-          ),
+          // No "Открыть настройки" shortcut on iOS/macOS: the only public
+          // deep link there always opens this app's own Settings page,
+          // never Accessibility, so a button promising to jump to the
+          // right place would just mislead — see class doc.
+          if (!_isApple) ...[
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              key: const ValueKey('open_system_settings_button'),
+              onPressed: _opening ? null : _openSettings,
+              icon: _opening
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.settings),
+              label: const Text('Открыть настройки'),
+            ),
+          ],
         ],
       ),
     );

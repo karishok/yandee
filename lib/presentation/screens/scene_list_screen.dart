@@ -79,12 +79,15 @@ class _SceneListScreenState extends State<SceneListScreen> {
   }
 
   Widget _settingsButton(BuildContext context) {
-    return IconButton(
-      key: const ValueKey('settings_button'),
-      icon: const Icon(Icons.settings),
-      tooltip: 'Настройки',
-      onPressed: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const SettingsScreen()),
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: IconButton(
+        key: const ValueKey('settings_button'),
+        icon: const Icon(Icons.settings),
+        tooltip: 'Настройки',
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const SettingsScreen()),
+        ),
       ),
     );
   }
