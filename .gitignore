@@ -11,3 +11,8 @@ android/.gradle/
 
 # Superpowers brainstorming visual-companion sessions
 .superpowers/
+
+# Release signing — never commit
+android/key.properties
+*.jks
+*.keystore
