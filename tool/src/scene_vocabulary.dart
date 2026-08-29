@@ -68,6 +68,11 @@ const scenes = [
     ObjectSpec('barn', 'Сарай'),
     ObjectSpec('pond', 'Пруд'),
     ObjectSpec('doghouse', 'Будка'),
+    // The scene actually draws one apple tree and three clouds; scene.json
+    // gives each cloud its own tap zone ("cloud_1".."cloud_3") but they all
+    // reuse this one recording, so only one word is listed here.
+    ObjectSpec('tree', 'Дерево'),
+    ObjectSpec('cloud', 'Облако'),
   ]),
   SceneSpec('street', 'Улица', [210, 215, 220], [
     ObjectSpec('car', 'Машина'),
@@ -83,6 +88,10 @@ const scenes = [
     // Added to match the new objects drawn into the updated background art.
     ObjectSpec('house', 'Дом'),
     ObjectSpec('road', 'Дорога'),
+    // The background actually draws three houses and three clouds;
+    // "house_2"/"house_3" in scene.json reuse the "house" recording above,
+    // and "cloud_1"/"cloud_2"/"cloud_3" all reuse this one recording.
+    ObjectSpec('cloud', 'Облако'),
   ]),
   SceneSpec('bathroom', 'Ванная', [210, 235, 245], [
     ObjectSpec('soap', 'Мыло'),
@@ -101,5 +110,7 @@ const scenes = [
     ObjectSpec('shower', 'Душ'),
     ObjectSpec('curtain', 'Занавеска'),
     ObjectSpec('bath_mat', 'Коврик'),
+    // Added to match the laundry basket drawn into the background art.
+    ObjectSpec('basket', 'Корзина'),
   ]),
 ];
