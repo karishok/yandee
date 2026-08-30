@@ -6,10 +6,21 @@ import 'scene_mode_effects.dart';
 /// Only the current target registers as a correct tap, so found objects
 /// are always exactly the objects before the current target's index — a
 /// wrong tap never changes state, and there is no way to skip ahead.
+///
+/// A scene can draw several instances of the same thing (e.g. 3 houses,
+/// each its own tap zone so Explore mode can name any of them) — those
+/// share one label, so they're collapsed into a single find target here:
+/// tapping *any* of them counts, and the round only asks for that name
+/// once, not once per instance.
 class FindMode implements SceneMode {
   FindMode({required List<SceneObject> objects, required this.effects})
-      : _objects = List.unmodifiable(objects) {
+      : _objects = _dedupeByLabel(objects) {
     assert(_objects.isNotEmpty, 'FindMode requires at least one object');
+  }
+
+  static List<SceneObject> _dedupeByLabel(List<SceneObject> objects) {
+    final seenLabels = <String>{};
+    return List.unmodifiable(objects.where((o) => seenLabels.add(o.label)));
   }
 
   final List<SceneObject> _objects;
@@ -35,7 +46,7 @@ class FindMode implements SceneMode {
     final target = currentTarget;
     if (target == null) return; // round already complete
 
-    if (object != target) {
+    if (object.label != target.label) {
       effects.playSystemPhrase(SystemPhrase.wrongHint);
       return;
     }
