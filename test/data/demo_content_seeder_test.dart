@@ -15,7 +15,7 @@ void main() {
 
   // Started at 10 objects each; extra objects were added per scene to
   // match new items drawn into the updated background art.
-  const expectedObjectCounts = {'home': 12, 'kitchen': 14, 'farm': 18, 'street': 17, 'bathroom': 14};
+  const expectedObjectCounts = {'home': 12, 'kitchen': 14, 'farm': 19, 'street': 17, 'bathroom': 14};
 
   setUp(() async {
     cacheRoot = await Directory.systemTemp.createTemp('yandee_seeder_test_');
