@@ -15,18 +15,32 @@ List<SceneObject> shuffleFindOrder(List<SceneObject> objects) => List.of(objects
 /// current target registers as a correct tap, so found objects are always
 /// exactly the objects before the current target's index — a wrong tap
 /// never changes state, and there is no way to skip ahead.
+///
+/// A scene can draw several instances of the same thing (e.g. 3 houses,
+/// each its own tap zone so Explore mode can name any of them) — those
+/// share one label, so they're collapsed into a single find target here:
+/// tapping *any* of them counts, and the round only asks for that name
+/// once, not once per instance.
 class FindMode implements SceneMode {
   /// [shuffle] picks the round's order from the scene's objects; defaults
   /// to [shuffleFindOrder] (an actual shuffle). Tests — and
   /// `SceneController`, which exposes its own override for the same
   /// reason — inject an identity (or otherwise fixed) function to keep
   /// round order deterministic and assertable.
+  ///
+  /// Deduplication runs before the shuffle, so the round order is a
+  /// permutation of the distinct labels rather than of the raw tap zones.
   FindMode({
     required List<SceneObject> objects,
     required this.effects,
     List<SceneObject> Function(List<SceneObject>) shuffle = shuffleFindOrder,
-  }) : _objects = List.unmodifiable(shuffle(objects)) {
+  }) : _objects = List.unmodifiable(shuffle(_dedupeByLabel(objects))) {
     assert(_objects.isNotEmpty, 'FindMode requires at least one object');
+  }
+
+  static List<SceneObject> _dedupeByLabel(List<SceneObject> objects) {
+    final seenLabels = <String>{};
+    return List.unmodifiable(objects.where((o) => seenLabels.add(o.label)));
   }
 
   final List<SceneObject> _objects;
@@ -52,7 +66,7 @@ class FindMode implements SceneMode {
     final target = currentTarget;
     if (target == null) return; // round already complete
 
-    if (object != target) {
+    if (object.label != target.label) {
       effects.playSystemPhrase(SystemPhrase.wrongHint);
       return;
     }

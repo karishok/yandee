@@ -9,9 +9,9 @@ void main() {
     const expectedCounts = {
       'home': 12,
       'kitchen': 14,
-      'farm': 14,
-      'street': 12,
-      'bathroom': 13,
+      'farm': 16,
+      'street': 13,
+      'bathroom': 14,
     };
     expect(scenes.length, 5);
     for (final scene in scenes) {
