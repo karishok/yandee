@@ -8,6 +8,7 @@ class FakeAudioSink implements AudioSink {
   final List<SystemPhrase> playedSystemPhrases = [];
   final List<SystemPhrase> playedInterruptibleSystemPhrases = [];
   final List<(SystemPhrase, String)> playedSequences = [];
+  int stopInterruptibleCalls = 0;
   bool disposeCalled = false;
 
   final Map<SystemPhrase, Completer<void>> _held = {};
@@ -37,6 +38,9 @@ class FakeAudioSink implements AudioSink {
   @override
   Future<void> playInterruptibleSystemPhrase(SystemPhrase phrase) async =>
       playedInterruptibleSystemPhrases.add(phrase);
+
+  @override
+  void stopInterruptible() => stopInterruptibleCalls++;
 
   @override
   void dispose() => disposeCalled = true;

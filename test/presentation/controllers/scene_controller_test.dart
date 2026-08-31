@@ -178,6 +178,50 @@ void main() {
     expect(audio.playedSystemPhrases, isEmpty); // never touches the serialized queue
   });
 
+  test('a correct tap cuts off a wrong-hint that is still playing', () async {
+    final audio = FakeAudioSink();
+    final controller = SceneController(
+      cachedScene: cachedScene,
+      audioSink: audio,
+      findModeShuffle: (list) => list,
+    );
+    controller.setMode(SceneModeType.find);
+    await Future<void>.delayed(Duration.zero);
+
+    controller.onObjectTapped(cat); // wrong: target is ball
+    expect(audio.playedInterruptibleSystemPhrases, [SystemPhrase.wrongHint]);
+    expect(audio.stopInterruptibleCalls, 0);
+
+    // "Попробуй ещё раз" is still going when the child gets it right. It has
+    // to stop then and there — the hint is about to become wrong, and it
+    // would otherwise drone on underneath the success chime.
+    controller.onObjectTapped(ball);
+    expect(audio.stopInterruptibleCalls, 1);
+  });
+
+  test('the hint is cut immediately, not after the voice queue drains', () async {
+    final audio = FakeAudioSink();
+    final controller = SceneController(
+      cachedScene: cachedScene,
+      audioSink: audio,
+      findModeShuffle: (list) => list,
+    );
+    controller.setMode(SceneModeType.find);
+    await Future<void>.delayed(Duration.zero);
+
+    // Wedge the voice queue: the success chime can't start until this
+    // resolves. The stop must not be waiting behind it — "quickly" is the
+    // whole point, and a queued stop would land seconds late.
+    audio.holdPhrase(SystemPhrase.correct);
+    controller.onObjectTapped(cat); // wrong
+    controller.onObjectTapped(ball); // correct
+
+    expect(audio.stopInterruptibleCalls, 1);
+    expect(audio.playedSystemPhrases, isEmpty); // chime hasn't even started yet
+
+    audio.releasePhrase(SystemPhrase.correct);
+  });
+
   test('setMode with the current type is a no-op', () {
     final audio = FakeAudioSink();
     final controller = SceneController(cachedScene: cachedScene, audioSink: audio);

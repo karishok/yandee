@@ -39,6 +39,21 @@ class AudioPlayerService implements AudioSink {
       _playSafely(AssetSource(_systemPhraseAssets[phrase]!), player: _interruptiblePlayer);
 
   @override
+  void stopInterruptible() {
+    // Errors are swallowed the same way playback errors are: stopping a
+    // player that isn't playing is a no-op worth no noise, and a failure
+    // here must never take gameplay down with it.
+    unawaited(_interruptiblePlayer.stop().catchError(
+          (Object error, StackTrace stackTrace) => developer.log(
+            'Audio stop failed',
+            name: 'AudioPlayerService',
+            error: error,
+            stackTrace: stackTrace,
+          ),
+        ));
+  }
+
+  @override
   Future<void> playSystemPhraseThenFile(SystemPhrase phrase, String objectAudioPath) async {
     await _playPhraseAndWait(phrase);
     await _playSafely(DeviceFileSource(objectAudioPath));

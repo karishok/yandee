@@ -101,6 +101,14 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
       unawaited(_audio.playInterruptibleSystemPhrase(phrase));
       return;
     }
+
+    // Any other phrase means the hint has been overtaken by events — most
+    // often "Попробуй ещё раз" still playing when the child gets it right.
+    // Cut it here, synchronously, rather than inside _voiceQueue: the queue
+    // may be several seconds deep, and a stop that lands then isn't a stop
+    // the child connects to their own correct tap.
+    _audio.stopInterruptible();
+
     if (phrase == SystemPhrase.correct) {
       if (_correctPending) {
         // Still saying (or waiting to say) an earlier "Молодец" from a

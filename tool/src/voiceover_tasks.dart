@@ -9,10 +9,13 @@ class VoiceoverTask {
   final String outputPath;
 }
 
+/// `assets/audio/system/correct.wav` is deliberately absent: the success
+/// sound is a generated chime (`tool/generate_ding.dart`), not speech, and
+/// listing it here would have `record_voiceover.dart system` cheerfully
+/// offer to record "Молодец!" over the top of it.
 const _systemPhrases = [
   VoiceoverTask(text: 'Найди:', outputPath: 'assets/audio/system/find_intro.wav'),
   VoiceoverTask(text: 'Попробуй ещё раз', outputPath: 'assets/audio/system/wrong_hint.wav'),
-  VoiceoverTask(text: 'Молодец!', outputPath: 'assets/audio/system/correct.wav'),
   VoiceoverTask(text: 'Ура, ты всё нашёл!', outputPath: 'assets/audio/system/round_complete.wav'),
 ];
 

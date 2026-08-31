@@ -3,13 +3,16 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../tool/src/voiceover_tasks.dart';
 
 void main() {
-  test('includes all 4 system phrases with the agreed text', () {
+  test('includes all 3 spoken system phrases with the agreed text', () {
     final tasks = buildVoiceoverTasks();
     final byPath = {for (final t in tasks) t.outputPath: t.text};
 
     expect(byPath['assets/audio/system/find_intro.wav'], 'Найди:');
     expect(byPath['assets/audio/system/wrong_hint.wav'], 'Попробуй ещё раз');
-    expect(byPath['assets/audio/system/correct.wav'], 'Молодец!');
+    // No entry for correct.wav: the success sound is a generated chime
+    // (tool/generate_ding.dart), not a spoken phrase, so the recording tool
+    // must not offer to record over it.
+    expect(byPath.containsKey('assets/audio/system/correct.wav'), isFalse);
     expect(byPath['assets/audio/system/round_complete.wav'], 'Ура, ты всё нашёл!');
   });
 
@@ -22,9 +25,9 @@ void main() {
     expect(byPath['assets/demo_content/bathroom/duck_toy.wav'], 'Уточка');
   });
 
-  test('produces exactly 73 tasks with no duplicate output paths', () {
+  test('produces exactly 72 tasks with no duplicate output paths', () {
     final tasks = buildVoiceoverTasks();
-    expect(tasks.length, 73);
-    expect(tasks.map((t) => t.outputPath).toSet().length, 73);
+    expect(tasks.length, 72);
+    expect(tasks.map((t) => t.outputPath).toSet().length, 72);
   });
 }

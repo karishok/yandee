@@ -17,6 +17,11 @@ abstract class AudioSink {
   /// other, not pile up into a long backlog of the same phrase.
   Future<void> playInterruptibleSystemPhrase(SystemPhrase phrase);
 
+  /// Silence whatever `playInterruptibleSystemPhrase` is currently playing,
+  /// without starting anything in its place. Fire-and-forget: nothing waits
+  /// on the stop, because the point is that it happens *now*.
+  void stopInterruptible();
+
   /// Play a system phrase, wait for it to finish, then play the object
   /// audio file — used for Find mode's "Find: `<name>`" prompt.
   Future<void> playSystemPhraseThenFile(SystemPhrase phrase, String objectAudioPath);
