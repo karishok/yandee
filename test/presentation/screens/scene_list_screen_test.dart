@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' show Response;
 import 'package:http/testing.dart';
 import 'package:path/path.dart' as p;
 import 'package:yandee/data/content_repository.dart';
@@ -38,12 +39,11 @@ Future<void> _seedScene(Directory cacheRoot, String id, String title) async {
 // (Directory.createTemp, File.writeAsBytes/readAsString, directory
 // listing) never complete inside that zone, so all real I/O setup plus
 // pumpWidget() (whose initState chain kicks off ContentRepository's real
-// loadCachedIndex()/refresh() calls) must run inside a single
+// loadCachedIndex() call) must run inside a single
 // tester.runAsync() block — same pattern Tasks 12/13 established for
 // FileImage decoding. We poll with real delays + real pumps until
-// SceneListScreen's own loading spinner clears, then give the trailing
-// background refresh()+reload a little more real time to finish before
-// leaving the real zone, so no dangling real Future/Timer survives past
+// SceneListScreen's own loading spinner clears before leaving the real zone,
+// so no dangling real Future/Timer survives past
 // runAsync() and trips the test framework's pending-timer check.
 Future<void> _pumpAndSettleReal(WidgetTester tester) async {
   for (var i = 0; i < 40 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty; i++) {
@@ -79,6 +79,33 @@ void main() {
 
     expect(find.text('Город'), findsOneWidget);
     expect(find.text('Ферма'), findsOneWidget);
+  });
+
+  testWidgets('shows cached scenes without contacting remote content', (tester) async {
+    late Directory cacheRoot;
+    var requestCount = 0;
+
+    await tester.runAsync(() async {
+      cacheRoot = await Directory.systemTemp.createTemp('yandee_list_test_local_only_');
+      await _seedScene(cacheRoot, 'city', 'Город');
+      final repository = ContentRepository(
+        httpClient: MockClient((request) async {
+          requestCount++;
+          return Response('', 404);
+        }),
+        baseUrl: Uri.parse('https://example.invalid/v1/'),
+        cacheRootProvider: () async => cacheRoot,
+      );
+
+      await tester.pumpWidget(MaterialApp(home: SceneListScreen(contentRepository: repository)));
+      await _pumpAndSettleReal(tester);
+    });
+    addTearDown(() => cacheRoot.delete(recursive: true));
+
+    await tester.pump();
+
+    expect(find.text('Город'), findsOneWidget);
+    expect(requestCount, 0);
   });
 
   testWidgets('the settings button opens the settings screen', (tester) async {

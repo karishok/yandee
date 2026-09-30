@@ -2,21 +2,11 @@ import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 import 'data/content_repository.dart';
 import 'data/demo_content_seeder.dart';
 import 'presentation/screens/scene_list_screen.dart';
-
-/// Root of the static hosting endpoint that serves `index.json` and each
-/// scene's files. Must end with a trailing slash — `Uri.resolve` treats a
-/// URL's last path segment as a filename otherwise, and would silently
-/// drop it when building request URLs. Point this at the real CDN once
-/// content hosting is deployed; until then, requests simply fail and the
-/// app falls back to its local (seeded demo) cache, per the offline
-/// error-handling behavior in ContentRepository.refresh().
-final kContentBaseUrl = Uri.parse('https://content.yandee.app/v1/');
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,9 +23,7 @@ class YandeeApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final contentRepository = ContentRepository(
-      httpClient: http.Client(),
-      baseUrl: kContentBaseUrl,
+    final contentRepository = ContentRepository.local(
       cacheRootProvider: getApplicationDocumentsDirectory,
     );
     return MaterialApp(

@@ -22,10 +22,19 @@ class ContentRepository {
         _cacheRootProvider = cacheRootProvider,
         assert(baseUrl.path.endsWith('/'), 'baseUrl must end with / so Uri.resolve keeps the full path');
 
+  /// Creates a repository that only reads and writes the local cache.
+  ///
+  /// This is the production mode until content hosting is deployed. It has
+  /// no HTTP client, so the app cannot accidentally contact a remote host.
+  ContentRepository.local({required Future<Directory> Function() cacheRootProvider})
+      : _httpClient = null,
+        _baseUrl = null,
+        _cacheRootProvider = cacheRootProvider;
+
   static const cacheSubdirName = 'content_cache';
 
-  final http.Client _httpClient;
-  final Uri _baseUrl;
+  final http.Client? _httpClient;
+  final Uri? _baseUrl;
   final Future<Directory> Function() _cacheRootProvider;
 
   /// Downloads currently in progress, keyed by scene id. Lets overlapping
@@ -83,9 +92,13 @@ class ContentRepository {
   /// atomically swaps each one in only once fully downloaded. Never
   /// throws — any failure just means "try again on the next refresh()".
   Future<void> refresh() async {
+    final httpClient = _httpClient;
+    final baseUrl = _baseUrl;
+    if (httpClient == null || baseUrl == null) return;
+
     final List<SceneManifestEntry> remoteEntries;
     try {
-      final response = await _httpClient.get(_baseUrl.resolve('index.json'));
+      final response = await httpClient.get(baseUrl.resolve('index.json'));
       if (response.statusCode != 200) return;
       final decoded = jsonDecode(response.body) as Map<String, dynamic>;
       remoteEntries = (decoded['scenes'] as List<dynamic>)
@@ -151,7 +164,7 @@ class ContentRepository {
   }
 
   Future<List<int>> _downloadBytes(String relativePath) async {
-    final response = await _httpClient.get(_baseUrl.resolve(relativePath));
+    final response = await _httpClient!.get(_baseUrl!.resolve(relativePath));
     if (response.statusCode != 200) {
       throw HttpException('GET $relativePath -> ${response.statusCode}');
     }

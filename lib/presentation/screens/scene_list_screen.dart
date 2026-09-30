@@ -34,11 +34,6 @@ class _SceneListScreenState extends State<SceneListScreen> {
       _scenes = cached;
       _loading = false;
     });
-    await widget.contentRepository.refresh();
-    if (!mounted) return;
-    final updated = await widget.contentRepository.loadCachedIndex();
-    if (!mounted) return;
-    setState(() => _scenes = updated);
   }
 
   @override
