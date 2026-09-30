@@ -44,8 +44,8 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   // each one waits for the previous to actually finish before starting —
   // e.g. the "correct" phrase must finish before the next "find: <object>"
   // prompt begins, or they play on top of each other. `playObjectAudio`
-  // (Explore-mode taps) deliberately stays off this queue: a new tap should
-  // interrupt whatever's playing immediately, not wait its turn.
+  // (Explore-mode taps) deliberately stays off this queue: its separate
+  // current-plus-latest policy must not wait behind Find-mode instructions.
   Future<void> _voiceQueue = Future.value();
 
   // True while a "correct" phrase is somewhere between being queued and
@@ -54,6 +54,13 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   // moved on to the next target by the time they'd all finish, so only the
   // first one (per busy stretch) actually plays; see playSystemPhrase.
   bool _correctPending = false;
+
+  // Explore-mode names are deliberately not a FIFO queue. While one name is
+  // being spoken, retain only the latest object the child reaches; once the
+  // current name finishes, speak that one object and discard everything in
+  // between.
+  bool _objectAudioPlaying = false;
+  String? _pendingObjectAudioPath;
 
   SceneModeType get modeType => _modeType;
   bool get showCongrats => _showCongrats;
@@ -76,7 +83,34 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
 
   @override
   void playObjectAudio(SceneObject object) {
-    unawaited(_audio.playFile(cachedScene.audioPathFor(object)));
+    final path = cachedScene.audioPathFor(object);
+    if (_objectAudioPlaying) {
+      _pendingObjectAudioPath = path;
+      return;
+    }
+    _playObjectAudio(path);
+  }
+
+  void _playObjectAudio(String path) {
+    _objectAudioPlaying = true;
+    unawaited(_finishObjectAudio(path));
+  }
+
+  Future<void> _finishObjectAudio(String path) async {
+    try {
+      await _audio.playExploreFile(path);
+    } catch (_) {
+      // Audio failures must not affect touch interaction. The concrete sink
+      // logs its own errors; this protects alternate implementations too.
+    }
+
+    final nextPath = _pendingObjectAudioPath;
+    _pendingObjectAudioPath = null;
+    if (nextPath == null) {
+      _objectAudioPlaying = false;
+      return;
+    }
+    _playObjectAudio(nextPath);
   }
 
   @override

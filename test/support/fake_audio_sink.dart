@@ -12,6 +12,7 @@ class FakeAudioSink implements AudioSink {
   bool disposeCalled = false;
 
   final Map<SystemPhrase, Completer<void>> _held = {};
+  final Map<String, Completer<void>> _heldFiles = {};
 
   /// Makes playSystemPhrase(phrase) start (and record itself as played) but
   /// not resolve until [releasePhrase] is called — lets a test tell whether
@@ -21,8 +22,21 @@ class FakeAudioSink implements AudioSink {
 
   void releasePhrase(SystemPhrase phrase) => _held.remove(phrase)?.complete();
 
+  /// Makes [playExploreFile] record itself but not finish until [releaseFile] is
+  /// called. This models a name that is still being spoken.
+  void holdFile(String absolutePath) => _heldFiles[absolutePath] = Completer<void>();
+
+  void releaseFile(String absolutePath) => _heldFiles.remove(absolutePath)?.complete();
+
   @override
   Future<void> playFile(String absolutePath) async => playedFiles.add(absolutePath);
+
+  @override
+  Future<void> playExploreFile(String absolutePath) async {
+    playedFiles.add(absolutePath);
+    final hold = _heldFiles[absolutePath];
+    if (hold != null) await hold.future;
+  }
 
   @override
   Future<void> playSystemPhrase(SystemPhrase phrase) async {

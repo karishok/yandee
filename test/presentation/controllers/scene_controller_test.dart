@@ -37,6 +37,26 @@ void main() {
     expect(audio.playedFiles, [cachedScene.audioPathFor(ball)]);
   });
 
+  test('explore mode plays the current object then only the final object from a fast sweep', () async {
+    final audio = FakeAudioSink();
+    final controller = SceneController(cachedScene: cachedScene, audioSink: audio);
+    final ballPath = cachedScene.audioPathFor(ball);
+    final catPath = cachedScene.audioPathFor(cat);
+    audio.holdFile(ballPath);
+
+    controller.onObjectTapped(ball);
+    controller.onObjectTapped(cat);
+    controller.onObjectTapped(ball);
+    controller.onObjectTapped(cat);
+
+    expect(audio.playedFiles, [ballPath]);
+
+    audio.releaseFile(ballPath);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(audio.playedFiles, [ballPath, catPath]);
+  });
+
   test('switching to find mode prompts the first object', () async {
     final audio = FakeAudioSink();
     final controller = SceneController(

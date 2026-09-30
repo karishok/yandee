@@ -14,14 +14,16 @@ const Map<SystemPhrase, String> _systemPhraseAssets = {
 /// Thin `audioplayers` wrapper. Playback errors are logged and swallowed —
 /// per spec, sound must never block gameplay.
 class AudioPlayerService implements AudioSink {
-  AudioPlayerService({AudioPlayer? player, AudioPlayer? interruptiblePlayer})
+  AudioPlayerService({AudioPlayer? player, AudioPlayer? explorePlayer, AudioPlayer? interruptiblePlayer})
       : _player = player ?? AudioPlayer(),
+        _explorePlayer = explorePlayer ?? AudioPlayer(),
         _interruptiblePlayer = interruptiblePlayer ?? AudioPlayer();
 
   final AudioPlayer _player;
+  final AudioPlayer _explorePlayer;
 
   // A player dedicated to `playInterruptibleSystemPhrase`, kept separate
-  // from `_player` (object taps / find-target audio) so a rapid string of
+  // from `_player` (Find-mode target audio) so a rapid string of
   // wrong-answer hints can never cut off unrelated audio, or be cut off by
   // it. `AudioPlayer.play()` stops whatever that same player instance is
   // currently playing before starting the new source, which is exactly the
@@ -30,6 +32,10 @@ class AudioPlayerService implements AudioSink {
 
   @override
   Future<void> playFile(String absolutePath) => _playSafely(DeviceFileSource(absolutePath));
+
+  @override
+  Future<void> playExploreFile(String absolutePath) =>
+      _playExploreFileAndWait(DeviceFileSource(absolutePath));
 
   @override
   Future<void> playSystemPhrase(SystemPhrase phrase) => _playPhraseAndWait(phrase);
@@ -84,6 +90,19 @@ class AudioPlayerService implements AudioSink {
     }
   }
 
+  Future<void> _playExploreFileAndWait(Source source) async {
+    try {
+      // Subscribe before playback: a very short file may complete before
+      // `play` resolves. The controller uses this Future to decide when the
+      // one pending Explore-mode name may begin.
+      final completed = _explorePlayer.onPlayerComplete.first;
+      await _explorePlayer.play(source);
+      await completed;
+    } catch (error, stackTrace) {
+      developer.log('Audio playback failed', name: 'AudioPlayerService', error: error, stackTrace: stackTrace);
+    }
+  }
+
   Future<void> _playSafely(Source source, {AudioPlayer? player}) async {
     try {
       await (player ?? _player).play(source);
@@ -95,6 +114,7 @@ class AudioPlayerService implements AudioSink {
   @override
   void dispose() {
     unawaited(_player.dispose());
+    unawaited(_explorePlayer.dispose());
     unawaited(_interruptiblePlayer.dispose());
   }
 }
