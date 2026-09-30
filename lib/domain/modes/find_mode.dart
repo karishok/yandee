@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../models/scene_object.dart';
 import 'scene_mode.dart';
 import 'scene_mode_effects.dart';
@@ -48,6 +50,7 @@ class FindMode implements SceneMode {
 
   int _targetIndex = 0;
   int _foundCount = 0;
+  bool _waitingForCorrectFeedback = false;
 
   /// The object currently being searched for, or null once every object
   /// in the scene has been found.
@@ -63,24 +66,32 @@ class FindMode implements SceneMode {
 
   @override
   void onObjectTapped(SceneObject object) {
+    if (_waitingForCorrectFeedback) return;
     final target = currentTarget;
     if (target == null) return; // round already complete
 
     if (object.label != target.label) {
-      effects.playSystemPhrase(SystemPhrase.wrongHint);
+      unawaited(effects.playSystemPhrase(SystemPhrase.wrongHint));
       return;
     }
 
+    _waitingForCorrectFeedback = true;
+    unawaited(_advanceAfterCorrectAnswer());
+  }
+
+  Future<void> _advanceAfterCorrectAnswer() async {
+    await effects.playSystemPhrase(SystemPhrase.correct);
     _foundCount++;
-    effects.playSystemPhrase(SystemPhrase.correct);
 
     if (_foundCount == _objects.length) {
-      effects.playSystemPhrase(SystemPhrase.roundComplete);
+      await effects.playSystemPhrase(SystemPhrase.roundComplete);
       effects.onRoundCompleted();
+      _waitingForCorrectFeedback = false;
       return;
     }
 
     _targetIndex++;
+    _waitingForCorrectFeedback = false;
     effects.promptFind(_objects[_targetIndex], announceIntro: false); // same round: skip the intro word
   }
 }

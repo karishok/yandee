@@ -54,11 +54,11 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   // moved on to the next target by the time they'd all finish, so only the
   // first one (per busy stretch) actually plays; see playSystemPhrase.
   bool _correctPending = false;
+  bool _wrongHintPlaying = false;
 
   // Explore-mode names are deliberately not a FIFO queue. While one name is
-  // being spoken, retain only the latest object the child reaches; once the
-  // current name finishes, speak that one object and discard everything in
-  // between.
+  // being started, retain only the latest object the child reaches; then
+  // discard everything in between.
   bool _objectAudioPlaying = false;
   String? _pendingObjectAudioPath;
 
@@ -124,16 +124,19 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   }
 
   @override
-  void playSystemPhrase(SystemPhrase phrase) {
+  Future<void> playSystemPhrase(SystemPhrase phrase) {
     if (phrase == SystemPhrase.wrongHint) {
+      if (_wrongHintPlaying) return Future<void>.value();
+      _wrongHintPlaying = true;
       // A child mistapping several times in a row fires this repeatedly,
       // faster than one "try again" take is to say. Routing it through the
       // interruptible path (instead of the serialized _voiceQueue below)
       // means each new mistap cuts off the previous hint instead of queuing
       // behind it — otherwise a 5-tap streak would leave the hint droning
       // on for many seconds after the child has moved on.
-      unawaited(_audio.playInterruptibleSystemPhrase(phrase));
-      return;
+      final playback = _audio.playInterruptibleSystemPhrase(phrase);
+      playback.whenComplete(() => _wrongHintPlaying = false);
+      return playback;
     }
 
     // Any other phrase means the hint has been overtaken by events — most
@@ -142,6 +145,7 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
     // may be several seconds deep, and a stop that lands then isn't a stop
     // the child connects to their own correct tap.
     _audio.stopInterruptible();
+    _wrongHintPlaying = false;
 
     if (phrase == SystemPhrase.correct) {
       if (_correctPending) {
@@ -150,15 +154,18 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
         // of/behind it, so drop this one instead of queueing another full
         // play. The next find prompt (or the round-complete fanfare) still
         // follows right after, unaffected — this only skips the phrase.
-        return;
+        return Future<void>.value();
       }
       _correctPending = true;
-      _voiceQueue = _voiceQueue.then((_) => _audio.playSystemPhrase(phrase)).whenComplete(() {
+      final playback = _voiceQueue.then((_) => _audio.playSystemPhrase(phrase));
+      _voiceQueue = playback.whenComplete(() {
         _correctPending = false;
       });
-      return;
+      return playback;
     }
-    _voiceQueue = _voiceQueue.then((_) => _audio.playSystemPhrase(phrase));
+    final playback = _voiceQueue.then((_) => _audio.playSystemPhrase(phrase));
+    _voiceQueue = playback;
+    return playback;
   }
 
   @override

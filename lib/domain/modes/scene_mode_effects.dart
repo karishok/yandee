@@ -21,7 +21,7 @@ abstract class SceneModeEffects {
   void promptFind(SceneObject target, {bool announceIntro = true});
 
   /// Play a bundled system phrase (hint, correct, fanfare, ...).
-  void playSystemPhrase(SystemPhrase phrase);
+  Future<void> playSystemPhrase(SystemPhrase phrase);
 
   /// Called once when a Find round finishes (all objects found).
   void onRoundCompleted();

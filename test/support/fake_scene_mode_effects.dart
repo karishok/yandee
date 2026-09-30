@@ -18,7 +18,7 @@ class FakeSceneModeEffects implements SceneModeEffects {
   }
 
   @override
-  void playSystemPhrase(SystemPhrase phrase) => systemPhraseCalls.add(phrase);
+  Future<void> playSystemPhrase(SystemPhrase phrase) async => systemPhraseCalls.add(phrase);
 
   @override
   void onRoundCompleted() => roundCompletedCalls++;

@@ -115,6 +115,52 @@ void main() {
     expect(audio.playedFiles, [cachedScene.audioPathFor(cat)]);
   });
 
+  test('find mode keeps the current target until the correct phrase finishes', () async {
+    final audio = FakeAudioSink();
+    final controller = SceneController(
+      cachedScene: cachedScene,
+      audioSink: audio,
+      findModeShuffle: (list) => list,
+    );
+    controller.setMode(SceneModeType.find);
+    await Future<void>.delayed(Duration.zero);
+
+    audio.holdPhrase(SystemPhrase.correct);
+    controller.onObjectTapped(ball);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(controller.currentFindTarget, ball);
+
+    audio.releasePhrase(SystemPhrase.correct);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(controller.currentFindTarget, cat);
+  });
+
+  test('find mode does not repeat a wrong hint while it is still playing', () async {
+    final audio = FakeAudioSink();
+    final controller = SceneController(
+      cachedScene: cachedScene,
+      audioSink: audio,
+      findModeShuffle: (list) => list,
+    );
+    controller.setMode(SceneModeType.find);
+    await Future<void>.delayed(Duration.zero);
+
+    audio.holdInterruptiblePhrase(SystemPhrase.wrongHint);
+    controller.onObjectTapped(cat);
+    controller.onObjectTapped(cat);
+    controller.onObjectTapped(cat);
+
+    expect(audio.playedInterruptibleSystemPhrases, [SystemPhrase.wrongHint]);
+
+    audio.releaseInterruptiblePhrase(SystemPhrase.wrongHint);
+    await Future<void>.delayed(Duration.zero);
+    controller.onObjectTapped(cat);
+
+    expect(audio.playedInterruptibleSystemPhrases, [SystemPhrase.wrongHint, SystemPhrase.wrongHint]);
+  });
+
   test('a correct tap while the previous "correct" phrase is still playing does not repeat it', () async {
     final audio = FakeAudioSink();
     final controller = SceneController(
@@ -131,9 +177,8 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(audio.playedSystemPhrases, [SystemPhrase.correct]);
 
-    // Target is now cat. Tap it correctly too, before the first "Молодец"
-    // has actually finished playing — this also happens to be the round's
-    // last object.
+    // The target is still ball while "Молодец" is playing, so this tap is
+    // ignored instead of advancing behind the audio.
     controller.onObjectTapped(cat);
     await Future<void>.delayed(Duration.zero);
 
@@ -144,9 +189,12 @@ void main() {
     audio.releasePhrase(SystemPhrase.correct);
     await Future<void>.delayed(Duration.zero);
 
-    // No further "correct" ever plays for the second tap — but the round
-    // still completes normally (the fanfare isn't gated by this at all).
-    expect(audio.playedSystemPhrases, [SystemPhrase.correct, SystemPhrase.roundComplete]);
+    expect(audio.playedSystemPhrases, [SystemPhrase.correct]);
+    expect(controller.showCongrats, isFalse);
+
+    controller.onObjectTapped(cat);
+    await Future<void>.delayed(Duration.zero);
+    expect(audio.playedSystemPhrases, [SystemPhrase.correct, SystemPhrase.correct, SystemPhrase.roundComplete]);
     expect(controller.showCongrats, isTrue);
   });
 
@@ -160,10 +208,10 @@ void main() {
     );
     controller.setMode(SceneModeType.find);
     controller.onObjectTapped(ball);
+    await Future<void>.delayed(Duration.zero);
     controller.onObjectTapped(cat);
+    await Future<void>.delayed(Duration.zero);
 
-    // showCongrats is set synchronously by FindMode itself, independent of
-    // the voice queue's playback timing.
     expect(controller.showCongrats, isTrue);
 
     await Future<void>.delayed(const Duration(milliseconds: 30));
@@ -183,9 +231,8 @@ void main() {
     controller.setMode(SceneModeType.find);
     await Future<void>.delayed(Duration.zero); // let the first find prompt land
 
-    // Mistapping repeatedly and quickly (e.g. a child tapping 5 times in a
-    // row) must not queue up 5 full "try again" plays back to back — each
-    // new one should simply replace whatever's still playing.
+    // Mistapping repeatedly and quickly must not restart the same phrase
+    // while it is still playing.
     controller.onObjectTapped(cat); // wrong: target is ball
     controller.onObjectTapped(cat); // wrong again, immediately
     controller.onObjectTapped(cat); // and again
@@ -193,7 +240,7 @@ void main() {
 
     expect(
       audio.playedInterruptibleSystemPhrases,
-      [SystemPhrase.wrongHint, SystemPhrase.wrongHint, SystemPhrase.wrongHint],
+      [SystemPhrase.wrongHint],
     );
     expect(audio.playedSystemPhrases, isEmpty); // never touches the serialized queue
   });

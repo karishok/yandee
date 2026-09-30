@@ -12,6 +12,7 @@ class FakeAudioSink implements AudioSink {
   bool disposeCalled = false;
 
   final Map<SystemPhrase, Completer<void>> _held = {};
+  final Map<SystemPhrase, Completer<void>> _heldInterruptible = {};
   final Map<String, Completer<void>> _heldFiles = {};
 
   /// Makes playSystemPhrase(phrase) start (and record itself as played) but
@@ -21,6 +22,12 @@ class FakeAudioSink implements AudioSink {
   void holdPhrase(SystemPhrase phrase) => _held[phrase] = Completer<void>();
 
   void releasePhrase(SystemPhrase phrase) => _held.remove(phrase)?.complete();
+
+  void holdInterruptiblePhrase(SystemPhrase phrase) =>
+      _heldInterruptible[phrase] = Completer<void>();
+
+  void releaseInterruptiblePhrase(SystemPhrase phrase) =>
+      _heldInterruptible.remove(phrase)?.complete();
 
   /// Makes [playExploreFile] record itself but not finish until [releaseFile] is
   /// called. This models a name that is still being spoken.
@@ -50,8 +57,11 @@ class FakeAudioSink implements AudioSink {
       playedSequences.add((phrase, objectAudioPath));
 
   @override
-  Future<void> playInterruptibleSystemPhrase(SystemPhrase phrase) async =>
-      playedInterruptibleSystemPhrases.add(phrase);
+  Future<void> playInterruptibleSystemPhrase(SystemPhrase phrase) async {
+    playedInterruptibleSystemPhrases.add(phrase);
+    final hold = _heldInterruptible[phrase];
+    if (hold != null) await hold.future;
+  }
 
   @override
   void stopInterruptible() => stopInterruptibleCalls++;

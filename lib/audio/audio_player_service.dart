@@ -35,14 +35,14 @@ class AudioPlayerService implements AudioSink {
 
   @override
   Future<void> playExploreFile(String absolutePath) =>
-      _playExploreFileAndWait(DeviceFileSource(absolutePath));
+      _playSafely(DeviceFileSource(absolutePath), player: _explorePlayer);
 
   @override
   Future<void> playSystemPhrase(SystemPhrase phrase) => _playPhraseAndWait(phrase);
 
   @override
   Future<void> playInterruptibleSystemPhrase(SystemPhrase phrase) =>
-      _playSafely(AssetSource(_systemPhraseAssets[phrase]!), player: _interruptiblePlayer);
+      _playInterruptiblePhraseAndWait(phrase);
 
   @override
   void stopInterruptible() {
@@ -90,13 +90,10 @@ class AudioPlayerService implements AudioSink {
     }
   }
 
-  Future<void> _playExploreFileAndWait(Source source) async {
+  Future<void> _playInterruptiblePhraseAndWait(SystemPhrase phrase) async {
     try {
-      // Subscribe before playback: a very short file may complete before
-      // `play` resolves. The controller uses this Future to decide when the
-      // one pending Explore-mode name may begin.
-      final completed = _explorePlayer.onPlayerComplete.first;
-      await _explorePlayer.play(source);
+      final completed = _interruptiblePlayer.onPlayerComplete.first;
+      await _interruptiblePlayer.play(AssetSource(_systemPhraseAssets[phrase]!));
       await completed;
     } catch (error, stackTrace) {
       developer.log('Audio playback failed', name: 'AudioPlayerService', error: error, stackTrace: stackTrace);

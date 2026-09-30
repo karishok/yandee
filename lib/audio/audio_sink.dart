@@ -7,9 +7,8 @@ abstract class AudioSink {
   /// Play a locally cached audio file (a scene object's recorded name).
   Future<void> playFile(String absolutePath);
 
-  /// Play an Explore-mode object name and complete only once it has finished.
-  /// The Explore controller uses this to retain at most one latest pending
-  /// name while another name is playing.
+  /// Start an Explore-mode object name on its dedicated player. The Explore
+  /// controller retains at most one latest pending name itself.
   Future<void> playExploreFile(String absolutePath);
 
   /// Play a bundled system phrase asset.

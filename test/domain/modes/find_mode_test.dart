@@ -30,10 +30,11 @@ void main() {
     expect(effects.promptFindCalls, [ball]); // no new prompt
   });
 
-  test('correct tap on a non-final target advances to the next object, without the intro word', () {
+  test('correct tap on a non-final target advances to the next object, without the intro word', () async {
     final effects = FakeSceneModeEffects();
     final mode = FindMode(objects: objects, effects: effects, shuffle: (list) => list)..activate();
     mode.onObjectTapped(ball);
+    await Future<void>.delayed(Duration.zero);
     expect(effects.systemPhraseCalls, [SystemPhrase.correct]);
     expect(mode.currentTarget, cat);
     expect(effects.promptFindCalls, [ball, cat]);
@@ -41,12 +42,15 @@ void main() {
     expect(effects.roundCompletedCalls, 0);
   });
 
-  test('finding the last object plays the fanfare and completes the round', () {
+  test('finding the last object plays the fanfare and completes the round', () async {
     final effects = FakeSceneModeEffects();
     final mode = FindMode(objects: objects, effects: effects, shuffle: (list) => list)..activate();
     mode.onObjectTapped(ball);
+    await Future<void>.delayed(Duration.zero);
     mode.onObjectTapped(cat);
+    await Future<void>.delayed(Duration.zero);
     mode.onObjectTapped(tree);
+    await Future<void>.delayed(Duration.zero);
     expect(
       effects.systemPhraseCalls,
       [SystemPhrase.correct, SystemPhrase.correct, SystemPhrase.correct, SystemPhrase.roundComplete],
@@ -55,12 +59,15 @@ void main() {
     expect(mode.currentTarget, isNull);
   });
 
-  test('taps after the round is complete are ignored', () {
+  test('taps after the round is complete are ignored', () async {
     final effects = FakeSceneModeEffects();
     final mode = FindMode(objects: objects, effects: effects, shuffle: (list) => list)..activate();
     mode.onObjectTapped(ball);
+    await Future<void>.delayed(Duration.zero);
     mode.onObjectTapped(cat);
+    await Future<void>.delayed(Duration.zero);
     mode.onObjectTapped(tree);
+    await Future<void>.delayed(Duration.zero);
     effects.systemPhraseCalls.clear();
     mode.onObjectTapped(ball);
     expect(effects.systemPhraseCalls, isEmpty);
@@ -93,7 +100,7 @@ void main() {
     expect(sawNonIdentityOrder, isTrue);
   });
 
-  test('a scene with exactly one object completes on the first correct tap', () {
+  test('a scene with exactly one object completes on the first correct tap', () async {
     final effects = FakeSceneModeEffects();
     final mode = FindMode(objects: [ball], effects: effects, shuffle: (list) => list)..activate();
 
@@ -101,6 +108,7 @@ void main() {
     expect(effects.promptFindCalls, [ball]);
 
     mode.onObjectTapped(ball);
+    await Future<void>.delayed(Duration.zero);
 
     expect(
       effects.systemPhraseCalls,
@@ -124,10 +132,11 @@ void main() {
       expect(effects.promptFindCalls, [house1]); // not asked 3 times for the 3 houses
     });
 
-    test('tapping any instance of the target label counts as correct, not just the first one', () {
+    test('tapping any instance of the target label counts as correct, not just the first one', () async {
       final effects = FakeSceneModeEffects();
       final mode = FindMode(objects: objectsWithDuplicates, effects: effects, shuffle: (list) => list)..activate();
       mode.onObjectTapped(house3); // a different instance than currentTarget (house1)
+      await Future<void>.delayed(Duration.zero);
       expect(effects.systemPhraseCalls, [SystemPhrase.correct]);
       expect(mode.currentTarget, cat);
     });
@@ -140,12 +149,14 @@ void main() {
       expect(mode.currentTarget, house1);
     });
 
-    test('the round only has as many targets as distinct labels', () {
+    test('the round only has as many targets as distinct labels', () async {
       final effects = FakeSceneModeEffects();
       final mode = FindMode(objects: objectsWithDuplicates, effects: effects, shuffle: (list) => list)..activate();
       mode.onObjectTapped(house1);
+      await Future<void>.delayed(Duration.zero);
       expect(mode.currentTarget, cat);
       mode.onObjectTapped(cat);
+      await Future<void>.delayed(Duration.zero);
       expect(effects.roundCompletedCalls, 1); // 2 targets (Дом, Кот), not 4 objects
     });
   });
