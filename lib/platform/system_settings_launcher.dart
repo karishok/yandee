@@ -23,7 +23,7 @@ Future<bool> openGuidedAccessSettings() async {
       // subpage like Accessibility, so this lands on Settings' root (or
       // this app's own page); the in-app instructions cover the rest of
       // the path from there.
-      return launchUrl(Uri(scheme: 'app-settings'), mode: LaunchMode.externalApplication);
+      return await launchUrl(Uri(scheme: 'app-settings'), mode: LaunchMode.externalApplication);
     }
     if (Platform.isAndroid) {
       // ACTION_SECURITY_SETTINGS is a public, documented Android intent
