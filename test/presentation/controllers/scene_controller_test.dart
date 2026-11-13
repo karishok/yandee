@@ -3,6 +3,7 @@ import 'package:yandee/data/cached_scene.dart';
 import 'package:yandee/domain/models/object_rect.dart';
 import 'package:yandee/domain/models/scene.dart';
 import 'package:yandee/domain/models/scene_object.dart';
+import 'package:yandee/domain/models/scene_variant.dart';
 import 'package:yandee/domain/modes/scene_mode_effects.dart';
 import 'package:yandee/presentation/controllers/scene_controller.dart';
 
@@ -110,7 +111,7 @@ void main() {
     await Future<void>.delayed(Duration.zero);
 
     // The second (and every later) target in a round plays its name
-    // directly — no repeated "Найди:" intro.
+    // directly — no repeated "Где" intro.
     expect(audio.playedSequences, [(SystemPhrase.findIntro, cachedScene.audioPathFor(ball))]);
     expect(audio.playedFiles, [cachedScene.audioPathFor(cat)]);
   });
@@ -304,5 +305,76 @@ void main() {
     expect(audio.disposeCalled, isFalse);
     controller.dispose();
     expect(audio.disposeCalled, isTrue);
+  });
+
+  group('realistic picture', () {
+    const realisticBallRect = ObjectRect(x: 0.6, y: 0.6, width: 0.2, height: 0.2);
+    final sceneWithRealistic = CachedScene(
+      scene: Scene(
+        id: 'demo',
+        version: 1,
+        title: 'Демо',
+        minAgeMonths: 12,
+        background: 'background.png',
+        objects: [ball, cat],
+        realistic: const SceneVariant(
+          background: 'background_real.png',
+          rects: {'ball': realisticBallRect},
+        ),
+      ),
+      directoryPath: '/cache/demo',
+    );
+
+    test('a scene opens on its default picture', () {
+      final controller = SceneController(cachedScene: sceneWithRealistic, audioSink: FakeAudioSink());
+      expect(controller.hasRealisticPicture, isTrue);
+      expect(controller.showsRealisticPicture, isFalse);
+      expect(controller.visibleBackgroundPath, '/cache/demo/background.png');
+      expect(controller.visibleObjects.first.rect, rect);
+    });
+
+    test('togglePicture switches to the realistic picture and its tap zones, then back', () {
+      final controller = SceneController(cachedScene: sceneWithRealistic, audioSink: FakeAudioSink());
+      var notifications = 0;
+      controller.addListener(() => notifications++);
+
+      controller.togglePicture();
+      expect(controller.showsRealisticPicture, isTrue);
+      expect(controller.visibleBackgroundPath, '/cache/demo/background_real.png');
+      expect(controller.visibleObjects.first.rect, realisticBallRect);
+      expect(notifications, 1);
+
+      controller.togglePicture();
+      expect(controller.showsRealisticPicture, isFalse);
+      expect(controller.visibleObjects.first.rect, rect);
+      expect(notifications, 2);
+    });
+
+    test('a scene with no realistic picture has nothing to switch to', () {
+      final controller = SceneController(cachedScene: cachedScene, audioSink: FakeAudioSink());
+      var notifications = 0;
+      controller.addListener(() => notifications++);
+
+      expect(controller.hasRealisticPicture, isFalse);
+      controller.togglePicture();
+
+      expect(controller.showsRealisticPicture, isFalse);
+      expect(notifications, 0);
+    });
+
+    test('switching pictures in the middle of a Find round keeps the round going', () {
+      final controller = SceneController(
+        cachedScene: sceneWithRealistic,
+        audioSink: FakeAudioSink(),
+        findModeShuffle: (list) => list,
+      );
+      controller.setMode(SceneModeType.find);
+      expect(controller.currentFindTarget, ball);
+
+      controller.togglePicture();
+
+      expect(controller.modeType, SceneModeType.find);
+      expect(controller.currentFindTarget, ball);
+    });
   });
 }

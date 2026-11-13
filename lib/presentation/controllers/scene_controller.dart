@@ -62,8 +62,36 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   bool _objectAudioPlaying = false;
   String? _pendingObjectAudioPath;
 
+  // Which of the scene's pictures is on screen. Deliberately not part of
+  // the mode: switching it changes how the objects look and where they sit,
+  // not what the child is doing, so a Find round carries straight on.
+  bool _showsRealisticPicture = false;
+
   SceneModeType get modeType => _modeType;
   bool get showCongrats => _showCongrats;
+
+  /// Whether this scene has a realistic picture to switch to at all.
+  bool get hasRealisticPicture => cachedScene.scene.realistic != null;
+
+  /// Whether the realistic picture (rather than the default illustration)
+  /// is the one being shown. Every scene opens on the default.
+  bool get showsRealisticPicture => _showsRealisticPicture;
+
+  /// The picture being shown.
+  String get visibleBackgroundPath =>
+      (_showsRealisticPicture ? cachedScene.realisticBackgroundPath : null) ?? cachedScene.backgroundPath;
+
+  /// The scene's objects with the tap zones of the picture being shown.
+  List<SceneObject> get visibleObjects =>
+      cachedScene.scene.objectsFor(realistic: _showsRealisticPicture);
+
+  /// Swaps the default illustration for the realistic picture, or back.
+  /// Does nothing for a scene that has no realistic picture.
+  void togglePicture() {
+    if (!hasRealisticPicture) return;
+    _showsRealisticPicture = !_showsRealisticPicture;
+    notifyListeners();
+  }
 
   SceneObject? get currentFindTarget => _mode is FindMode ? (_mode as FindMode).currentTarget : null;
 

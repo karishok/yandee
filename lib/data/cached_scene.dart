@@ -22,5 +22,11 @@ class CachedScene {
 
   String get backgroundPath => p.join(directoryPath, scene.background);
 
+  /// The scene's realistic picture, or null if it only has the default one.
+  String? get realisticBackgroundPath {
+    final realistic = scene.realistic;
+    return realistic == null ? null : p.join(directoryPath, realistic.background);
+  }
+
   String audioPathFor(SceneObject object) => p.join(directoryPath, object.audio);
 }

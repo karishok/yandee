@@ -143,6 +143,12 @@ class ContentRepository {
       await File(p.join(tmpDir.path, scene.background))
           .writeAsBytes(await _downloadBytes('${entry.id}/${scene.background}'));
 
+      final realisticBackground = scene.realistic?.background;
+      if (realisticBackground != null) {
+        await File(p.join(tmpDir.path, realisticBackground))
+            .writeAsBytes(await _downloadBytes('${entry.id}/$realisticBackground'));
+      }
+
       // entry.thumbnail is already root-relative (e.g. "city/thumb.png");
       // it is stored locally under the fixed name "thumb.png", which is
       // what loadCachedIndex() expects regardless of the remote path.

@@ -3,19 +3,44 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../tool/src/scene_vocabulary.dart';
 
 void main() {
-  test('defines exactly 5 scenes with the expected object count each', () {
-    // Started at 10 objects each; extra objects were added per scene to
-    // match new items drawn into the updated background art.
+  // The app's first five scenes. They started at 10 objects each; extra
+  // objects were added per scene to match new items drawn into the updated
+  // background art.
+  const originalSceneCounts = {
+    'home': 12,
+    'kitchen': 14,
+    'farm': 16,
+    'street': 13,
+    'bathroom': 14,
+  };
+
+  test('defines the expected scenes with the expected object count each', () {
     const expectedCounts = {
-      'home': 12,
-      'kitchen': 14,
-      'farm': 16,
-      'street': 13,
-      'bathroom': 14,
+      ...originalSceneCounts,
+      'playground': 7,
+      'zoo': 7,
+      'forest': 10,
+      'toys': 7,
+      'sea': 12,
     };
-    expect(scenes.length, 5);
+    expect(scenes.map((s) => s.id), expectedCounts.keys);
     for (final scene in scenes) {
       expect(scene.objects.length, expectedCounts[scene.id], reason: 'scene ${scene.id}');
+    }
+  });
+
+  // The agreed exceptions to the 7-object cap. The forest art draws a
+  // stump, leafy trees and a path so prominently that they are named too;
+  // the sea looked empty with 7, so five more objects were drawn into it.
+  const scenesAllowedOverSeven = {'forest', 'sea'};
+
+  test('every scene added after the first five has at most 7 objects', () {
+    final laterScenes = scenes.where(
+      (s) => !originalSceneCounts.containsKey(s.id) && !scenesAllowedOverSeven.contains(s.id),
+    );
+    expect(laterScenes, isNotEmpty);
+    for (final scene in laterScenes) {
+      expect(scene.objects.length, lessThanOrEqualTo(7), reason: 'scene ${scene.id}');
     }
   });
 

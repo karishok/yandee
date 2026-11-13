@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:yandee/data/content_repository.dart';
 import 'package:yandee/presentation/screens/scene_screen.dart';
+import 'package:yandee/presentation/widgets/scene_illustration.dart';
 
 import '../../support/fake_audio_sink.dart';
 import '../../support/fixture_assets.dart';
@@ -101,6 +102,64 @@ Future<Directory> _seedCacheWithTopRightCornerObject() async {
   return cacheRoot;
 }
 
+// A scene that also has a realistic picture, on which the ball sits
+// somewhere else than on the default one. The second object is authored at
+// the illustration's top-left corner — right under where the picture toggle
+// lives — to cover the toggle never sitting on top of a tap zone.
+Future<Directory> _seedCacheWithRealisticPicture() async {
+  final cacheRoot = await Directory.systemTemp.createTemp('yandee_scene_screen_realistic_test_');
+  final sceneDir = Directory(p.join(cacheRoot.path, ContentRepository.cacheSubdirName, 'demo'));
+  await sceneDir.create(recursive: true);
+  await writeFixturePng(sceneDir, 'background.png', width: 400, height: 300);
+  await writeFixturePng(sceneDir, 'background_real.png', width: 400, height: 300);
+  await File(p.join(sceneDir.path, 'ball.wav')).writeAsBytes([0]);
+  await File(p.join(sceneDir.path, 'corner.wav')).writeAsBytes([0]);
+  await File(p.join(sceneDir.path, 'scene.json')).writeAsString(jsonEncode({
+    'id': 'demo',
+    'version': 1,
+    'title': 'Демо',
+    'minAgeMonths': 12,
+    'background': 'background.png',
+    'objects': [
+      {
+        'id': 'corner',
+        'label': 'Угол',
+        'audio': 'corner.wav',
+        'rect': {'x': 0.0, 'y': 0.0, 'width': 0.15, 'height': 0.15},
+      },
+      {
+        'id': 'ball',
+        'label': 'Мяч',
+        'audio': 'ball.wav',
+        'rect': {'x': 0.1, 'y': 0.6, 'width': 0.2, 'height': 0.2},
+      },
+    ],
+    'realistic': {
+      'background': 'background_real.png',
+      'rects': {
+        'ball': {'x': 0.7, 'y': 0.6, 'width': 0.2, 'height': 0.2},
+      },
+    },
+  }));
+  return cacheRoot;
+}
+
+// Find mode advances only once the "correct" chime has finished playing,
+// i.e. after several async hops through SceneController's voice queue. That
+// queue's first future is created while the scene loads — inside
+// tester.runAsync(), so in the real zone — and a continuation chained onto
+// it is scheduled there too, where the FakeAsync-driven tester.pump()
+// can't reach it. So after a correct tap, alternate real event-loop turns
+// (for those hops) with pumped frames (for the hops and rebuilds that
+// belong to the test zone) until [finder] shows the round has moved on.
+// Bounded: if it never does, the caller's own expect() reports the failure.
+Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
+  for (var i = 0; i < 20 && finder.evaluate().isEmpty; i++) {
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pump();
+  }
+}
+
 void main() {
   testWidgets('opens in explore mode; switching to find shows the banner and completing it shows congrats', (tester) async {
     late Directory cacheRoot;
@@ -165,13 +224,13 @@ void main() {
     expect(find.text(firstLabel), findsOneWidget);
 
     await tester.tapAt(tester.getCenter(find.byKey(ValueKey('object_zone_${zoneIdForLabel[firstLabel]}')))); // correct
-    await tester.pump();
+    await _pumpUntilFound(tester, find.text(secondLabel));
     expect(find.text(secondLabel), findsOneWidget);
 
     await tester.tapAt(
       tester.getCenter(find.byKey(ValueKey('object_zone_${zoneIdForLabel[secondLabel]}'))),
     ); // correct, last
-    await tester.pump();
+    await _pumpUntilFound(tester, find.byKey(const ValueKey('congrats_overlay')));
 
     expect(find.byKey(const ValueKey('congrats_overlay')), findsOneWidget);
     expect(find.byKey(const ValueKey('find_banner')), findsNothing);
@@ -394,8 +453,92 @@ void main() {
       // the scene's only object is the current Find target, so a real tap
       // reaching the controller completes the round immediately.
       await tester.tapAt(tester.getCenter(cornerZoneFinder));
-      await tester.pump();
+      await _pumpUntilFound(tester, find.byKey(const ValueKey('congrats_overlay')));
       expect(find.byKey(const ValueKey('congrats_overlay')), findsOneWidget);
     },
   );
+
+  testWidgets('a scene with a realistic picture has a toggle that switches the picture and its tap zones', (
+    tester,
+  ) async {
+    late Directory cacheRoot;
+    final audio = FakeAudioSink();
+
+    await tester.runAsync(() async {
+      cacheRoot = await _seedCacheWithRealisticPicture();
+      final repository = ContentRepository.local(cacheRootProvider: () async => cacheRoot);
+
+      await tester.pumpWidget(MaterialApp(
+        home: SceneScreen(contentRepository: repository, sceneId: 'demo', audioSinkFactory: () => audio),
+      ));
+
+      for (var i = 0; i < 40 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await tester.pump();
+      }
+    });
+    addTearDown(() => cacheRoot.delete(recursive: true));
+    await tester.pump();
+
+    final toggleFinder = find.byKey(const ValueKey('picture_toggle'));
+    final ballZoneFinder = find.byKey(const ValueKey('object_zone_ball'));
+    expect(toggleFinder, findsOneWidget);
+    expect(
+      tester.getRect(toggleFinder).overlaps(tester.getRect(find.byKey(const ValueKey('object_zone_corner')))),
+      isFalse,
+      reason: 'the picture toggle must not cover a tap zone in the top-left corner',
+    );
+
+    final illustrationWidth = tester.getSize(find.byType(SceneIllustration)).width;
+    final defaultBallRect = tester.getRect(ballZoneFinder);
+
+    await tester.tap(toggleFinder);
+    await tester.pumpAndSettle();
+
+    // On the realistic picture the ball is authored 0.6 of the picture's
+    // width further right, so its tap zone must have moved there.
+    final realisticBallRect = tester.getRect(ballZoneFinder);
+    expect(realisticBallRect.left - defaultBallRect.left, greaterThan(illustrationWidth * 0.4));
+
+    // The old spot is now empty; the new one names the ball.
+    final ballAudioPath = p.join(cacheRoot.path, ContentRepository.cacheSubdirName, 'demo', 'ball.wav');
+    await tester.tapAt(defaultBallRect.center);
+    await tester.pump();
+    expect(audio.playedFiles, isEmpty);
+    await tester.tapAt(realisticBallRect.center);
+    await tester.pump();
+    expect(audio.playedFiles, [ballAudioPath]);
+
+    // And the toggle goes back again.
+    await tester.tap(toggleFinder);
+    await tester.pumpAndSettle();
+    expect(tester.getRect(ballZoneFinder), defaultBallRect);
+  });
+
+  testWidgets('a scene with only the default picture has no picture toggle', (tester) async {
+    late Directory cacheRoot;
+
+    await tester.runAsync(() async {
+      cacheRoot = await _seedCache();
+      final repository = ContentRepository.local(cacheRootProvider: () async => cacheRoot);
+
+      await tester.pumpWidget(MaterialApp(
+        home: SceneScreen(
+          contentRepository: repository,
+          sceneId: 'demo',
+          audioSinkFactory: () => FakeAudioSink(),
+        ),
+      ));
+
+      for (var i = 0; i < 40 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await tester.pump();
+      }
+    });
+    addTearDown(() => cacheRoot.delete(recursive: true));
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('mode_switch')), findsOneWidget);
+    expect(find.byKey(const ValueKey('picture_toggle')), findsNothing);
+  });
 }

@@ -61,7 +61,7 @@ class FindMode implements SceneMode {
   void activate() {
     _targetIndex = 0;
     _foundCount = 0;
-    effects.promptFind(_objects[_targetIndex]); // first target of the round: announce "Найди:"
+    effects.promptFind(_objects[_targetIndex]); // first target of the round: announce "Где"
   }
 
   @override

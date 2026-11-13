@@ -19,6 +19,12 @@ class SceneIllustration extends StatefulWidget {
 class _SceneIllustrationState extends State<SceneIllustration> {
   late final ImageProvider _imageProvider;
   ImageStreamListener? _listener;
+
+  // The scene's realistic picture, for scenes that have one. Resolved up
+  // front (see initState) so that switching to it is instant rather than
+  // showing a blank frame while a 1024x1536 PNG decodes.
+  ImageProvider? _realisticImageProvider;
+  ImageStreamListener? _realisticListener;
   Size? _imageSize;
   bool _hasError = false;
 
@@ -46,20 +52,33 @@ class _SceneIllustrationState extends State<SceneIllustration> {
       },
     );
     _imageProvider.resolve(const ImageConfiguration()).addListener(_listener!);
+
+    final realisticPath = widget.cachedScene.realisticBackgroundPath;
+    if (realisticPath != null) {
+      final provider = FileImage(File(realisticPath));
+      _realisticImageProvider = provider;
+      // Only here to keep the decoded picture alive in the image cache and
+      // to swallow a load failure: a broken realistic picture must not take
+      // the whole scene down, the Image below shows its own fallback.
+      _realisticListener = ImageStreamListener((_, __) {}, onError: (_, __) {});
+      provider.resolve(const ImageConfiguration()).addListener(_realisticListener!);
+    }
   }
 
   @override
   void dispose() {
     _imageProvider.resolve(const ImageConfiguration()).removeListener(_listener!);
+    _realisticImageProvider?.resolve(const ImageConfiguration()).removeListener(_realisticListener!);
     super.dispose();
   }
 
   /// The object whose rect (scaled to [size]) contains [localPosition], or
   /// null if none does. Objects are checked last-to-first so that, when
   /// rects overlap, the one later in `scene.objects` wins — the same
-  /// "painted on top" priority the old Stack ordering gave it.
+  /// "painted on top" priority the old Stack ordering gave it. The rects
+  /// are those of whichever picture is currently shown.
   SceneObject? _objectAt(Offset localPosition, Size size) {
-    for (final object in widget.cachedScene.scene.objects.reversed) {
+    for (final object in context.read<SceneController>().visibleObjects.reversed) {
       final rect = Rect.fromLTWH(
         object.rect.x * size.width,
         object.rect.y * size.height,
@@ -109,6 +128,11 @@ class _SceneIllustrationState extends State<SceneIllustration> {
     if (imageSize == null) {
       return const Center(child: CircularProgressIndicator());
     }
+    final controller = context.watch<SceneController>();
+    final realisticImageProvider = _realisticImageProvider;
+    final showsRealistic = controller.showsRealisticPicture && realisticImageProvider != null;
+    // The realistic picture is laid out in the default picture's frame, so
+    // both must share one aspect ratio (all scene art is 2:3).
     return Center(
       child: AspectRatio(
         aspectRatio: imageSize.width / imageSize.height,
@@ -118,7 +142,20 @@ class _SceneIllustrationState extends State<SceneIllustration> {
             return Stack(
               fit: StackFit.expand,
               children: [
-                Image(image: _imageProvider, fit: BoxFit.fill),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  layoutBuilder: (currentChild, previousChildren) =>
+                      Stack(fit: StackFit.expand, children: [...previousChildren, if (currentChild != null) currentChild]),
+                  child: Image(
+                    key: ValueKey(showsRealistic),
+                    image: showsRealistic ? realisticImageProvider : _imageProvider,
+                    fit: BoxFit.fill,
+                    errorBuilder: (_, __, ___) => const ColoredBox(
+                      color: Colors.white,
+                      child: Center(child: Icon(Icons.broken_image, size: 64, color: Colors.grey)),
+                    ),
+                  ),
+                ),
                 Positioned.fill(
                   child: Listener(
                     behavior: HitTestBehavior.opaque,
@@ -133,7 +170,7 @@ class _SceneIllustrationState extends State<SceneIllustration> {
                 // entirely, so they never shadow the Listener above).
                 // Widget tests use their keys/rects to find and measure a
                 // given object's tap zone.
-                for (final object in widget.cachedScene.scene.objects)
+                for (final object in controller.visibleObjects)
                   Positioned(
                     key: ValueKey('object_zone_${object.id}'),
                     left: object.rect.x * size.width,

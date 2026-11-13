@@ -43,7 +43,7 @@ void main() {
   group('taskMatchesFilter', () {
     const kitchenTask = VoiceoverTask(text: 'Яблоко', outputPath: 'assets/demo_content/kitchen/apple.wav');
     const farmTask = VoiceoverTask(text: 'Корова', outputPath: 'assets/demo_content/farm/cow.wav');
-    const systemTask = VoiceoverTask(text: 'Найди:', outputPath: 'assets/audio/system/find_intro.wav');
+    const systemTask = VoiceoverTask(text: 'Где', outputPath: 'assets/audio/system/find_intro.wav');
 
     test('null filter matches everything', () {
       expect(taskMatchesFilter(kitchenTask, null), isTrue);
