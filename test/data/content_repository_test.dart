@@ -194,6 +194,54 @@ void main() {
       expect(await Directory(p.join(cacheRoot.path, ContentRepository.cacheSubdirName, 'city__tmp')).exists(), isFalse);
     });
 
+    test('a scene with a realistic picture has that picture downloaded too', () async {
+      final client = MockClient((request) async {
+        final path = request.url.path;
+        if (path == '/v1/index.json') {
+          return http.Response(
+            jsonEncode({
+              'scenesVersion': 1,
+              'scenes': [
+                {'id': 'city', 'version': 1, 'title': 'Город', 'thumbnail': 'city/thumb.png'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        }
+        if (path == '/v1/city/scene.json') {
+          return http.Response(
+            jsonEncode({
+              'id': 'city',
+              'version': 1,
+              'title': 'Город',
+              'minAgeMonths': 12,
+              'background': 'background.png',
+              'objects': <Map<String, dynamic>>[],
+              'realistic': {'background': 'background_real.png', 'rects': <String, dynamic>{}},
+            }),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        }
+        if (path == '/v1/city/background.png') return http.Response.bytes([1, 2, 3], 200);
+        if (path == '/v1/city/background_real.png') return http.Response.bytes([9, 9], 200);
+        if (path == '/v1/city/thumb.png') return http.Response.bytes([4, 5], 200);
+        return http.Response('not found', 404);
+      });
+      final repo = ContentRepository(
+        httpClient: client,
+        baseUrl: Uri.parse('https://example.invalid/v1/'),
+        cacheRootProvider: () async => cacheRoot,
+      );
+
+      await repo.refresh();
+
+      final cached = await repo.loadScene('city');
+      expect(cached, isNotNull);
+      expect(await File(cached!.realisticBackgroundPath!).readAsBytes(), [9, 9]);
+    });
+
     test('a failed asset download leaves a previously cached scene untouched', () async {
       await _seedScene(cacheRoot, 'city', version: 1, title: 'Город');
       final client = MockClient((request) async {

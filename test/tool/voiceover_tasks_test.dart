@@ -7,7 +7,7 @@ void main() {
     final tasks = buildVoiceoverTasks();
     final byPath = {for (final t in tasks) t.outputPath: t.text};
 
-    expect(byPath['assets/audio/system/find_intro.wav'], 'Найди:');
+    expect(byPath['assets/audio/system/find_intro.wav'], 'Где');
     expect(byPath['assets/audio/system/wrong_hint.wav'], 'Попробуй ещё раз');
     // No entry for correct.wav: the success sound is a generated chime
     // (tool/generate_ding.dart), not a spoken phrase, so the recording tool
@@ -25,9 +25,9 @@ void main() {
     expect(byPath['assets/demo_content/bathroom/duck_toy.wav'], 'Уточка');
   });
 
-  test('produces exactly 72 tasks with no duplicate output paths', () {
+  test('produces exactly 115 tasks with no duplicate output paths', () {
     final tasks = buildVoiceoverTasks();
-    expect(tasks.length, 72);
-    expect(tasks.map((t) => t.outputPath).toSet().length, 72);
+    expect(tasks.length, 115);
+    expect(tasks.map((t) => t.outputPath).toSet().length, 115);
   });
 }

@@ -25,6 +25,9 @@ class SceneObject {
     );
   }
 
+  /// The same object at a different place on the picture.
+  SceneObject withRect(ObjectRect rect) => SceneObject(id: id, label: label, audio: audio, rect: rect);
+
   /// Objects are identified by id everywhere in the app (mode logic,
   /// widget-test finders), so equality/hashing only look at it.
   @override

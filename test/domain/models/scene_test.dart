@@ -45,4 +45,71 @@ void main() {
     expect(a, equals(b));
     expect(a.hashCode, b.hashCode);
   });
+
+  group('realistic variant', () {
+    final jsonWithRealistic = {
+      ...json,
+      'objects': [
+        {
+          'id': 'tree_1',
+          'label': 'Дерево',
+          'audio': 'tree.mp3',
+          'rect': {'x': 0.12, 'y': 0.45, 'width': 0.10, 'height': 0.20},
+        },
+        {
+          'id': 'car',
+          'label': 'Машина',
+          'audio': 'car.mp3',
+          'rect': {'x': 0.5, 'y': 0.5, 'width': 0.2, 'height': 0.1},
+        },
+      ],
+      'realistic': {
+        'background': 'background_real.png',
+        'rects': {
+          'tree_1': {'x': 0.3, 'y': 0.4, 'width': 0.15, 'height': 0.25},
+        },
+      },
+    };
+
+    test('a scene without a realistic block has no realistic variant', () {
+      expect(Scene.fromJson(json).realistic, isNull);
+    });
+
+    test('Scene.fromJson parses the realistic background and its tap zones', () {
+      final realistic = Scene.fromJson(jsonWithRealistic).realistic!;
+      expect(realistic.background, 'background_real.png');
+      expect(realistic.rects.keys, ['tree_1']);
+      expect(realistic.rects['tree_1']!.x, 0.3);
+      expect(realistic.rects['tree_1']!.height, 0.25);
+    });
+
+    test('objectsFor(realistic: false) returns the objects with their own tap zones', () {
+      final scene = Scene.fromJson(jsonWithRealistic);
+      expect(scene.objectsFor(realistic: false).map((o) => o.rect.x), [0.12, 0.5]);
+    });
+
+    test('objectsFor(realistic: true) moves the objects to the realistic tap zones', () {
+      final scene = Scene.fromJson(jsonWithRealistic);
+      final objects = scene.objectsFor(realistic: true);
+
+      // Same objects, in the same order (order is tap priority), with the
+      // same words and audio — only where they are on the picture changes.
+      expect(objects.map((o) => o.id), ['tree_1', 'car']);
+      expect(objects.first.label, 'Дерево');
+      expect(objects.first.audio, 'tree.mp3');
+      expect(objects.first.rect.x, 0.3);
+      expect(objects.first.rect.width, 0.15);
+    });
+
+    test('an object the realistic variant gives no tap zone keeps its own', () {
+      final scene = Scene.fromJson(jsonWithRealistic);
+      final car = scene.objectsFor(realistic: true).last;
+      expect(car.rect.x, 0.5);
+    });
+
+    test('objectsFor(realistic: true) on a scene without the variant returns the objects unchanged', () {
+      final scene = Scene.fromJson(json);
+      expect(scene.objectsFor(realistic: true).single.rect.x, 0.12);
+    });
+  });
 }

@@ -67,7 +67,7 @@ class _StartupScreenState extends State<_StartupScreen> {
 
   Future<void> _seed() async {
     final cacheRoot = await getApplicationDocumentsDirectory();
-    await const DemoContentSeeder().seedIfEmpty(cacheRoot);
+    await const DemoContentSeeder().seed(cacheRoot);
   }
 
   @override

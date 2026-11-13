@@ -33,6 +33,11 @@ flutter:
     - assets/demo_content/farm/
     - assets/demo_content/street/
     - assets/demo_content/bathroom/
+    - assets/demo_content/playground/
+    - assets/demo_content/zoo/
+    - assets/demo_content/forest/
+    - assets/demo_content/toys/
+    - assets/demo_content/sea/
 
 flutter_launcher_icons:
   android: true

@@ -13,9 +13,9 @@ abstract class SceneModeEffects {
   void playObjectAudio(SceneObject object);
 
   /// Announces [target] as the next thing to find: its name audio, with
-  /// the "Найди:" lead-in word immediately before it when [announceIntro]
+  /// the "Где" lead-in word immediately before it when [announceIntro]
   /// is true. Callers pass true only for the first target of a round —
-  /// hearing "Найди:" again before every single subsequent target (once
+  /// hearing "Где" again before every single subsequent target (once
   /// per correct tap) is what got called out as repetitive/annoying, on
   /// top of adding a full phrase's worth of delay to every tap in a row.
   void promptFind(SceneObject target, {bool announceIntro = true});

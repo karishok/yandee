@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -124,11 +126,35 @@ class _SceneView extends StatelessWidget {
                       _ModeSwitch(modeType: controller.modeType, onChanged: controller.setMode),
                     ],
                   ),
-                  if (showBanner) ...[
+                  if (showBanner || controller.hasRealisticPicture) ...[
                     const SizedBox(height: 10),
+                    // The second row: the picture toggle on the left (only
+                    // for scenes that have a realistic picture), the find
+                    // banner on the right. The toggle lives down here rather
+                    // than next to the back button because the first row is
+                    // already full on a narrow phone.
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [Flexible(child: _FindBanner(target: controller.currentFindTarget))],
+                      children: [
+                        if (controller.hasRealisticPicture) ...[
+                          _PictureToggle(
+                            // Shows the picture a tap switches *to*.
+                            previewPath: controller.showsRealisticPicture
+                                ? cachedScene.backgroundPath
+                                : cachedScene.realisticBackgroundPath!,
+                            showsRealisticPicture: controller.showsRealisticPicture,
+                            onPressed: controller.togglePicture,
+                          ),
+                          const SizedBox(width: 12),
+                        ],
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: showBanner
+                                ? _FindBanner(target: controller.currentFindTarget)
+                                : const SizedBox.shrink(),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ],
@@ -174,6 +200,61 @@ class _FindBanner extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Swaps the scene's default illustration for its realistic picture and
+/// back. Wordless on purpose — it is a small round preview of the picture a
+/// tap switches to, so a child who can't read still sees what it does.
+class _PictureToggle extends StatelessWidget {
+  const _PictureToggle({
+    required this.previewPath,
+    required this.showsRealisticPicture,
+    required this.onPressed,
+  });
+
+  final String previewPath;
+  final bool showsRealisticPicture;
+  final VoidCallback onPressed;
+
+  static const double _size = 52;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      label: showsRealisticPicture ? 'Показать рисунок' : 'Показать как в жизни',
+      child: Material(
+        key: const ValueKey('picture_toggle'),
+        color: Colors.white,
+        shape: const CircleBorder(),
+        elevation: 3,
+        shadowColor: Colors.black.withValues(alpha: 0.3),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onPressed,
+          child: Padding(
+            padding: const EdgeInsets.all(3),
+            child: ClipOval(
+              child: SizedBox(
+                width: _size - 6,
+                height: _size - 6,
+                child: Image(
+                  // Keyed so the preview swaps cleanly instead of briefly
+                  // showing the previous picture's frame.
+                  key: ValueKey(previewPath),
+                  image: FileImage(File(previewPath)),
+                  fit: BoxFit.cover,
+                  excludeFromSemantics: true,
+                  errorBuilder: (_, __, ___) => Icon(Icons.image, color: colorScheme.primary),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

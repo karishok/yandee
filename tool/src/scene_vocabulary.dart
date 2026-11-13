@@ -18,7 +18,8 @@ class SceneSpec {
 }
 
 // The app's first 5 real content scenes (see
-// docs/superpowers/plans/2026-08-11-yandee-interactive-scenes.md).
+// docs/superpowers/plans/2026-08-11-yandee-interactive-scenes.md), followed
+// by the smaller scenes added later.
 const scenes = [
   SceneSpec('home', 'Дом', [235, 222, 200], [
     ObjectSpec('bed', 'Кровать'),
@@ -112,5 +113,72 @@ const scenes = [
     ObjectSpec('bath_mat', 'Коврик'),
     // Added to match the laundry basket drawn into the background art.
     ObjectSpec('basket', 'Корзина'),
+  ]),
+  // Scenes added after the first five are deliberately smaller: at most 7
+  // objects each, so the youngest children aren't overwhelmed ('forest' and
+  // 'sea' are the agreed exceptions, see below).
+  SceneSpec('playground', 'Площадка', [200, 225, 170], [
+    ObjectSpec('swing', 'Качели'),
+    ObjectSpec('slide', 'Горка'),
+    ObjectSpec('carousel', 'Карусель'),
+    ObjectSpec('sandbox', 'Песочница'),
+    // The bucket and shovel are drawn inside the sandbox; they come after
+    // it so that, in scene.json's same order, their tap zones win over it.
+    ObjectSpec('bucket', 'Ведёрко'),
+    ObjectSpec('shovel', 'Лопатка'),
+    ObjectSpec('ball', 'Мяч'),
+  ]),
+  SceneSpec('zoo', 'Зоопарк', [215, 230, 170], [
+    ObjectSpec('elephant', 'Слон'),
+    ObjectSpec('giraffe', 'Жираф'),
+    ObjectSpec('lion', 'Лев'),
+    ObjectSpec('monkey', 'Обезьяна'),
+    ObjectSpec('zebra', 'Зебра'),
+    ObjectSpec('tiger', 'Тигр'),
+    ObjectSpec('hippo', 'Бегемот'),
+  ]),
+  SceneSpec('forest', 'Лес', [190, 220, 160], [
+    ObjectSpec('fir_tree', 'Ёлка'),
+    ObjectSpec('mushroom', 'Гриб'),
+    ObjectSpec('hare', 'Заяц'),
+    ObjectSpec('fox', 'Лиса'),
+    ObjectSpec('hedgehog', 'Ёж'),
+    ObjectSpec('squirrel', 'Белка'),
+    ObjectSpec('bear', 'Медведь'),
+    // Agreed exception to the 7-object cap: the art draws these three so
+    // prominently that a child would tap them, so they are named too.
+    // scene.json gives the two leafy trees ("tree_1", "tree_2") and the
+    // winding path ("path_1".."path_6") several tap zones each; every zone
+    // of a word reuses that word's single recording.
+    ObjectSpec('stump', 'Пень'),
+    ObjectSpec('tree', 'Дерево'),
+    ObjectSpec('path', 'Тропинка'),
+  ]),
+  SceneSpec('toys', 'Игрушки', [245, 230, 200], [
+    ObjectSpec('teddy_bear', 'Мишка'),
+    ObjectSpec('doll', 'Кукла'),
+    ObjectSpec('blocks', 'Кубики'),
+    ObjectSpec('pyramid', 'Пирамидка'),
+    ObjectSpec('toy_car', 'Машинка'),
+    ObjectSpec('spinning_top', 'Юла'),
+    ObjectSpec('drum', 'Барабан'),
+  ]),
+  // The second agreed exception to the 7-object cap: the beach looked
+  // empty with 7, so five more objects were drawn into the art. scene.json
+  // gives the sea itself ("sea_1".."sea_5") and the umbrella ("umbrella_1"
+  // canopy, "umbrella_2" pole) several tap zones each, reusing one recording.
+  SceneSpec('sea', 'Море', [150, 210, 230], [
+    ObjectSpec('sea', 'Море'),
+    ObjectSpec('sun', 'Солнце'),
+    ObjectSpec('seashell', 'Ракушка'),
+    ObjectSpec('crab', 'Краб'),
+    ObjectSpec('fish', 'Рыбка'),
+    ObjectSpec('boat', 'Лодка'),
+    ObjectSpec('umbrella', 'Зонтик'),
+    ObjectSpec('seagull', 'Чайка'),
+    ObjectSpec('cloud', 'Облако'),
+    ObjectSpec('sandcastle', 'Замок'),
+    ObjectSpec('starfish', 'Морская звезда'),
+    ObjectSpec('turtle', 'Черепаха'),
   ]),
 ];
