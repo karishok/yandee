@@ -82,9 +82,10 @@ class _SceneIllustrationState extends State<SceneIllustration> {
   /// null if none does. Objects are checked last-to-first so that, when
   /// rects overlap, the one later in `scene.objects` wins — the same
   /// "painted on top" priority the old Stack ordering gave it. The rects
-  /// are those of whichever picture is currently shown.
+  /// are those of whichever picture is currently shown. In the flashlight
+  /// game only the things to find are there to be hit.
   SceneObject? _objectAt(Offset localPosition, Size size) {
-    for (final object in context.read<SceneController>().visibleObjects.reversed) {
+    for (final object in context.read<SceneController>().touchableObjects.reversed) {
       final rect = Rect.fromLTWH(
         object.rect.x * size.width,
         object.rect.y * size.height,
@@ -174,7 +175,7 @@ class _SceneIllustrationState extends State<SceneIllustration> {
                   Positioned.fill(
                     child: FlashlightDarkness(
                       lightCenter: _lightCenter,
-                      objects: controller.visibleObjects,
+                      objects: controller.touchableObjects,
                       isFound: flashlight.isFound,
                       lightsOn: flashlight.isComplete,
                     ),

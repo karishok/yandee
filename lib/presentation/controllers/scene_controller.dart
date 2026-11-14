@@ -94,15 +94,22 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
     notifyListeners();
   }
 
-  /// Scenes the flashlight game is offered in. A trial on one scene for
-  /// now; once it proves itself it can become a per-scene content flag.
-  static const flashlightSceneIds = {'forest'};
-
-  /// Whether this scene offers the flashlight game.
-  bool get hasFlashlight => flashlightSceneIds.contains(cachedScene.scene.id);
+  /// Whether this scene offers the flashlight game: it does when it has
+  /// something to hide in the dark, i.e. objects with an outline marked up.
+  bool get hasFlashlight => cachedScene.scene.objects.any((object) => object.outline != null);
 
   /// The running flashlight game, or null in any other mode.
   FlashlightMode? get flashlight => _mode is FlashlightMode ? _mode as FlashlightMode : null;
+
+  /// The objects a finger can land on right now, in the picture's tap
+  /// order: all of them, except in the flashlight game, where only the
+  /// things to find count — so a tree or a path whose tap zone lies over
+  /// an animal's doesn't keep the finger from reaching it.
+  List<SceneObject> get touchableObjects {
+    final flashlight = this.flashlight;
+    final objects = visibleObjects;
+    return flashlight == null ? objects : objects.where(flashlight.isTarget).toList();
+  }
 
   SceneObject? get currentFindTarget => _mode is FindMode ? (_mode as FindMode).currentTarget : null;
 

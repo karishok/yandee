@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yandee/data/cached_scene.dart';
+import 'package:yandee/domain/models/object_outline.dart';
 import 'package:yandee/domain/models/object_rect.dart';
 import 'package:yandee/domain/models/scene.dart';
 import 'package:yandee/domain/models/scene_object.dart';
@@ -379,26 +380,38 @@ void main() {
   });
 
   group('flashlight', () {
-    CachedScene sceneWithId(String id) => CachedScene(
-          scene: Scene(
-            id: id,
-            version: 1,
-            title: 'Лес',
-            minAgeMonths: 12,
-            background: 'background.png',
-            objects: [ball, cat],
-          ),
-          directoryPath: '/cache/$id',
-        );
+    const outline = ObjectOutline([(x: 0, y: 0), (x: 0.1, y: 0), (x: 0.05, y: 0.1)]);
+    const fox = SceneObject(id: 'fox', label: 'Лиса', audio: 'fox.wav', rect: rect, outline: outline);
+    const bear = SceneObject(id: 'bear', label: 'Медведь', audio: 'bear.wav', rect: rect, outline: outline);
+    // The ball has no outline: scenery, as far as the flashlight goes.
+    final forest = CachedScene(
+      scene: Scene(
+        id: 'forest',
+        version: 1,
+        title: 'Лес',
+        minAgeMonths: 12,
+        background: 'background.png',
+        objects: [fox, ball, bear],
+      ),
+      directoryPath: '/cache/forest',
+    );
 
-    test('is offered in the forest only', () {
-      expect(SceneController(cachedScene: sceneWithId('forest'), audioSink: FakeAudioSink()).hasFlashlight, isTrue);
+    test('is offered where the scene has objects with an outline', () {
+      expect(SceneController(cachedScene: forest, audioSink: FakeAudioSink()).hasFlashlight, isTrue);
       expect(SceneController(cachedScene: cachedScene, audioSink: FakeAudioSink()).hasFlashlight, isFalse);
     });
 
-    test('lighting objects notifies listeners and ends in the congratulations', () async {
+    test('only the things to find can be touched while the game is on', () {
+      final controller = SceneController(cachedScene: forest, audioSink: FakeAudioSink());
+      expect(controller.touchableObjects, [fox, ball, bear]);
+      controller.setMode(SceneModeType.flashlight);
+      expect(controller.touchableObjects, [fox, bear]);
+      controller.setMode(SceneModeType.explore);
+      expect(controller.touchableObjects, [fox, ball, bear]);
+    });
+
+    test('lighting the targets notifies listeners and ends in the congratulations', () async {
       final audio = FakeAudioSink();
-      final forest = sceneWithId('forest');
       final controller = SceneController(cachedScene: forest, audioSink: audio);
       var notifications = 0;
       controller.addListener(() => notifications++);
@@ -407,19 +420,23 @@ void main() {
       expect(controller.flashlight, isNotNull);
       notifications = 0;
 
-      controller.onObjectTapped(ball);
-      expect(notifications, 1);
-      expect(controller.flashlight!.isFound(ball), isTrue);
-      expect(audio.playedFiles, [forest.audioPathFor(ball)]);
+      controller.onObjectTapped(ball); // scenery: nothing happens
+      expect(notifications, 0);
+      expect(audio.playedFiles, isEmpty);
 
-      controller.onObjectTapped(ball); // already lit: no change to redraw
+      controller.onObjectTapped(fox);
+      expect(notifications, 1);
+      expect(controller.flashlight!.isFound(fox), isTrue);
+      expect(audio.playedFiles, [forest.audioPathFor(fox)]);
+
+      controller.onObjectTapped(fox); // already lit: no change to redraw
       expect(notifications, 1);
 
-      controller.onObjectTapped(cat);
+      controller.onObjectTapped(bear);
       expect(controller.flashlight!.isComplete, isTrue);
       await Future<void>.delayed(Duration.zero);
       await Future<void>.delayed(Duration.zero);
-      expect(audio.playedFiles, contains(forest.audioPathFor(cat)));
+      expect(audio.playedFiles, contains(forest.audioPathFor(bear)));
       expect(controller.showCongrats, isTrue);
     });
   });

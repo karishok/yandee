@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:yandee/domain/models/object_outline.dart';
 import 'package:yandee/domain/models/object_rect.dart';
 import 'package:yandee/domain/models/scene_object.dart';
 import 'package:yandee/domain/modes/flashlight_mode.dart';
@@ -8,11 +9,14 @@ import '../../support/fake_scene_mode_effects.dart';
 
 void main() {
   const rect = ObjectRect(x: 0, y: 0, width: 0.1, height: 0.1);
-  const fox = SceneObject(id: 'fox', label: 'Лиса', audio: 'fox.wav', rect: rect);
-  const tree1 = SceneObject(id: 'tree_1', label: 'Дерево', audio: 'tree.wav', rect: rect);
-  const tree2 = SceneObject(id: 'tree_2', label: 'Дерево', audio: 'tree.wav', rect: rect);
-  const bear = SceneObject(id: 'bear', label: 'Медведь', audio: 'bear.wav', rect: rect);
-  final objects = [fox, tree1, tree2, bear];
+  const outline = ObjectOutline([(x: 0, y: 0), (x: 0.1, y: 0), (x: 0.05, y: 0.1)]);
+  const fox = SceneObject(id: 'fox', label: 'Лиса', audio: 'fox.wav', rect: rect, outline: outline);
+  const hare1 = SceneObject(id: 'hare_1', label: 'Заяц', audio: 'hare.wav', rect: rect, outline: outline);
+  const hare2 = SceneObject(id: 'hare_2', label: 'Заяц', audio: 'hare.wav', rect: rect, outline: outline);
+  const bear = SceneObject(id: 'bear', label: 'Медведь', audio: 'bear.wav', rect: rect, outline: outline);
+  // Scenery: no outline, so not something to find.
+  const tree = SceneObject(id: 'tree', label: 'Дерево', audio: 'tree.wav', rect: rect);
+  final objects = [fox, tree, hare1, hare2, bear];
 
   test('counts things to find by label, starting with none found', () {
     final mode = FlashlightMode(objects: objects, effects: FakeSceneModeEffects())..activate();
@@ -22,7 +26,19 @@ void main() {
     expect(mode.isFound(fox), isFalse);
   });
 
-  test('lighting an object finds it and says its name', () {
+  test('only objects with an outline are things to find', () {
+    final mode = FlashlightMode(objects: objects, effects: FakeSceneModeEffects())..activate();
+    expect(mode.isTarget(fox), isTrue);
+    expect(mode.isTarget(tree), isFalse);
+  });
+
+  test('an object is a target on any picture, outline or not', () {
+    // The realistic picture may have no outline marked up for it.
+    final mode = FlashlightMode(objects: objects, effects: FakeSceneModeEffects())..activate();
+    expect(mode.isTarget(fox.placedAt(rect: rect, outline: null)), isTrue);
+  });
+
+  test('lighting a target finds it and says its name', () {
     final effects = FakeSceneModeEffects();
     final mode = FlashlightMode(objects: objects, effects: effects)..activate();
     mode.onObjectTapped(fox);
@@ -31,31 +47,40 @@ void main() {
     expect(effects.objectAudioCalls, [fox]);
   });
 
-  test('lighting one instance lights every instance with that label', () {
-    final mode = FlashlightMode(objects: objects, effects: FakeSceneModeEffects())..activate();
-    mode.onObjectTapped(tree2);
-    expect(mode.isFound(tree1), isTrue);
-    expect(mode.foundCount, 1);
-  });
-
-  test('lighting a found object again repeats its name without counting twice', () {
+  test('lighting anything else does nothing at all', () {
     final effects = FakeSceneModeEffects();
     final mode = FlashlightMode(objects: objects, effects: effects)..activate();
-    mode.onObjectTapped(tree1);
-    mode.onObjectTapped(tree2);
-    expect(mode.foundCount, 1);
-    expect(effects.objectAudioCalls, [tree1, tree2]);
+    mode.onObjectTapped(tree);
+    expect(mode.foundCount, 0);
+    expect(mode.isFound(tree), isFalse);
+    expect(effects.objectAudioCalls, isEmpty);
   });
 
-  test('finding the last thing says its name, plays the fanfare, then completes the round', () async {
+  test('lighting one instance lights every instance with that label', () {
+    final mode = FlashlightMode(objects: objects, effects: FakeSceneModeEffects())..activate();
+    mode.onObjectTapped(hare2);
+    expect(mode.isFound(hare1), isTrue);
+    expect(mode.foundCount, 1);
+  });
+
+  test('lighting a found target again repeats its name without counting twice', () {
+    final effects = FakeSceneModeEffects();
+    final mode = FlashlightMode(objects: objects, effects: effects)..activate();
+    mode.onObjectTapped(hare1);
+    mode.onObjectTapped(hare2);
+    expect(mode.foundCount, 1);
+    expect(effects.objectAudioCalls, [hare1, hare2]);
+  });
+
+  test('finding the last target says its name, plays the fanfare, then completes the round', () async {
     final effects = FakeSceneModeEffects();
     final mode = FlashlightMode(objects: objects, effects: effects)..activate();
     mode.onObjectTapped(fox);
-    mode.onObjectTapped(tree1);
+    mode.onObjectTapped(hare1);
     mode.onObjectTapped(bear);
     expect(mode.isComplete, isTrue);
     await Future<void>.delayed(Duration.zero);
-    expect(effects.objectAudioCalls, [fox, tree1]);
+    expect(effects.objectAudioCalls, [fox, hare1]);
     expect(effects.announceObjectCalls, [bear]);
     expect(effects.systemPhraseCalls, [SystemPhrase.roundComplete]);
     expect(effects.roundCompletedCalls, 1);

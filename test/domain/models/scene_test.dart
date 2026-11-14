@@ -112,4 +112,100 @@ void main() {
       expect(scene.objectsFor(realistic: true).single.rect.x, 0.12);
     });
   });
+
+  group('outline', () {
+    final jsonWithOutlines = {
+      ...json,
+      'objects': [
+        {
+          'id': 'fox',
+          'label': 'Лиса',
+          'audio': 'fox.wav',
+          'rect': {'x': 0.1, 'y': 0.1, 'width': 0.2, 'height': 0.2},
+          'outline': [
+            [0.1, 0.1],
+            [0.3, 0.1],
+            [0.2, 0.3],
+          ],
+        },
+        {
+          'id': 'hare',
+          'label': 'Заяц',
+          'audio': 'hare.wav',
+          'rect': {'x': 0.5, 'y': 0.1, 'width': 0.2, 'height': 0.2},
+          'outline': [
+            [0.5, 0.1],
+            [0.7, 0.1],
+            [0.6, 0.3],
+          ],
+        },
+        {
+          'id': 'bear',
+          'label': 'Медведь',
+          'audio': 'bear.wav',
+          'rect': {'x': 0.1, 'y': 0.5, 'width': 0.2, 'height': 0.2},
+          'outline': [
+            [0.1, 0.5],
+            [0.3, 0.5],
+            [0.2, 0.7],
+          ],
+        },
+        {
+          'id': 'tree',
+          'label': 'Дерево',
+          'audio': 'tree.wav',
+          'rect': {'x': 0.5, 'y': 0.5, 'width': 0.2, 'height': 0.2},
+        },
+      ],
+      'realistic': {
+        'background': 'background_real.png',
+        'rects': {
+          'fox': {'x': 0.15, 'y': 0.15, 'width': 0.2, 'height': 0.2},
+          'hare': {'x': 0.55, 'y': 0.15, 'width': 0.2, 'height': 0.2},
+        },
+        'outlines': {
+          'fox': [
+            [0.15, 0.15],
+            [0.35, 0.15],
+            [0.25, 0.35],
+          ],
+        },
+      },
+    };
+
+    test('an object without an outline has none', () {
+      expect(Scene.fromJson(json).objects.single.outline, isNull);
+    });
+
+    test('SceneObject.fromJson parses the outline points in order', () {
+      final fox = Scene.fromJson(jsonWithOutlines).objects.first;
+      expect(fox.outline!.points, [(x: 0.1, y: 0.1), (x: 0.3, y: 0.1), (x: 0.2, y: 0.3)]);
+    });
+
+    test('the realistic picture brings its own outline along with its tap zone', () {
+      final fox = Scene.fromJson(jsonWithOutlines).objectsFor(realistic: true).first;
+      expect(fox.rect.x, 0.15);
+      expect(fox.outline!.points.first, (x: 0.15, y: 0.15));
+    });
+
+    test('an object moved on the realistic picture without an outline there has none', () {
+      // The default outline would be drawn in the wrong place.
+      final hare = Scene.fromJson(jsonWithOutlines).objectsFor(realistic: true)[1];
+      expect(hare.rect.x, 0.55);
+      expect(hare.outline, isNull);
+    });
+
+    test('an object the realistic picture leaves in place keeps its outline', () {
+      final bear = Scene.fromJson(jsonWithOutlines).objectsFor(realistic: true)[2];
+      expect(bear.outline!.points.first, (x: 0.1, y: 0.5));
+    });
+
+    test('a realistic variant without outlines parses to none', () {
+      final scene = Scene.fromJson({
+        ...jsonWithOutlines,
+        'realistic': {'background': 'background_real.png'},
+      });
+      expect(scene.realistic!.outlines, isEmpty);
+    });
+  });
 }

@@ -4,18 +4,24 @@ import '../models/scene_object.dart';
 import 'scene_mode.dart';
 import 'scene_mode_effects.dart';
 
-/// The scene is dark; the child moves a flashlight over it and every object
-/// the light reaches lights up for good and says its name. Lighting up the
-/// last one turns the lights on for the whole scene (the round is complete).
+/// The scene is dark; the child moves a flashlight over it looking for the
+/// things hiding there. Each one the light reaches lights up for good and
+/// says its name; lighting up the last one turns the lights on for the
+/// whole scene (the round is complete).
+///
+/// What hides is the objects that have an outline marked up — a handful
+/// per scene (the animals in the forest), not everything on the picture,
+/// so there is dark to search between them. Everything else is scenery
+/// here: the light shows it, and touching it does nothing.
 ///
 /// No order and no wrong answers: the child finds things in whatever order
-/// the light happens to reach them. Objects are counted by label, like in
-/// Find mode — a scene that draws several trees has one "Дерево" to find,
-/// and lighting any of them lights all of them.
+/// the light happens to reach them. Targets are counted by label, like in
+/// Find mode — several of the same thing are one thing to find, and
+/// lighting any of them lights all of them.
 class FlashlightMode implements SceneMode {
   FlashlightMode({required List<SceneObject> objects, required this.effects})
-      : _labels = List.unmodifiable(objects.map((o) => o.label).toSet()) {
-    assert(_labels.isNotEmpty, 'FlashlightMode requires at least one object');
+      : _labels = List.unmodifiable(objects.where((o) => o.outline != null).map((o) => o.label).toSet()) {
+    assert(_labels.isNotEmpty, 'FlashlightMode requires at least one object with an outline');
   }
 
   final SceneModeEffects effects;
@@ -32,6 +38,10 @@ class FlashlightMode implements SceneMode {
   /// Whether every object has been found (the lights are on).
   bool get isComplete => _completed;
 
+  /// Whether [object] is one of the things hiding in the dark. Goes by
+  /// label, so it holds for the object on any of the scene's pictures.
+  bool isTarget(SceneObject object) => _labels.contains(object.label);
+
   /// Whether [object] has already been lit — by itself or by another
   /// instance with the same label.
   bool isFound(SceneObject object) => _foundLabels.contains(object.label);
@@ -44,7 +54,7 @@ class FlashlightMode implements SceneMode {
 
   @override
   void onObjectTapped(SceneObject object) {
-    if (_completed) return;
+    if (_completed || !isTarget(object)) return;
     if (!_foundLabels.add(object.label)) {
       // Already lit: just say its name again, like in Explore mode.
       effects.playObjectAudio(object);

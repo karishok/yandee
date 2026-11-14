@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../domain/models/object_outline.dart';
 import '../../domain/models/scene_object.dart';
 
 /// The night laid over a scene in the flashlight game: everything is dark
@@ -24,7 +25,9 @@ class FlashlightDarkness extends StatefulWidget {
   /// Where the light points, normalized to the picture (0..1 on each axis).
   final Offset lightCenter;
 
-  /// The scene's objects, with the tap zones of the picture being shown.
+  /// The things to find, as they sit on the picture being shown. A found
+  /// one shows through the dark in the shape of its outline (or, with no
+  /// outline on this picture, as a soft oval over its tap zone).
   final List<SceneObject> objects;
 
   /// Whether an object has already been found (and so stays lit).
@@ -152,20 +155,13 @@ class _DarknessPainter extends CustomPainter {
       if (found == null) continue;
       final progress = Curves.easeOutBack
           .transform(((now - found).inMicroseconds / _revealDuration.inMicroseconds).clamp(0.0, 1.0));
-      final rect = _rectOf(object, size);
-      final glow = rect.inflate(rect.shortestSide * 0.12);
-      final shown = Rect.fromCenter(
-        center: glow.center,
-        width: glow.width * progress,
-        height: glow.height * progress,
-      );
-      if (shown.isEmpty) continue;
-      canvas.drawOval(
-        shown,
-        Paint()
-          ..blendMode = BlendMode.dstOut
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, rect.shortestSide * 0.15),
-      );
+      if (progress <= 0) continue;
+      final outline = object.outline;
+      if (outline == null) {
+        _cutOval(canvas, _rectOf(object, size), progress);
+      } else {
+        _cutSilhouette(canvas, _pathOf(outline, size), size, progress);
+      }
     }
 
     canvas.drawCircle(
@@ -193,6 +189,50 @@ class _DarknessPainter extends CustomPainter {
 
     if (hintsVisible) _paintHints(canvas, size, now);
   }
+
+  // The found object's own shape, with a little room around it and a soft
+  // edge, popping out from its middle.
+  void _cutSilhouette(Canvas canvas, Path silhouette, Size size, double progress) {
+    final center = silhouette.getBounds().center;
+    final edge = MaskFilter.blur(BlurStyle.normal, size.width * 0.008);
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.scale(progress);
+    canvas.translate(-center.dx, -center.dy);
+    canvas.drawPath(
+      silhouette,
+      Paint()
+        ..blendMode = BlendMode.dstOut
+        ..maskFilter = edge,
+    );
+    // Stroking the same shape widens the hole past the silhouette, so the
+    // soft edge falls on the scenery around the object, not on the object.
+    canvas.drawPath(
+      silhouette,
+      Paint()
+        ..blendMode = BlendMode.dstOut
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = size.width * 0.02
+        ..strokeJoin = StrokeJoin.round
+        ..maskFilter = edge,
+    );
+    canvas.restore();
+  }
+
+  // For an object with no outline on the picture being shown: a soft oval
+  // over its tap zone.
+  void _cutOval(Canvas canvas, Rect rect, double progress) {
+    final glow = rect.inflate(rect.shortestSide * 0.12);
+    canvas.drawOval(
+      Rect.fromCenter(center: glow.center, width: glow.width * progress, height: glow.height * progress),
+      Paint()
+        ..blendMode = BlendMode.dstOut
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, rect.shortestSide * 0.15),
+    );
+  }
+
+  Path _pathOf(ObjectOutline outline, Size size) => Path()
+    ..addPolygon([for (final point in outline.points) Offset(point.x * size.width, point.y * size.height)], true);
 
   // A soft twinkle on one object still hiding in the dark — just one, so
   // the hint points somewhere instead of scattering sparkles everywhere.
