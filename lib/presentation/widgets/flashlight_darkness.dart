@@ -150,6 +150,9 @@ class _DarknessPainter extends CustomPainter {
     canvas.saveLayer(bounds, Paint());
     canvas.drawRect(bounds, Paint()..color = _night);
 
+    // Objects that share an outline (the pieces of a path) are found
+    // together and need cutting out only once.
+    final cut = <ObjectOutline>{};
     for (final object in objects) {
       final found = foundAt[object.id];
       if (found == null) continue;
@@ -157,6 +160,7 @@ class _DarknessPainter extends CustomPainter {
           .transform(((now - found).inMicroseconds / _revealDuration.inMicroseconds).clamp(0.0, 1.0));
       if (progress <= 0) continue;
       final outline = object.outline;
+      if (outline != null && !cut.add(outline)) continue;
       if (outline == null) {
         _cutOval(canvas, _rectOf(object, size), progress);
       } else {

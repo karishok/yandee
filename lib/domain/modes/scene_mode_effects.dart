@@ -21,7 +21,8 @@ abstract class SceneModeEffects {
   void promptFind(SceneObject target, {bool announceIntro = true});
 
   /// Say an object's name in turn with the other spoken effects (after
-  /// whatever is already being said), completing once it has been said.
+  /// whatever is already being said, never cutting it off), completing
+  /// once the name has been said to the end.
   Future<void> announceObject(SceneObject object);
 
   /// Play a bundled system phrase (hint, correct, fanfare, ...).

@@ -29,6 +29,9 @@ class FlashlightMode implements SceneMode {
   final Set<String> _foundLabels = {};
   bool _completed = false;
 
+  // Names being said or waiting their turn to be.
+  int _namesInFlight = 0;
+
   /// How many distinct things there are to find in this scene.
   int get totalCount => _labels.length;
 
@@ -56,20 +59,34 @@ class FlashlightMode implements SceneMode {
   void onObjectTapped(SceneObject object) {
     if (_completed || !isTarget(object)) return;
     if (!_foundLabels.add(object.label)) {
-      // Already lit: just say its name again, like in Explore mode.
-      effects.playObjectAudio(object);
+      // Already lit: say its name again, but only into silence. A child
+      // sweeping back and forth over lit animals would otherwise pile up
+      // a long backlog of names.
+      if (_namesInFlight == 0) unawaited(_say(object));
       return;
     }
     if (_foundLabels.length < _labels.length) {
-      effects.playObjectAudio(object);
+      unawaited(_say(object));
       return;
     }
     _completed = true;
     unawaited(_finishRound(object));
   }
 
+  // Every name is said in full and in turn: moving the light from the fox
+  // straight on to the hare names the fox, then the hare — a new find
+  // never cuts off the one before it.
+  Future<void> _say(SceneObject object) async {
+    _namesInFlight++;
+    try {
+      await effects.announceObject(object);
+    } finally {
+      _namesInFlight--;
+    }
+  }
+
   Future<void> _finishRound(SceneObject lastObject) async {
-    await effects.announceObject(lastObject);
+    await _say(lastObject);
     await effects.playSystemPhrase(SystemPhrase.roundComplete);
     effects.onRoundCompleted();
   }

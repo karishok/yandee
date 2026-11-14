@@ -89,14 +89,15 @@ void main() {
     expect(withRealistic, containsAll(['forest', 'zoo']));
   });
 
-  test('the forest hides its five animals in the flashlight game', () {
-    final forest = readScene(sceneDirs.singleWhere((dir) => p.basename(dir.path) == 'forest'));
-    // Version 4 is the one that added the outlines: bumping it is what
-    // gets the updated scene re-seeded on devices that already have it.
-    expect(forest.version, greaterThanOrEqualTo(4));
-    expect(
-      forest.objects.where((o) => o.outline != null).map((o) => o.label).toSet(),
-      {'Медведь', 'Лиса', 'Заяц', 'Белка', 'Ёж'},
-    );
-  });
+  // In the scenes that have the flashlight game everything on the picture
+  // is something to find, so every object needs its outline. The versions
+  // are the ones that added them: bumping a scene's version is what gets
+  // it re-seeded on devices that already have the scene.
+  for (final (sceneId, version) in [('forest', 6), ('zoo', 4), ('farm', 6)]) {
+    test('$sceneId: every object can be found in the flashlight game', () {
+      final scene = readScene(sceneDirs.singleWhere((dir) => p.basename(dir.path) == sceneId));
+      expect(scene.version, greaterThanOrEqualTo(version));
+      expect(scene.objects.where((o) => o.outline == null).map((o) => o.id), isEmpty);
+    });
+  }
 }

@@ -427,6 +427,7 @@ void main() {
       controller.onObjectTapped(fox);
       expect(notifications, 1);
       expect(controller.flashlight!.isFound(fox), isTrue);
+      await Future<void>.delayed(Duration.zero);
       expect(audio.playedFiles, [forest.audioPathFor(fox)]);
 
       controller.onObjectTapped(fox); // already lit: no change to redraw
@@ -437,6 +438,34 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       await Future<void>.delayed(Duration.zero);
       expect(audio.playedFiles, contains(forest.audioPathFor(bear)));
+      expect(controller.showCongrats, isTrue);
+    });
+
+    test('each name is said to the end before the next one, and before the fanfare', () async {
+      final audio = FakeAudioSink();
+      final controller = SceneController(cachedScene: forest, audioSink: audio);
+      final foxPath = forest.audioPathFor(fox);
+      final bearPath = forest.audioPathFor(bear);
+      audio.holdFile(foxPath);
+      audio.holdFile(bearPath);
+      controller.setMode(SceneModeType.flashlight);
+
+      // The light goes from the fox straight on to the bear.
+      controller.onObjectTapped(fox);
+      controller.onObjectTapped(bear);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedFiles, [foxPath], reason: 'the bear waits for the fox to be named in full');
+
+      audio.releaseFile(foxPath);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedFiles, [foxPath, bearPath]);
+      expect(audio.playedSystemPhrases, isEmpty, reason: 'the fanfare waits for the last name');
+      expect(controller.showCongrats, isFalse);
+
+      audio.releaseFile(bearPath);
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedSystemPhrases, [SystemPhrase.roundComplete]);
       expect(controller.showCongrats, isTrue);
     });
   });

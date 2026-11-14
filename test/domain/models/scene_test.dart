@@ -200,6 +200,16 @@ void main() {
       expect(bear.outline!.points.first, (x: 0.1, y: 0.5));
     });
 
+    test('outlines with the same points are equal', () {
+      // Every piece of a path carries the whole path's outline; the game
+      // uses this to draw it once.
+      final objects = Scene.fromJson(jsonWithOutlines).objects;
+      final again = Scene.fromJson(jsonWithOutlines).objects;
+      expect(objects.first.outline, again.first.outline);
+      expect(objects.first.outline.hashCode, again.first.outline.hashCode);
+      expect(objects.first.outline, isNot(objects[1].outline));
+    });
+
     test('a realistic variant without outlines parses to none', () {
       final scene = Scene.fromJson({
         ...jsonWithOutlines,

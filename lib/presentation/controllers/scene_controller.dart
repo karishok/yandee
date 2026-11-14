@@ -179,7 +179,9 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
 
   @override
   Future<void> announceObject(SceneObject object) {
-    final playback = _voiceQueue.then((_) => _audio.playFile(cachedScene.audioPathFor(object)));
+    // To the end, not just started: the next thing in the queue (another
+    // name, the round-complete fanfare) must not talk over this one.
+    final playback = _voiceQueue.then((_) => _audio.playFileToEnd(cachedScene.audioPathFor(object)));
     _voiceQueue = playback;
     return playback;
   }

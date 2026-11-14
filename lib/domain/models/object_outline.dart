@@ -15,4 +15,20 @@ class ObjectOutline {
         for (final point in json.cast<List<dynamic>>())
           (x: (point[0] as num).toDouble(), y: (point[1] as num).toDouble()),
       ]);
+
+  /// Outlines are the same when they have the same corners in the same
+  /// order. Several objects can share one — every piece of a path carries
+  /// the whole path's outline.
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! ObjectOutline || other.points.length != points.length) return false;
+    for (var i = 0; i < points.length; i++) {
+      if (other.points[i] != points[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => Object.hashAll(points);
 }
