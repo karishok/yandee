@@ -46,19 +46,7 @@ void main() {
     mode.onObjectTapped(fox);
     expect(mode.isFound(fox), isTrue);
     expect(mode.foundCount, 1);
-    expect(effects.announceObjectCalls, [fox]);
-  });
-
-  test('names found in a row are each said in full, in the order found', () {
-    // Moving the light from the fox straight on to the hare: the fox is
-    // still being named, and the hare's name queues up behind it rather
-    // than cutting it off (the effects say them one after another).
-    final effects = FakeSceneModeEffects()..announcementGate = Completer<void>();
-    final mode = FlashlightMode(objects: objects, effects: effects)..activate();
-    mode.onObjectTapped(fox);
-    mode.onObjectTapped(hare1);
-    expect(effects.announceObjectCalls, [fox, hare1]);
-    expect(effects.objectAudioCalls, isEmpty);
+    expect(effects.objectAudioCalls, [fox]);
   });
 
   test('lighting anything else does nothing at all', () {
@@ -78,32 +66,15 @@ void main() {
     expect(mode.foundCount, 1);
   });
 
-  test('lighting a found target again repeats its name without counting twice', () async {
+  test('lighting a found target again asks for its name again without counting twice', () {
+    // Whether it is actually said is up to the effects: a name being said
+    // is never cut off, and only the latest one asked for meanwhile follows.
     final effects = FakeSceneModeEffects();
     final mode = FlashlightMode(objects: objects, effects: effects)..activate();
     mode.onObjectTapped(hare1);
-    await Future<void>.delayed(Duration.zero); // its name has been said
     mode.onObjectTapped(hare2);
     expect(mode.foundCount, 1);
-    expect(effects.announceObjectCalls, [hare1, hare2]);
-  });
-
-  test('a found target is not repeated while a name is still being said', () async {
-    // Sweeping back and forth over lit animals must not pile up a backlog
-    // of names: a repeat is only worth saying into silence.
-    final gate = Completer<void>();
-    final effects = FakeSceneModeEffects()..announcementGate = gate;
-    final mode = FlashlightMode(objects: objects, effects: effects)..activate();
-    mode.onObjectTapped(fox);
-    mode.onObjectTapped(fox);
-    mode.onObjectTapped(hare1);
-    mode.onObjectTapped(fox);
-    expect(effects.announceObjectCalls, [fox, hare1]);
-
-    gate.complete();
-    await Future<void>.delayed(Duration.zero);
-    mode.onObjectTapped(fox);
-    expect(effects.announceObjectCalls, [fox, hare1, fox]);
+    expect(effects.objectAudioCalls, [hare1, hare2]);
   });
 
   test('finding the last target says its name, plays the fanfare, then completes the round', () async {
@@ -114,7 +85,26 @@ void main() {
     mode.onObjectTapped(bear);
     expect(mode.isComplete, isTrue);
     await Future<void>.delayed(Duration.zero);
-    expect(effects.announceObjectCalls, [fox, hare1, bear]);
+    expect(effects.objectAudioCalls, [fox, hare1]);
+    expect(effects.announceObjectCalls, [bear]);
+    expect(effects.systemPhraseCalls, [SystemPhrase.roundComplete]);
+    expect(effects.roundCompletedCalls, 1);
+  });
+
+  test('the fanfare waits for the last name to be said', () async {
+    final gate = Completer<void>();
+    final effects = FakeSceneModeEffects()..announcementGate = gate;
+    final mode = FlashlightMode(objects: objects, effects: effects)..activate();
+    mode.onObjectTapped(fox);
+    mode.onObjectTapped(hare1);
+    mode.onObjectTapped(bear);
+    await Future<void>.delayed(Duration.zero);
+    expect(effects.announceObjectCalls, [bear]);
+    expect(effects.systemPhraseCalls, isEmpty);
+    expect(effects.roundCompletedCalls, 0);
+
+    gate.complete();
+    await Future<void>.delayed(Duration.zero);
     expect(effects.systemPhraseCalls, [SystemPhrase.roundComplete]);
     expect(effects.roundCompletedCalls, 1);
   });
@@ -126,8 +116,10 @@ void main() {
       mode.onObjectTapped(object);
     }
     await Future<void>.delayed(Duration.zero);
+    effects.objectAudioCalls.clear();
     effects.announceObjectCalls.clear();
     mode.onObjectTapped(fox);
+    expect(effects.objectAudioCalls, isEmpty);
     expect(effects.announceObjectCalls, isEmpty);
     expect(effects.roundCompletedCalls, 1);
   });

@@ -46,6 +46,7 @@ updated scene.json is re-seeded on devices.
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -71,7 +72,11 @@ def subject_masks(image):
     with tempfile.TemporaryDirectory() as tmp:
         source = Path(tmp) / "picture.png"
         cv2.imwrite(str(source), image)
-        subprocess.run(["swift", str(HELPER), str(source), tmp, "mask"], check=True, capture_output=True)
+        # `swift file.swift` recompiles the helper on every call; for a long
+        # run, compile it once (`swiftc -O tool/subject_masks.swift -o X`)
+        # and point SUBJECT_MASKS_BIN at the result.
+        helper = [os.environ["SUBJECT_MASKS_BIN"]] if os.environ.get("SUBJECT_MASKS_BIN") else ["swift", str(HELPER)]
+        subprocess.run([*helper, str(source), tmp, "mask"], check=True, capture_output=True)
         return [cv2.imread(str(path), cv2.IMREAD_GRAYSCALE) > 127 for path in sorted(Path(tmp).glob("mask_*.png"))]
 
 

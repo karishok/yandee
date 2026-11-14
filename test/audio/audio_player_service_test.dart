@@ -58,7 +58,6 @@ void main() {
       final clipPlayer = FakeAudioPlayer();
       final service = AudioPlayerService(
         player: FakeAudioPlayer(),
-        explorePlayer: FakeAudioPlayer(),
         interruptiblePlayer: FakeAudioPlayer(),
         clipPlayerFactory: () => clipPlayer,
       );
@@ -79,7 +78,6 @@ void main() {
       final clipPlayer = FakeAudioPlayer(length: const Duration(seconds: 1));
       final service = AudioPlayerService(
         player: FakeAudioPlayer(),
-        explorePlayer: FakeAudioPlayer(),
         interruptiblePlayer: FakeAudioPlayer(),
         clipPlayerFactory: () => clipPlayer,
       );
@@ -100,7 +98,6 @@ void main() {
       final clipPlayer = FakeAudioPlayer(starts: false);
       final service = AudioPlayerService(
         player: FakeAudioPlayer(),
-        explorePlayer: FakeAudioPlayer(),
         interruptiblePlayer: FakeAudioPlayer(),
         clipPlayerFactory: () => clipPlayer,
       );
@@ -113,17 +110,16 @@ void main() {
     });
   });
 
-  testWidgets('playExploreFile comes back even when the name never starts', (tester) async {
-    // SceneController holds every later Explore name back until this
-    // returns, so a start that hangs must not hang it too.
+  testWidgets('playFile comes back even when the clip never starts', (tester) async {
+    // The voice queue holds everything after it back until this returns,
+    // so a start that hangs must not hang the queue too.
     final service = AudioPlayerService(
-      player: FakeAudioPlayer(),
-      explorePlayer: FakeAudioPlayer(starts: false),
+      player: FakeAudioPlayer(starts: false),
       interruptiblePlayer: FakeAudioPlayer(),
       clipPlayerFactory: FakeAudioPlayer.new,
     );
     var done = false;
-    unawaited(service.playExploreFile('/cache/fox.wav').then((_) => done = true));
+    unawaited(service.playFile('/cache/fox.wav').then((_) => done = true));
 
     await tester.pump(const Duration(seconds: 10));
     expect(done, isTrue);
