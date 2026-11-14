@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yandee/data/cached_scene.dart';
+import 'package:yandee/domain/models/object_outline.dart';
 import 'package:yandee/domain/models/object_rect.dart';
 import 'package:yandee/domain/models/scene.dart';
 import 'package:yandee/domain/models/scene_object.dart';
@@ -375,6 +376,97 @@ void main() {
 
       expect(controller.modeType, SceneModeType.find);
       expect(controller.currentFindTarget, ball);
+    });
+  });
+
+  group('flashlight', () {
+    const outline = ObjectOutline([(x: 0, y: 0), (x: 0.1, y: 0), (x: 0.05, y: 0.1)]);
+    const fox = SceneObject(id: 'fox', label: 'Лиса', audio: 'fox.wav', rect: rect, outline: outline);
+    const bear = SceneObject(id: 'bear', label: 'Медведь', audio: 'bear.wav', rect: rect, outline: outline);
+    // The ball has no outline: scenery, as far as the flashlight goes.
+    final forest = CachedScene(
+      scene: Scene(
+        id: 'forest',
+        version: 1,
+        title: 'Лес',
+        minAgeMonths: 12,
+        background: 'background.png',
+        objects: [fox, ball, bear],
+      ),
+      directoryPath: '/cache/forest',
+    );
+
+    test('is offered where the scene has objects with an outline', () {
+      expect(SceneController(cachedScene: forest, audioSink: FakeAudioSink()).hasFlashlight, isTrue);
+      expect(SceneController(cachedScene: cachedScene, audioSink: FakeAudioSink()).hasFlashlight, isFalse);
+    });
+
+    test('only the things to find can be touched while the game is on', () {
+      final controller = SceneController(cachedScene: forest, audioSink: FakeAudioSink());
+      expect(controller.touchableObjects, [fox, ball, bear]);
+      controller.setMode(SceneModeType.flashlight);
+      expect(controller.touchableObjects, [fox, bear]);
+      controller.setMode(SceneModeType.explore);
+      expect(controller.touchableObjects, [fox, ball, bear]);
+    });
+
+    test('lighting the targets notifies listeners and ends in the congratulations', () async {
+      final audio = FakeAudioSink();
+      final controller = SceneController(cachedScene: forest, audioSink: audio);
+      var notifications = 0;
+      controller.addListener(() => notifications++);
+
+      controller.setMode(SceneModeType.flashlight);
+      expect(controller.flashlight, isNotNull);
+      notifications = 0;
+
+      controller.onObjectTapped(ball); // scenery: nothing happens
+      expect(notifications, 0);
+      expect(audio.playedFiles, isEmpty);
+
+      controller.onObjectTapped(fox);
+      expect(notifications, 1);
+      expect(controller.flashlight!.isFound(fox), isTrue);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedFiles, [forest.audioPathFor(fox)]);
+
+      controller.onObjectTapped(fox); // already lit: no change to redraw
+      expect(notifications, 1);
+
+      controller.onObjectTapped(bear);
+      expect(controller.flashlight!.isComplete, isTrue);
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedFiles, contains(forest.audioPathFor(bear)));
+      expect(controller.showCongrats, isTrue);
+    });
+
+    test('each name is said to the end before the next one, and before the fanfare', () async {
+      final audio = FakeAudioSink();
+      final controller = SceneController(cachedScene: forest, audioSink: audio);
+      final foxPath = forest.audioPathFor(fox);
+      final bearPath = forest.audioPathFor(bear);
+      audio.holdFile(foxPath);
+      audio.holdFile(bearPath);
+      controller.setMode(SceneModeType.flashlight);
+
+      // The light goes from the fox straight on to the bear.
+      controller.onObjectTapped(fox);
+      controller.onObjectTapped(bear);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedFiles, [foxPath], reason: 'the bear waits for the fox to be named in full');
+
+      audio.releaseFile(foxPath);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedFiles, [foxPath, bearPath]);
+      expect(audio.playedSystemPhrases, isEmpty, reason: 'the fanfare waits for the last name');
+      expect(controller.showCongrats, isFalse);
+
+      audio.releaseFile(bearPath);
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedSystemPhrases, [SystemPhrase.roundComplete]);
+      expect(controller.showCongrats, isTrue);
     });
   });
 }

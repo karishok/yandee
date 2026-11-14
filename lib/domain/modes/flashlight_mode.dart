@@ -1,0 +1,93 @@
+import 'dart:async';
+
+import '../models/scene_object.dart';
+import 'scene_mode.dart';
+import 'scene_mode_effects.dart';
+
+/// The scene is dark; the child moves a flashlight over it looking for the
+/// things hiding there. Each one the light reaches lights up for good and
+/// says its name; lighting up the last one turns the lights on for the
+/// whole scene (the round is complete).
+///
+/// What hides is the objects that have an outline marked up — a handful
+/// per scene (the animals in the forest), not everything on the picture,
+/// so there is dark to search between them. Everything else is scenery
+/// here: the light shows it, and touching it does nothing.
+///
+/// No order and no wrong answers: the child finds things in whatever order
+/// the light happens to reach them. Targets are counted by label, like in
+/// Find mode — several of the same thing are one thing to find, and
+/// lighting any of them lights all of them.
+class FlashlightMode implements SceneMode {
+  FlashlightMode({required List<SceneObject> objects, required this.effects})
+      : _labels = List.unmodifiable(objects.where((o) => o.outline != null).map((o) => o.label).toSet()) {
+    assert(_labels.isNotEmpty, 'FlashlightMode requires at least one object with an outline');
+  }
+
+  final SceneModeEffects effects;
+  final List<String> _labels;
+  final Set<String> _foundLabels = {};
+  bool _completed = false;
+
+  // Names being said or waiting their turn to be.
+  int _namesInFlight = 0;
+
+  /// How many distinct things there are to find in this scene.
+  int get totalCount => _labels.length;
+
+  /// How many of them the light has reached so far.
+  int get foundCount => _foundLabels.length;
+
+  /// Whether every object has been found (the lights are on).
+  bool get isComplete => _completed;
+
+  /// Whether [object] is one of the things hiding in the dark. Goes by
+  /// label, so it holds for the object on any of the scene's pictures.
+  bool isTarget(SceneObject object) => _labels.contains(object.label);
+
+  /// Whether [object] has already been lit — by itself or by another
+  /// instance with the same label.
+  bool isFound(SceneObject object) => _foundLabels.contains(object.label);
+
+  @override
+  void activate() {
+    _foundLabels.clear();
+    _completed = false;
+  }
+
+  @override
+  void onObjectTapped(SceneObject object) {
+    if (_completed || !isTarget(object)) return;
+    if (!_foundLabels.add(object.label)) {
+      // Already lit: say its name again, but only into silence. A child
+      // sweeping back and forth over lit animals would otherwise pile up
+      // a long backlog of names.
+      if (_namesInFlight == 0) unawaited(_say(object));
+      return;
+    }
+    if (_foundLabels.length < _labels.length) {
+      unawaited(_say(object));
+      return;
+    }
+    _completed = true;
+    unawaited(_finishRound(object));
+  }
+
+  // Every name is said in full and in turn: moving the light from the fox
+  // straight on to the hare names the fox, then the hare — a new find
+  // never cuts off the one before it.
+  Future<void> _say(SceneObject object) async {
+    _namesInFlight++;
+    try {
+      await effects.announceObject(object);
+    } finally {
+      _namesInFlight--;
+    }
+  }
+
+  Future<void> _finishRound(SceneObject lastObject) async {
+    await _say(lastObject);
+    await effects.playSystemPhrase(SystemPhrase.roundComplete);
+    effects.onRoundCompleted();
+  }
+}

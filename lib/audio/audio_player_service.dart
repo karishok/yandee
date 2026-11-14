@@ -14,13 +14,39 @@ const Map<SystemPhrase, String> _systemPhraseAssets = {
 /// Thin `audioplayers` wrapper. Playback errors are logged and swallowed —
 /// per spec, sound must never block gameplay.
 class AudioPlayerService implements AudioSink {
-  AudioPlayerService({AudioPlayer? player, AudioPlayer? explorePlayer, AudioPlayer? interruptiblePlayer})
-      : _player = player ?? AudioPlayer(),
+  AudioPlayerService({
+    AudioPlayer? player,
+    AudioPlayer? explorePlayer,
+    AudioPlayer? interruptiblePlayer,
+    AudioPlayer Function() clipPlayerFactory = AudioPlayer.new,
+  })  : _player = player ?? AudioPlayer(),
         _explorePlayer = explorePlayer ?? AudioPlayer(),
-        _interruptiblePlayer = interruptiblePlayer ?? AudioPlayer();
+        _interruptiblePlayer = interruptiblePlayer ?? AudioPlayer(),
+        _clipPlayerFactory = clipPlayerFactory;
+
+  // Makes the throwaway player each clip that is waited on to its end gets
+  // (see _playToEnd). Tests swap in a fake.
+  final AudioPlayer Function() _clipPlayerFactory;
 
   final AudioPlayer _player;
   final AudioPlayer _explorePlayer;
+
+  // The game queues things up behind these calls — the next name, the
+  // round-complete fanfare, the return to Explore — so none of them may
+  // wait on the native player without a limit. A player that never says a
+  // clip started or ended (the app went to the background mid-phrase, the
+  // audio route changed, a phone call cut in, a new clip was requested the
+  // instant the last one finished) would otherwise leave the scene silent
+  // and stuck until it is reopened. Local clips start within a fraction of
+  // a second, so these limits are far from normal play.
+  static const _startLimit = Duration(seconds: 3);
+
+  // How long past its own length a clip may run before its end is assumed.
+  static const _endSlack = Duration(seconds: 2);
+
+  // Stands in for the length of a clip the player can't tell the length of;
+  // longer than any phrase or name the app has.
+  static const _unknownClipLength = Duration(seconds: 6);
 
   // A player dedicated to `playInterruptibleSystemPhrase`, kept separate
   // from `_player` (Find-mode target audio) so a rapid string of
@@ -34,11 +60,14 @@ class AudioPlayerService implements AudioSink {
   Future<void> playFile(String absolutePath) => _playSafely(DeviceFileSource(absolutePath));
 
   @override
+  Future<void> playFileToEnd(String absolutePath) => _playToEnd(DeviceFileSource(absolutePath));
+
+  @override
   Future<void> playExploreFile(String absolutePath) =>
       _playSafely(DeviceFileSource(absolutePath), player: _explorePlayer);
 
   @override
-  Future<void> playSystemPhrase(SystemPhrase phrase) => _playPhraseAndWait(phrase);
+  Future<void> playSystemPhrase(SystemPhrase phrase) => _playToEnd(_phraseSource(phrase));
 
   @override
   Future<void> playInterruptibleSystemPhrase(SystemPhrase phrase) =>
@@ -61,12 +90,15 @@ class AudioPlayerService implements AudioSink {
 
   @override
   Future<void> playSystemPhraseThenFile(SystemPhrase phrase, String objectAudioPath) async {
-    await _playPhraseAndWait(phrase);
+    await _playToEnd(_phraseSource(phrase));
     await _playSafely(DeviceFileSource(objectAudioPath));
   }
 
-  // Plays a system phrase on a dedicated, throwaway player and waits for it
-  // to actually finish (not just start). A dedicated player is required
+  Source _phraseSource(SystemPhrase phrase) => AssetSource(_systemPhraseAssets[phrase]!);
+
+  // Plays a clip (a system phrase, or an object's name that must be heard
+  // in full) on a dedicated, throwaway player and waits for it to actually
+  // finish (not just start). A dedicated player is required
   // because `audioplayers` only fires `onPlayerComplete` for a track that
   // finishes naturally, not one that gets interrupted. If this played on
   // the *shared* player, any other call (e.g. `playFile`/`playSystemPhrase`
@@ -77,12 +109,18 @@ class AudioPlayerService implements AudioSink {
   // other call, so its completion always means its own track, which in
   // turn means callers that `await` this can rely on the phrase having
   // truly finished before doing anything that should follow it.
-  Future<void> _playPhraseAndWait(SystemPhrase phrase) async {
-    final phrasePlayer = AudioPlayer();
+  //
+  // Both waits are bounded (see _startLimit): the clip not being heard to
+  // the end is a glitch, the game freezing behind it is not acceptable.
+  Future<void> _playToEnd(Source source) async {
+    final phrasePlayer = _clipPlayerFactory();
     try {
-      final completed = phrasePlayer.onPlayerComplete.first;
-      await phrasePlayer.play(AssetSource(_systemPhraseAssets[phrase]!));
-      await completed;
+      // If the wait below is abandoned, this later fails with "stream
+      // closed" when the player is disposed; that is not an error.
+      final completed = phrasePlayer.onPlayerComplete.first..ignore();
+      await phrasePlayer.play(source).timeout(_startLimit);
+      final length = await _lengthOf(phrasePlayer) ?? _unknownClipLength;
+      await completed.timeout(length + _endSlack);
     } catch (error, stackTrace) {
       developer.log('Audio playback failed', name: 'AudioPlayerService', error: error, stackTrace: stackTrace);
     } finally {
@@ -93,16 +131,24 @@ class AudioPlayerService implements AudioSink {
   Future<void> _playInterruptiblePhraseAndWait(SystemPhrase phrase) async {
     try {
       final completed = _interruptiblePlayer.onPlayerComplete.first;
-      await _interruptiblePlayer.play(AssetSource(_systemPhraseAssets[phrase]!));
+      await _interruptiblePlayer.play(_phraseSource(phrase));
       await completed;
     } catch (error, stackTrace) {
       developer.log('Audio playback failed', name: 'AudioPlayerService', error: error, stackTrace: stackTrace);
     }
   }
 
+  Future<Duration?> _lengthOf(AudioPlayer player) async {
+    try {
+      return await player.getDuration().timeout(const Duration(seconds: 1));
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _playSafely(Source source, {AudioPlayer? player}) async {
     try {
-      await (player ?? _player).play(source);
+      await (player ?? _player).play(source).timeout(_startLimit);
     } catch (error, stackTrace) {
       developer.log('Audio playback failed', name: 'AudioPlayerService', error: error, stackTrace: stackTrace);
     }

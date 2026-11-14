@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:yandee/domain/models/scene_object.dart';
 import 'package:yandee/domain/modes/scene_mode_effects.dart';
 
@@ -6,7 +8,12 @@ class FakeSceneModeEffects implements SceneModeEffects {
   final List<SceneObject> promptFindCalls = [];
   final List<bool> promptFindAnnounceIntroCalls = [];
   final List<SystemPhrase> systemPhraseCalls = [];
+  final List<SceneObject> announceObjectCalls = [];
   int roundCompletedCalls = 0;
+
+  /// While set, [announceObject] records its call but doesn't finish until
+  /// this completes — a name that is still being said.
+  Completer<void>? announcementGate;
 
   @override
   void playObjectAudio(SceneObject object) => objectAudioCalls.add(object);
@@ -15,6 +22,12 @@ class FakeSceneModeEffects implements SceneModeEffects {
   void promptFind(SceneObject target, {bool announceIntro = true}) {
     promptFindCalls.add(target);
     promptFindAnnounceIntroCalls.add(announceIntro);
+  }
+
+  @override
+  Future<void> announceObject(SceneObject object) async {
+    announceObjectCalls.add(object);
+    await announcementGate?.future;
   }
 
   @override

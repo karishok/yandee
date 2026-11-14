@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import 'package:yandee/data/cached_scene.dart';
+import 'package:yandee/domain/models/object_outline.dart';
 import 'package:yandee/domain/models/object_rect.dart';
 import 'package:yandee/domain/models/scene.dart';
 import 'package:yandee/domain/models/scene_object.dart';
@@ -417,4 +418,88 @@ void main() {
       ]);
     },
   );
+
+  testWidgets('in the flashlight game scenery on top of a target does not shadow it', (tester) async {
+    late Directory tempDir;
+    late CachedScene cachedScene;
+    late SceneController controller;
+    final audio = FakeAudioSink();
+    // `front` sits on top of `hidden` (later in the list wins a tap), and
+    // only `hidden` is something to find.
+    const hidden = SceneObject(
+      id: 'hidden',
+      label: 'Лиса',
+      audio: 'fox.wav',
+      rect: ObjectRect(x: 0.2, y: 0.4, width: 0.4, height: 0.4),
+      outline: ObjectOutline([(x: 0.2, y: 0.4), (x: 0.6, y: 0.4), (x: 0.4, y: 0.8)]),
+    );
+    // Scenery well away from both.
+    const far = SceneObject(
+      id: 'far',
+      label: 'Дерево',
+      audio: 'tree.wav',
+      rect: ObjectRect(x: 0.8, y: 0.1, width: 0.1, height: 0.1),
+    );
+
+    await tester.binding.setSurfaceSize(const Size(800, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.runAsync(() async {
+      tempDir = await Directory.systemTemp.createTemp('yandee_illustration_flashlight_test_');
+      await writeFixturePng(tempDir, 'background.png', width: 400, height: 300);
+      cachedScene = CachedScene(
+        scene: Scene(
+          id: 'demo',
+          version: 1,
+          title: 'Демо',
+          minAgeMonths: 12,
+          background: 'background.png',
+          objects: [hidden, front, far],
+        ),
+        directoryPath: tempDir.path,
+      );
+      controller = SceneController(cachedScene: cachedScene, audioSink: audio);
+      await tester.pumpWidget(MaterialApp(
+        home: SizedBox(
+          width: 800,
+          height: 800,
+          child: ChangeNotifierProvider.value(
+            value: controller,
+            child: SceneIllustration(cachedScene: cachedScene),
+          ),
+        ),
+      ));
+      for (var i = 0; i < 20 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await tester.pump();
+      }
+    });
+    addTearDown(() => tempDir.delete(recursive: true));
+    addTearDown(controller.dispose);
+
+    // Explore: the object on top answers.
+    await tester.tapAt(tester.getCenter(find.byKey(const ValueKey('object_zone_front'))));
+    await tester.pump();
+    expect(audio.playedFiles, [cachedScene.audioPathFor(front)]);
+
+    controller.setMode(SceneModeType.flashlight);
+    await tester.pump();
+    audio.playedFiles.clear();
+
+    // Scenery alone: silent, nothing found.
+    await tester.tapAt(tester.getCenter(find.byKey(const ValueKey('object_zone_far'))));
+    await tester.pump();
+    expect(audio.playedFiles, isEmpty);
+    expect(controller.flashlight!.foundCount, 0);
+
+    // The same spot as before now reaches the target underneath, and that
+    // being the only target, finishes the round.
+    await tester.tapAt(tester.getCenter(find.byKey(const ValueKey('object_zone_front'))));
+    await tester.pump();
+    expect(controller.flashlight!.isFound(hidden), isTrue);
+    expect(controller.flashlight!.isComplete, isTrue);
+
+    // Let the darkness fade and the congratulations timer run out.
+    await tester.pump(const Duration(seconds: 3));
+  });
 }

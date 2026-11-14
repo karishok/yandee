@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
+import 'package:yandee/domain/models/object_outline.dart';
 import 'package:yandee/domain/models/scene.dart';
 
 /// Checks the scenes shipped in `assets/demo_content` against the files
@@ -49,6 +50,35 @@ void main() {
       // for an object that doesn't exist) is a mark-up mistake.
       expect(realistic.rects.keys.toSet(), scene.objects.map((o) => o.id).toSet());
     });
+
+    test('$sceneId: outlines are polygons inside the picture, for objects that exist', () {
+      final scene = readScene(dir);
+      final outlines = {
+        for (final object in scene.objects)
+          if (object.outline != null) object.id: object.outline!,
+        for (final entry in (scene.realistic?.outlines ?? const <String, ObjectOutline>{}).entries)
+          '${entry.key} (realistic)': entry.value,
+      };
+      for (final entry in outlines.entries) {
+        expect(entry.value.points.length, greaterThanOrEqualTo(3), reason: entry.key);
+        for (final point in entry.value.points) {
+          expect(point.x, inInclusiveRange(0, 1), reason: entry.key);
+          expect(point.y, inInclusiveRange(0, 1), reason: entry.key);
+        }
+      }
+      final ids = scene.objects.map((o) => o.id).toSet();
+      expect(ids, containsAll(scene.realistic?.outlines.keys ?? const <String>[]));
+    });
+
+    test('$sceneId: a flashlight target has an outline on the realistic picture too', () {
+      final scene = readScene(dir);
+      final realistic = scene.realistic;
+      if (realistic == null) return;
+      // Without one a found target falls back to a blurry oval over its
+      // tap zone on that picture — it works, but it is a mark-up gap.
+      final targets = scene.objects.where((o) => o.outline != null).map((o) => o.id).toSet();
+      expect(realistic.outlines.keys.toSet(), targets);
+    });
   }
 
   test('the forest and the zoo have a realistic picture', () {
@@ -58,4 +88,16 @@ void main() {
     ];
     expect(withRealistic, containsAll(['forest', 'zoo']));
   });
+
+  // In the scenes that have the flashlight game everything on the picture
+  // is something to find, so every object needs its outline. The versions
+  // are the ones that added them: bumping a scene's version is what gets
+  // it re-seeded on devices that already have the scene.
+  for (final (sceneId, version) in [('forest', 6), ('zoo', 4), ('farm', 6)]) {
+    test('$sceneId: every object can be found in the flashlight game', () {
+      final scene = readScene(sceneDirs.singleWhere((dir) => p.basename(dir.path) == sceneId));
+      expect(scene.version, greaterThanOrEqualTo(version));
+      expect(scene.objects.where((o) => o.outline == null).map((o) => o.id), isEmpty);
+    });
+  }
 }

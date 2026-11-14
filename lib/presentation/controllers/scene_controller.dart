@@ -7,10 +7,11 @@ import '../../data/cached_scene.dart';
 import '../../domain/models/scene_object.dart';
 import '../../domain/modes/explore_mode.dart';
 import '../../domain/modes/find_mode.dart';
+import '../../domain/modes/flashlight_mode.dart';
 import '../../domain/modes/scene_mode.dart';
 import '../../domain/modes/scene_mode_effects.dart';
 
-enum SceneModeType { explore, find }
+enum SceneModeType { explore, find, flashlight }
 
 /// Owns the active [SceneMode] for one open scene, and is where mode
 /// switching, audio dispatch, and the Find-round congratulations timing
@@ -93,6 +94,23 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
     notifyListeners();
   }
 
+  /// Whether this scene offers the flashlight game: it does when it has
+  /// something to hide in the dark, i.e. objects with an outline marked up.
+  bool get hasFlashlight => cachedScene.scene.objects.any((object) => object.outline != null);
+
+  /// The running flashlight game, or null in any other mode.
+  FlashlightMode? get flashlight => _mode is FlashlightMode ? _mode as FlashlightMode : null;
+
+  /// The objects a finger can land on right now, in the picture's tap
+  /// order: all of them, except in the flashlight game, where only the
+  /// things to find count — so a tree or a path whose tap zone lies over
+  /// an animal's doesn't keep the finger from reaching it.
+  List<SceneObject> get touchableObjects {
+    final flashlight = this.flashlight;
+    final objects = visibleObjects;
+    return flashlight == null ? objects : objects.where(flashlight.isTarget).toList();
+  }
+
   SceneObject? get currentFindTarget => _mode is FindMode ? (_mode as FindMode).currentTarget : null;
 
   void setMode(SceneModeType type) {
@@ -100,14 +118,22 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
     _congratsTimer?.cancel();
     _showCongrats = false;
     _modeType = type;
-    _mode = type == SceneModeType.explore
-        ? ExploreMode(effects: this)
-        : FindMode(objects: cachedScene.scene.objects, effects: this, shuffle: findModeShuffle);
+    _mode = switch (type) {
+      SceneModeType.explore => ExploreMode(effects: this),
+      SceneModeType.find => FindMode(objects: cachedScene.scene.objects, effects: this, shuffle: findModeShuffle),
+      SceneModeType.flashlight => FlashlightMode(objects: cachedScene.scene.objects, effects: this),
+    };
     _mode.activate();
     notifyListeners();
   }
 
-  void onObjectTapped(SceneObject object) => _mode.onObjectTapped(object);
+  void onObjectTapped(SceneObject object) {
+    final flashlight = this.flashlight;
+    final foundBefore = flashlight?.foundCount;
+    _mode.onObjectTapped(object);
+    // A newly lit object changes what the darkness looks like.
+    if (flashlight != null && flashlight.foundCount != foundBefore) notifyListeners();
+  }
 
   @override
   void playObjectAudio(SceneObject object) {
@@ -149,6 +175,15 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
           : _audio.playFile(cachedScene.audioPathFor(target)),
     );
     notifyListeners();
+  }
+
+  @override
+  Future<void> announceObject(SceneObject object) {
+    // To the end, not just started: the next thing in the queue (another
+    // name, the round-complete fanfare) must not talk over this one.
+    final playback = _voiceQueue.then((_) => _audio.playFileToEnd(cachedScene.audioPathFor(object)));
+    _voiceQueue = playback;
+    return playback;
   }
 
   @override

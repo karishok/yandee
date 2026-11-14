@@ -7,6 +7,13 @@ abstract class AudioSink {
   /// Play a locally cached audio file (a scene object's recorded name).
   Future<void> playFile(String absolutePath);
 
+  /// Play a locally cached audio file and wait until it has been played to
+  /// the end — unlike [playFile], which returns as soon as playback starts
+  /// and whose next call cuts the previous one off. Nothing else this sink
+  /// plays can interrupt it, so awaiting calls in turn says each file in
+  /// full, one after another.
+  Future<void> playFileToEnd(String absolutePath);
+
   /// Start an Explore-mode object name on its dedicated player. The Explore
   /// controller retains at most one latest pending name itself.
   Future<void> playExploreFile(String absolutePath);
