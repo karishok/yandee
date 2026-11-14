@@ -14,10 +14,6 @@ abstract class AudioSink {
   /// full, one after another.
   Future<void> playFileToEnd(String absolutePath);
 
-  /// Start an Explore-mode object name on its dedicated player. The Explore
-  /// controller retains at most one latest pending name itself.
-  Future<void> playExploreFile(String absolutePath);
-
   /// Play a bundled system phrase asset.
   Future<void> playSystemPhrase(SystemPhrase phrase);
 

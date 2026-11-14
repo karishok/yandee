@@ -44,9 +44,10 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   // Serializes the "spoken" effects (system phrases and Find prompts) so
   // each one waits for the previous to actually finish before starting —
   // e.g. the "correct" phrase must finish before the next "find: <object>"
-  // prompt begins, or they play on top of each other. `playObjectAudio`
-  // (Explore-mode taps) deliberately stays off this queue: its separate
-  // current-plus-latest policy must not wait behind Find-mode instructions.
+  // prompt begins, or they play on top of each other. Object names
+  // (`playObjectAudio`, `announceObject`) deliberately stay off this queue:
+  // their own current-plus-latest policy must not wait behind Find-mode
+  // instructions.
   Future<void> _voiceQueue = Future.value();
 
   // True while a "correct" phrase is somewhere between being queued and
@@ -57,11 +58,17 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   bool _correctPending = false;
   bool _wrongHintPlaying = false;
 
-  // Explore-mode names are deliberately not a FIFO queue. While one name is
-  // being started, retain only the latest object the child reaches; then
-  // discard everything in between.
-  bool _objectAudioPlaying = false;
-  String? _pendingObjectAudioPath;
+  // Object names (Explore taps, flashlight finds) are deliberately not a
+  // FIFO queue. The name being said is always said to its end — a later
+  // tap never cuts it off. Of the names asked for meanwhile only the
+  // latest is kept and said next; the ones in between are skipped, so a
+  // child sweeping across the picture doesn't leave a backlog droning on.
+  bool _nameBeingSaid = false;
+  ({String path, Completer<void> done})? _nextName;
+
+  // Set once the scene is closed: a name still waiting its turn then must
+  // not start up over whatever screen comes next.
+  bool _disposed = false;
 
   // Which of the scene's pictures is on screen. Deliberately not part of
   // the mode: switching it changes how the objects look and where they sit,
@@ -136,35 +143,41 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   }
 
   @override
-  void playObjectAudio(SceneObject object) {
-    final path = cachedScene.audioPathFor(object);
-    if (_objectAudioPlaying) {
-      _pendingObjectAudioPath = path;
-      return;
+  void playObjectAudio(SceneObject object) => unawaited(_sayName(cachedScene.audioPathFor(object)));
+
+  /// Asks for a name to be said (see [_nameBeingSaid] for when it is). The
+  /// future completes once it has been said to its end — or right away if
+  /// a later name takes its place before its turn comes.
+  Future<void> _sayName(String path) {
+    final done = Completer<void>();
+    if (_nameBeingSaid) {
+      _nextName?.done.complete(); // overtaken: it will not be said
+      _nextName = (path: path, done: done);
+    } else {
+      _nameBeingSaid = true;
+      unawaited(_sayNames((path: path, done: done)));
     }
-    _playObjectAudio(path);
+    return done.future;
   }
 
-  void _playObjectAudio(String path) {
-    _objectAudioPlaying = true;
-    unawaited(_finishObjectAudio(path));
-  }
+  Future<void> _sayNames(({String path, Completer<void> done}) first) async {
+    for (var name = first; ;) {
+      try {
+        if (!_disposed) await _audio.playFileToEnd(name.path);
+      } catch (_) {
+        // Audio failures must not affect touch interaction. The concrete
+        // sink logs its own errors; this protects alternate implementations.
+      }
+      name.done.complete();
 
-  Future<void> _finishObjectAudio(String path) async {
-    try {
-      await _audio.playExploreFile(path);
-    } catch (_) {
-      // Audio failures must not affect touch interaction. The concrete sink
-      // logs its own errors; this protects alternate implementations too.
+      final next = _nextName;
+      _nextName = null;
+      if (next == null) {
+        _nameBeingSaid = false;
+        return;
+      }
+      name = next;
     }
-
-    final nextPath = _pendingObjectAudioPath;
-    _pendingObjectAudioPath = null;
-    if (nextPath == null) {
-      _objectAudioPlaying = false;
-      return;
-    }
-    _playObjectAudio(nextPath);
   }
 
   @override
@@ -178,13 +191,7 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   }
 
   @override
-  Future<void> announceObject(SceneObject object) {
-    // To the end, not just started: the next thing in the queue (another
-    // name, the round-complete fanfare) must not talk over this one.
-    final playback = _voiceQueue.then((_) => _audio.playFileToEnd(cachedScene.audioPathFor(object)));
-    _voiceQueue = playback;
-    return playback;
-  }
+  Future<void> announceObject(SceneObject object) => _sayName(cachedScene.audioPathFor(object));
 
   @override
   Future<void> playSystemPhrase(SystemPhrase phrase) {
@@ -240,6 +247,7 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
 
   @override
   void dispose() {
+    _disposed = true;
     _congratsTimer?.cancel();
     _audio.dispose();
     super.dispose();

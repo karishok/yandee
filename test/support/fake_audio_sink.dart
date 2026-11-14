@@ -29,7 +29,7 @@ class FakeAudioSink implements AudioSink {
   void releaseInterruptiblePhrase(SystemPhrase phrase) =>
       _heldInterruptible.remove(phrase)?.complete();
 
-  /// Makes [playExploreFile] and [playFileToEnd] record themselves but not finish until [releaseFile] is
+  /// Makes [playFileToEnd] record itself but not finish until [releaseFile] is
   /// called. This models a name that is still being spoken.
   void holdFile(String absolutePath) => _heldFiles[absolutePath] = Completer<void>();
 
@@ -40,13 +40,6 @@ class FakeAudioSink implements AudioSink {
 
   @override
   Future<void> playFileToEnd(String absolutePath) async {
-    playedFiles.add(absolutePath);
-    final hold = _heldFiles[absolutePath];
-    if (hold != null) await hold.future;
-  }
-
-  @override
-  Future<void> playExploreFile(String absolutePath) async {
     playedFiles.add(absolutePath);
     final hold = _heldFiles[absolutePath];
     if (hold != null) await hold.future;

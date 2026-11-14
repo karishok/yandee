@@ -29,9 +29,6 @@ class FlashlightMode implements SceneMode {
   final Set<String> _foundLabels = {};
   bool _completed = false;
 
-  // Names being said or waiting their turn to be.
-  int _namesInFlight = 0;
-
   /// How many distinct things there are to find in this scene.
   int get totalCount => _labels.length;
 
@@ -58,35 +55,22 @@ class FlashlightMode implements SceneMode {
   @override
   void onObjectTapped(SceneObject object) {
     if (_completed || !isTarget(object)) return;
-    if (!_foundLabels.add(object.label)) {
-      // Already lit: say its name again, but only into silence. A child
-      // sweeping back and forth over lit animals would otherwise pile up
-      // a long backlog of names.
-      if (_namesInFlight == 0) unawaited(_say(object));
-      return;
-    }
-    if (_foundLabels.length < _labels.length) {
-      unawaited(_say(object));
+    final isNewFind = _foundLabels.add(object.label);
+    if (!isNewFind || _foundLabels.length < _labels.length) {
+      // A find, or an already lit object touched again: say its name, like
+      // in Explore mode. The effects never cut a name off and, of several
+      // asked for while one is being said, say only the latest.
+      effects.playObjectAudio(object);
       return;
     }
     _completed = true;
     unawaited(_finishRound(object));
   }
 
-  // Every name is said in full and in turn: moving the light from the fox
-  // straight on to the hare names the fox, then the hare — a new find
-  // never cuts off the one before it.
-  Future<void> _say(SceneObject object) async {
-    _namesInFlight++;
-    try {
-      await effects.announceObject(object);
-    } finally {
-      _namesInFlight--;
-    }
-  }
-
   Future<void> _finishRound(SceneObject lastObject) async {
-    await _say(lastObject);
+    // The last name is the latest asked for, so it is the one that follows
+    // whatever is being said — and the fanfare waits for it.
+    await effects.announceObject(lastObject);
     await effects.playSystemPhrase(SystemPhrase.roundComplete);
     effects.onRoundCompleted();
   }
