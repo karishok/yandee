@@ -377,4 +377,50 @@ void main() {
       expect(controller.currentFindTarget, ball);
     });
   });
+
+  group('flashlight', () {
+    CachedScene sceneWithId(String id) => CachedScene(
+          scene: Scene(
+            id: id,
+            version: 1,
+            title: 'Лес',
+            minAgeMonths: 12,
+            background: 'background.png',
+            objects: [ball, cat],
+          ),
+          directoryPath: '/cache/$id',
+        );
+
+    test('is offered in the forest only', () {
+      expect(SceneController(cachedScene: sceneWithId('forest'), audioSink: FakeAudioSink()).hasFlashlight, isTrue);
+      expect(SceneController(cachedScene: cachedScene, audioSink: FakeAudioSink()).hasFlashlight, isFalse);
+    });
+
+    test('lighting objects notifies listeners and ends in the congratulations', () async {
+      final audio = FakeAudioSink();
+      final forest = sceneWithId('forest');
+      final controller = SceneController(cachedScene: forest, audioSink: audio);
+      var notifications = 0;
+      controller.addListener(() => notifications++);
+
+      controller.setMode(SceneModeType.flashlight);
+      expect(controller.flashlight, isNotNull);
+      notifications = 0;
+
+      controller.onObjectTapped(ball);
+      expect(notifications, 1);
+      expect(controller.flashlight!.isFound(ball), isTrue);
+      expect(audio.playedFiles, [forest.audioPathFor(ball)]);
+
+      controller.onObjectTapped(ball); // already lit: no change to redraw
+      expect(notifications, 1);
+
+      controller.onObjectTapped(cat);
+      expect(controller.flashlight!.isComplete, isTrue);
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedFiles, contains(forest.audioPathFor(cat)));
+      expect(controller.showCongrats, isTrue);
+    });
+  });
 }

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../data/cached_scene.dart';
 import '../../domain/models/scene_object.dart';
 import '../controllers/scene_controller.dart';
+import 'flashlight_darkness.dart';
 
 class SceneIllustration extends StatefulWidget {
   const SceneIllustration({super.key, required this.cachedScene});
@@ -34,6 +35,11 @@ class _SceneIllustrationState extends State<SceneIllustration> {
   // holding the phone with one hand while the other slides across the
   // picture) are followed independently.
   final Map<int, String?> _activeObjectIdByPointer = {};
+
+  // Where the flashlight points, normalized to the picture. It follows the
+  // finger and stays put where the finger lifts, so a child who only taps
+  // still moves the light around. Starts in the middle of the picture.
+  Offset _lightCenter = const Offset(0.5, 0.5);
 
   @override
   void initState() {
@@ -97,6 +103,14 @@ class _SceneIllustrationState extends State<SceneIllustration> {
   // sliding through several objects without lifting behave the same way:
   // both are just "this pointer just entered object X".
   void _handlePointerActivity(PointerEvent event, Size size) {
+    if (context.read<SceneController>().flashlight != null) {
+      setState(() {
+        _lightCenter = Offset(
+          (event.localPosition.dx / size.width).clamp(0.0, 1.0),
+          (event.localPosition.dy / size.height).clamp(0.0, 1.0),
+        );
+      });
+    }
     final object = _objectAt(event.localPosition, size);
     final previousId = _activeObjectIdByPointer[event.pointer];
     if (object?.id == previousId) return;
@@ -156,6 +170,15 @@ class _SceneIllustrationState extends State<SceneIllustration> {
                     ),
                   ),
                 ),
+                if (controller.flashlight case final flashlight?)
+                  Positioned.fill(
+                    child: FlashlightDarkness(
+                      lightCenter: _lightCenter,
+                      objects: controller.visibleObjects,
+                      isFound: flashlight.isFound,
+                      lightsOn: flashlight.isComplete,
+                    ),
+                  ),
                 Positioned.fill(
                   child: Listener(
                     behavior: HitTestBehavior.opaque,

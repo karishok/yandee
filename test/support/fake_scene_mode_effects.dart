@@ -6,6 +6,7 @@ class FakeSceneModeEffects implements SceneModeEffects {
   final List<SceneObject> promptFindCalls = [];
   final List<bool> promptFindAnnounceIntroCalls = [];
   final List<SystemPhrase> systemPhraseCalls = [];
+  final List<SceneObject> announceObjectCalls = [];
   int roundCompletedCalls = 0;
 
   @override
@@ -16,6 +17,9 @@ class FakeSceneModeEffects implements SceneModeEffects {
     promptFindCalls.add(target);
     promptFindAnnounceIntroCalls.add(announceIntro);
   }
+
+  @override
+  Future<void> announceObject(SceneObject object) async => announceObjectCalls.add(object);
 
   @override
   Future<void> playSystemPhrase(SystemPhrase phrase) async => systemPhraseCalls.add(phrase);

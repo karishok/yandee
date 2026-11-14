@@ -20,9 +20,13 @@ abstract class SceneModeEffects {
   /// top of adding a full phrase's worth of delay to every tap in a row.
   void promptFind(SceneObject target, {bool announceIntro = true});
 
+  /// Say an object's name in turn with the other spoken effects (after
+  /// whatever is already being said), completing once it has been said.
+  Future<void> announceObject(SceneObject object);
+
   /// Play a bundled system phrase (hint, correct, fanfare, ...).
   Future<void> playSystemPhrase(SystemPhrase phrase);
 
-  /// Called once when a Find round finishes (all objects found).
+  /// Called once when a round finishes (all objects found).
   void onRoundCompleted();
 }

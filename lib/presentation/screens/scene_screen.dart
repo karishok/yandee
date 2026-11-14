@@ -84,7 +84,10 @@ class _SceneView extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = context.watch<SceneController>();
     final showBanner = controller.modeType == SceneModeType.find && !controller.showCongrats;
+    final flashlight = controller.flashlight;
     return Scaffold(
+      // Night all around the picture too, while the flashlight game is on.
+      backgroundColor: flashlight != null && !flashlight.isComplete ? const Color(0xFF060A1C) : null,
       body: SafeArea(
         child: Stack(
           children: [
@@ -126,7 +129,7 @@ class _SceneView extends StatelessWidget {
                       _ModeSwitch(modeType: controller.modeType, onChanged: controller.setMode),
                     ],
                   ),
-                  if (showBanner || controller.hasRealisticPicture) ...[
+                  if (showBanner || controller.hasRealisticPicture || controller.hasFlashlight) ...[
                     const SizedBox(height: 10),
                     // The second row: the picture toggle on the left (only
                     // for scenes that have a realistic picture), the find
@@ -146,12 +149,23 @@ class _SceneView extends StatelessWidget {
                           ),
                           const SizedBox(width: 12),
                         ],
+                        if (controller.hasFlashlight) ...[
+                          _FlashlightButton(
+                            isOn: flashlight != null,
+                            onPressed: () => controller.setMode(
+                              flashlight != null ? SceneModeType.explore : SceneModeType.flashlight,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                        ],
                         Expanded(
                           child: Align(
                             alignment: Alignment.centerRight,
                             child: showBanner
                                 ? _FindBanner(target: controller.currentFindTarget)
-                                : const SizedBox.shrink(),
+                                : flashlight != null
+                                    ? _FlashlightStars(found: flashlight.foundCount, total: flashlight.totalCount)
+                                    : const SizedBox.shrink(),
                           ),
                         ),
                       ],
@@ -161,6 +175,83 @@ class _SceneView extends StatelessWidget {
               ),
             ),
             if (controller.showCongrats) const Positioned.fill(child: _CongratsOverlay()),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Turns the flashlight game on and off. Wordless, like the picture
+/// toggle next to it: a flashlight icon on a dark (night) circle.
+class _FlashlightButton extends StatelessWidget {
+  const _FlashlightButton({required this.isOn, required this.onPressed});
+
+  final bool isOn;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: isOn ? 'Выключить фонарик' : 'Фонарик',
+      child: Material(
+        key: const ValueKey('flashlight_button'),
+        color: isOn ? Colors.amber : const Color(0xFF1B2140),
+        shape: const CircleBorder(),
+        elevation: 3,
+        shadowColor: Colors.black.withValues(alpha: 0.3),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onPressed,
+          child: SizedBox(
+            width: 52,
+            height: 52,
+            child: Icon(
+              isOn ? Icons.flashlight_off : Icons.flashlight_on,
+              color: isOn ? const Color(0xFF1B2140) : Colors.amber,
+              size: 28,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One star per thing to find in the dark; each lights up as it's found.
+class _FlashlightStars extends StatelessWidget {
+  const _FlashlightStars({required this.found, required this.total});
+
+  final int found;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerRight,
+      child: Container(
+        key: const ValueKey('flashlight_stars'),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1B2140),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var i = 0; i < total; i++)
+              AnimatedScale(
+                scale: i < found ? 1.15 : 1,
+                duration: const Duration(milliseconds: 250),
+                child: Icon(
+                  i < found ? Icons.star_rounded : Icons.star_outline_rounded,
+                  key: ValueKey('flashlight_star_${i < found ? 'on' : 'off'}_$i'),
+                  color: i < found ? Colors.amber : Colors.white38,
+                  size: 24,
+                ),
+              ),
           ],
         ),
       ),
