@@ -39,17 +39,18 @@ CHOICES = {
 
 def http(url, binary=False):
     req = urllib.request.Request(url, headers={"User-Agent": UA})
-    for attempt in range(6):
+    for attempt in range(40):
         try:
             data = urllib.request.urlopen(req, timeout=60).read()
-            time.sleep(2)
+            time.sleep(5)
             return data if binary else json.loads(data)
         except urllib.error.HTTPError as e:
             if e.code != 429:
                 raise
-            wait = int(e.headers.get("Retry-After") or 0) or 15 * (attempt + 1)
-            print(f"  429, waiting {wait}s", file=sys.stderr)
-            time.sleep(wait)
+            # Anonymous clients get long Retry-After values; honour them.
+            wait = int(e.headers.get("Retry-After") or 0) or 30 * (attempt + 1)
+            print(f"  429, waiting {wait + 5}s", file=sys.stderr, flush=True)
+            time.sleep(wait + 5)
     raise RuntimeError("rate limited: " + url)
 
 
@@ -117,8 +118,11 @@ def main():
     raw_dir, out_dir = Path(sys.argv[1]), Path(sys.argv[2])
     raw_dir.mkdir(parents=True, exist_ok=True)
     out_dir.mkdir(parents=True, exist_ok=True)
-    credits = {}
+    credits_path = out_dir / "credits.json"
+    credits = json.loads(credits_path.read_text()) if credits_path.exists() else {}
     for key, (scene, title, max_len) in CHOICES.items():
+        if key in credits and credits[key]["title"] == title and (out_dir / f"{key}.wav").exists():
+            continue  # done in an earlier, interrupted run
         meta = info(title)
         src = raw_dir / (key + Path(urllib.parse.urlparse(meta["url"]).path).suffix)
         if not src.exists():
@@ -126,8 +130,8 @@ def main():
         y = cut(decode(src), max_len)
         encode(y, out_dir / f"{key}.wav")
         credits[key] = {"scene": scene, "title": title, **meta, "seconds": round(len(y) / SR, 2)}
-        print(f"{key:9} {len(y)/SR:4.1f}s  {meta['license']:14} {title}")
-    (out_dir / "credits.json").write_text(json.dumps(credits, ensure_ascii=False, indent=1))
+        credits_path.write_text(json.dumps(credits, ensure_ascii=False, indent=1))
+        print(f"{key:9} {len(y)/SR:4.1f}s  {meta['license']:14} {title}", flush=True)
 
 
 main()
