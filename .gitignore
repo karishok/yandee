@@ -16,3 +16,11 @@ android/.gradle/
 android/key.properties
 *.jks
 *.keystore
+
+# Raw Logic takes dropped next to the slicing script (tool/slice_voiceover.dart);
+# only the sliced clips in assets/ belong in the repository.
+/tool/*.wav
+/tool/*.aif
+/tool/*.aiff
+/tool/*.m4a
+/tool/*.mp3

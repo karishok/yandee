@@ -40,11 +40,21 @@ Future<void> main(List<String> args) async {
     return;
   }
 
-  final bounceFile = File(bouncePath);
-  if (!bounceFile.existsSync()) {
+  final bounceFile = findBounce(bouncePath);
+  if (bounceFile == null) {
     stderr.writeln('Файл не найден: $bouncePath');
+    final nearby = recordingsNearby();
+    if (nearby.isNotEmpty) {
+      stderr.writeln('Зато вижу такие записи — может, одна из них?');
+      for (final path in nearby) {
+        stderr.writeln('  $path');
+      }
+    }
     exitCode = 1;
     return;
+  }
+  if (bounceFile.path != bouncePath) {
+    stdout.writeln('Беру запись: ${bounceFile.path}');
   }
 
   final tasks = buildVoiceoverTasks().where((t) => taskMatchesFilter(t, sceneFilter)).toList();
@@ -124,4 +134,34 @@ Future<void> main(List<String> args) async {
   for (final task in tasks) {
     stdout.writeln('  ${task.text} -> ${task.outputPath}');
   }
+}
+
+/// The recording [path] points at. A bare file name is also looked for in
+/// `tool/`, next to this script — the natural place to drop a bounce, and
+/// easy to forget to spell out in the command.
+File? findBounce(String path, {String toolDir = 'tool'}) {
+  final asGiven = File(path);
+  if (asGiven.existsSync()) return asGiven;
+  if (!path.contains('/')) {
+    final inToolDir = File('$toolDir/$path');
+    if (inToolDir.existsSync()) return inToolDir;
+  }
+  return null;
+}
+
+/// Audio files lying in the project folder and in `tool/`, to suggest when
+/// the one asked for can't be found.
+List<String> recordingsNearby({String root = '.', String toolDir = 'tool'}) {
+  const extensions = ['.wav', '.aif', '.aiff', '.m4a', '.mp3', '.caf'];
+  final found = <String>[];
+  for (final dir in [Directory(root), Directory(toolDir)]) {
+    if (!dir.existsSync()) continue;
+    for (final file in dir.listSync().whereType<File>()) {
+      final name = file.uri.pathSegments.last;
+      if (extensions.any(name.toLowerCase().endsWith)) {
+        found.add(dir.path == '.' ? name : '${dir.path}/$name');
+      }
+    }
+  }
+  return found..sort();
 }
