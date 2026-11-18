@@ -189,8 +189,8 @@ class MonstersGame {
   }
 
   MonsterFood _randomFoodFor(MonsterColor color) {
-    final menu = menuFor(color);
-    return menu[_random.nextInt(menu.length)];
+    final foods = foodsFor(color);
+    return foods[_random.nextInt(foods.length)];
   }
 }
 

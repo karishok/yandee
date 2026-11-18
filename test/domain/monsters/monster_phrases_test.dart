@@ -44,10 +44,10 @@ void main() {
     expect(MonsterPhrases.winLine.text, 'Ура! Ты знаешь все цвета!');
   });
 
-  test('79 clips to record, each with its own file name', () {
+  test('70 clips to record, each with its own file name', () {
     final clips = MonsterPhrases.allClips;
-    expect(clips, hasLength(79));
-    expect(clips.map((clip) => clip.id).toSet(), hasLength(79));
+    expect(clips, hasLength(70));
+    expect(clips.map((clip) => clip.id).toSet(), hasLength(70));
     for (final clip in clips) {
       expect(clip.id, matches(RegExp(r'^[a-z_]+$')), reason: 'file names stay plain latin');
     }

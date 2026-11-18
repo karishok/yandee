@@ -2,7 +2,7 @@
 
 <!-- Этот файл создан командой `dart run tool/write_monsters_phrases_doc.dart`. Не правь его руками — правки пропадут при следующем запуске. -->
 
-Всего **79 фраз**, они разбиты на **11 частей по 5–10 фраз**. Одна часть — одна запись в Logic и одна команда. Части можно записывать в любом порядке и в разные дни.
+Всего **70 фраз**, они разбиты на **10 частей по 5–10 фраз**. Одна часть — одна запись в Logic и одна команда. Части можно записывать в любом порядке и в разные дни.
 
 Пока фраза не записана, игра говорит её временным компьютерным голосом. Как только появляется твоя запись, игра сама начинает использовать её (приложение после этого нужно заново поставить на телефон).
 
@@ -21,7 +21,7 @@
 
 Часть можно перезаписать сколько угодно раз — новая запись просто заменит старую.
 
-## Почему фраз 79, а не 182
+## Почему фраз 70, а не полторы сотни
 
 Цвет и еда всегда записаны вместе, одной фразой: «Красная клубника», «Красный помидор», «Красное мороженое». Так окончание цвета всегда правильное — из отдельных слов «красная» и «клубника» игра фразу не склеивает.
 
@@ -123,9 +123,9 @@ dart run tool/slice_voiceover.dart monsters-5 запись.wav
 | 4 | — белому! | `for_white.wav` |
 | 5 | — чёрному! | `for_black.wav` |
 
-## Часть 6. Еда: красная и синяя
+## Часть 6. Еда: красная, синяя, фиолетовая
 
-9 фраз. Команда после записи:
+10 фраз. Команда после записи:
 
 ```bash
 dart run tool/slice_voiceover.dart monsters-6 запись.wav
@@ -135,17 +135,18 @@ dart run tool/slice_voiceover.dart monsters-6 запись.wav
 |---|---|---|
 | 1 | Красная клубника | `food_red_strawberry.wav` |
 | 2 | Красный помидор | `food_red_tomato.wav` |
-| 3 | Красная конфета | `food_red_candy.wav` |
-| 4 | Красный леденец | `food_red_lollipop.wav` |
-| 5 | Красное мороженое | `food_red_ice_cream.wav` |
-| 6 | Синяя черника | `food_blue_blueberry.wav` |
+| 3 | Красное яблоко | `food_red_apple.wav` |
+| 4 | Красная вишня | `food_red_cherry.wav` |
+| 5 | Синяя черника | `food_blue_blueberry.wav` |
+| 6 | Синяя слива | `food_blue_plum.wav` |
 | 7 | Синяя конфета | `food_blue_candy.wav` |
-| 8 | Синий леденец | `food_blue_lollipop.wav` |
-| 9 | Синее мороженое | `food_blue_ice_cream.wav` |
+| 8 | Фиолетовый виноград | `food_purple_grapes.wav` |
+| 9 | Фиолетовый баклажан | `food_purple_eggplant.wav` |
+| 10 | Фиолетовый леденец | `food_purple_lollipop.wav` |
 
-## Часть 7. Еда: жёлтая и зелёная
+## Часть 7. Еда: жёлтая, зелёная
 
-10 фраз. Команда после записи:
+8 фраз. Команда после записи:
 
 ```bash
 dart run tool/slice_voiceover.dart monsters-7 запись.wav
@@ -155,18 +156,16 @@ dart run tool/slice_voiceover.dart monsters-7 запись.wav
 |---|---|---|
 | 1 | Жёлтый банан | `food_yellow_banana.wav` |
 | 2 | Жёлтый сыр | `food_yellow_cheese.wav` |
-| 3 | Жёлтая конфета | `food_yellow_candy.wav` |
-| 4 | Жёлтый леденец | `food_yellow_lollipop.wav` |
-| 5 | Жёлтое мороженое | `food_yellow_ice_cream.wav` |
-| 6 | Зелёный огурец | `food_green_cucumber.wav` |
-| 7 | Зелёная груша | `food_green_pear.wav` |
-| 8 | Зелёная конфета | `food_green_candy.wav` |
-| 9 | Зелёный леденец | `food_green_lollipop.wav` |
-| 10 | Зелёное мороженое | `food_green_ice_cream.wav` |
+| 3 | Жёлтый лимон | `food_yellow_lemon.wav` |
+| 4 | Жёлтая кукуруза | `food_yellow_corn.wav` |
+| 5 | Зелёный огурец | `food_green_cucumber.wav` |
+| 6 | Зелёная груша | `food_green_pear.wav` |
+| 7 | Зелёный горошек | `food_green_peas.wav` |
+| 8 | Зелёная брокколи | `food_green_broccoli.wav` |
 
-## Часть 8. Еда: оранжевая и фиолетовая
+## Часть 8. Еда: оранжевая, розовая
 
-10 фраз. Команда после записи:
+8 фраз. Команда после записи:
 
 ```bash
 dart run tool/slice_voiceover.dart monsters-8 запись.wav
@@ -176,18 +175,16 @@ dart run tool/slice_voiceover.dart monsters-8 запись.wav
 |---|---|---|
 | 1 | Оранжевый апельсин | `food_orange_orange_fruit.wav` |
 | 2 | Оранжевая морковка | `food_orange_carrot.wav` |
-| 3 | Оранжевая конфета | `food_orange_candy.wav` |
-| 4 | Оранжевый леденец | `food_orange_lollipop.wav` |
-| 5 | Оранжевое мороженое | `food_orange_ice_cream.wav` |
-| 6 | Фиолетовый виноград | `food_purple_grapes.wav` |
-| 7 | Фиолетовый баклажан | `food_purple_eggplant.wav` |
-| 8 | Фиолетовая конфета | `food_purple_candy.wav` |
-| 9 | Фиолетовый леденец | `food_purple_lollipop.wav` |
-| 10 | Фиолетовое мороженое | `food_purple_ice_cream.wav` |
+| 3 | Оранжевая тыква | `food_orange_pumpkin.wav` |
+| 4 | Оранжевый мандарин | `food_orange_mandarin.wav` |
+| 5 | Розовый пончик | `food_pink_donut.wav` |
+| 6 | Розовый зефир | `food_pink_marshmallow.wav` |
+| 7 | Розовая сахарная вата | `food_pink_cotton_candy.wav` |
+| 8 | Розовое мороженое | `food_pink_ice_cream.wav` |
 
-## Часть 9. Еда: розовая и коричневая
+## Часть 9. Еда: коричневая, голубая
 
-9 фраз. Команда после записи:
+7 фраз. Команда после записи:
 
 ```bash
 dart run tool/slice_voiceover.dart monsters-9 запись.wav
@@ -195,19 +192,17 @@ dart run tool/slice_voiceover.dart monsters-9 запись.wav
 
 | № | Что сказать | Файл |
 |---|---|---|
-| 1 | Розовый пончик | `food_pink_donut.wav` |
-| 2 | Розовая конфета | `food_pink_candy.wav` |
-| 3 | Розовый леденец | `food_pink_lollipop.wav` |
-| 4 | Розовое мороженое | `food_pink_ice_cream.wav` |
-| 5 | Коричневая шоколадка | `food_brown_chocolate.wav` |
-| 6 | Коричневое печенье | `food_brown_cookie.wav` |
-| 7 | Коричневая конфета | `food_brown_candy.wav` |
-| 8 | Коричневый леденец | `food_brown_lollipop.wav` |
-| 9 | Коричневое мороженое | `food_brown_ice_cream.wav` |
+| 1 | Коричневая шоколадка | `food_brown_chocolate.wav` |
+| 2 | Коричневое печенье | `food_brown_cookie.wav` |
+| 3 | Коричневый орех | `food_brown_nut.wav` |
+| 4 | Коричневый гриб | `food_brown_mushroom.wav` |
+| 5 | Голубая сахарная вата | `food_lightblue_cotton_candy.wav` |
+| 6 | Голубое мороженое | `food_lightblue_ice_cream.wav` |
+| 7 | Голубой леденец | `food_lightblue_lollipop.wav` |
 
-## Часть 10. Еда: голубая и чёрная
+## Часть 10. Еда: белая, чёрная
 
-7 фраз. Команда после записи:
+8 фраз. Команда после записи:
 
 ```bash
 dart run tool/slice_voiceover.dart monsters-10 запись.wav
@@ -215,29 +210,14 @@ dart run tool/slice_voiceover.dart monsters-10 запись.wav
 
 | № | Что сказать | Файл |
 |---|---|---|
-| 1 | Голубая конфета | `food_lightblue_candy.wav` |
-| 2 | Голубой леденец | `food_lightblue_lollipop.wav` |
-| 3 | Голубое мороженое | `food_lightblue_ice_cream.wav` |
-| 4 | Чёрная ежевика | `food_black_blackberry.wav` |
-| 5 | Чёрная конфета | `food_black_candy.wav` |
-| 6 | Чёрный леденец | `food_black_lollipop.wav` |
-| 7 | Чёрное мороженое | `food_black_ice_cream.wav` |
-
-## Часть 11. Еда: белая
-
-5 фраз. Команда после записи:
-
-```bash
-dart run tool/slice_voiceover.dart monsters-11 запись.wav
-```
-
-| № | Что сказать | Файл |
-|---|---|---|
 | 1 | Белое яйцо | `food_white_egg.wav` |
 | 2 | Белое молоко | `food_white_milk.wav` |
-| 3 | Белая конфета | `food_white_candy.wav` |
-| 4 | Белый леденец | `food_white_lollipop.wav` |
-| 5 | Белое мороженое | `food_white_ice_cream.wav` |
+| 3 | Белый рис | `food_white_rice.wav` |
+| 4 | Белый чеснок | `food_white_garlic.wav` |
+| 5 | Чёрная ежевика | `food_black_blackberry.wav` |
+| 6 | Чёрная оливка | `food_black_olive.wav` |
+| 7 | Чёрный хлеб | `food_black_bread.wav` |
+| 8 | Чёрная смородина | `food_black_currant.wav` |
 
 ## Если захочется записать без Logic
 

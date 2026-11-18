@@ -30,6 +30,15 @@ Future<void> main() async {
   const tempo = 0.95;
 
   final outDir = Directory('assets/audio/monsters_tts')..createSync(recursive: true);
+  // Files for phrases the game no longer has would otherwise ship forever.
+  final wanted = {for (final clip in MonsterPhrases.allClips) '${clip.id}.m4a'};
+  for (final file in outDir.listSync().whereType<File>()) {
+    final name = file.uri.pathSegments.last;
+    if (name.endsWith('.m4a') && !wanted.contains(name)) {
+      file.deleteSync();
+      stdout.writeln('удалён лишний файл: ${file.path}');
+    }
+  }
   final temp = Directory.systemTemp.createTempSync('yandee_monster_tts_');
   try {
     for (final clip in MonsterPhrases.allClips) {

@@ -8,7 +8,7 @@ import 'src/voiceover_tasks.dart';
 import 'src/wav_io.dart';
 
 /// Slices a single Logic Pro bounce — one scene's (or `system`'s) words, or
-/// one part of the "Монстрики" game's phrases (`monsters-1` … `monsters-11`,
+/// one part of the "Монстрики" game's phrases (`monsters-1` … `monsters-10`,
 /// see docs/monsters_phrases.md), said in order with a pause between each — into
 /// per-word `assets/*.wav`
 /// files, replacing the mic-capture path in `record_voiceover.dart` for

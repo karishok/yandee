@@ -249,34 +249,32 @@ void main() {
   });
 
   group('the menu', () {
-    test('every colour can be fed the three sweets', () {
+    test('every colour has at least three treats, each of its own colour', () {
       for (final color in MonsterColor.values) {
-        expect(
-          foodsFor(color).map((food) => food.kind),
-          containsAll([FoodKind.candy, FoodKind.lollipop, FoodKind.iceCream]),
-        );
+        final foods = foodsFor(color);
+        expect(foods.length, greaterThanOrEqualTo(3), reason: '$color');
+        expect(foods.map((food) => food.color).toSet(), {color});
+        expect(foods.toSet(), hasLength(foods.length), reason: 'no treat listed twice for $color');
       }
     });
 
-    test('a treat is always its monster\'s colour', () {
+    test('most treats are real food: sweets only fill in where a colour has little of its own', () {
+      const sweets = {FoodKind.candy, FoodKind.lollipop, FoodKind.iceCream, FoodKind.cottonCandy};
       for (final color in MonsterColor.values) {
-        expect(menuFor(color).map((food) => food.color).toSet(), {color});
+        if (color == MonsterColor.lightblue || color == MonsterColor.pink) continue;
+        final sweetCount = foodsFor(color).where((food) => sweets.contains(food.kind)).length;
+        expect(sweetCount, lessThanOrEqualTo(1), reason: '$color');
       }
     });
 
-    test('real foods come up twice as often as each sweet', () {
-      final menu = menuFor(MonsterColor.red);
-      expect(menu.where((food) => food.kind == FoodKind.strawberry), hasLength(2));
-      expect(menu.where((food) => food.kind == FoodKind.candy), hasLength(1));
+    test('every kind of food is used by some colour', () {
+      final used = allFoods.map((food) => food.kind).toSet();
+      expect(used, FoodKind.values.toSet());
     });
 
-    test('light blue has no real food, only sweets', () {
-      expect(foodsFor(MonsterColor.lightblue).map((food) => food.kind), sweets);
-    });
-
-    test('there are 50 different treats in all', () {
-      expect(allFoods, hasLength(50));
-      expect(allFoods.toSet(), hasLength(50));
+    test('there are 41 different treats in all', () {
+      expect(allFoods, hasLength(41));
+      expect(allFoods.toSet(), hasLength(41));
     });
 
     test('the colour word agrees with the food\'s gender', () {
@@ -284,8 +282,12 @@ void main() {
       expect(const MonsterFood(FoodKind.tomato, MonsterColor.red).name, 'красный помидор');
       expect(const MonsterFood(FoodKind.iceCream, MonsterColor.red).name, 'красное мороженое');
       expect(const MonsterFood(FoodKind.blueberry, MonsterColor.blue).name, 'синяя черника');
-      expect(const MonsterFood(FoodKind.lollipop, MonsterColor.lightblue).name, 'голубой леденец');
+      expect(const MonsterFood(FoodKind.lollipop, MonsterColor.purple).name, 'фиолетовый леденец');
       expect(const MonsterFood(FoodKind.milk, MonsterColor.white).name, 'белое молоко');
+      expect(const MonsterFood(FoodKind.cottonCandy, MonsterColor.pink).name, 'розовая сахарная вата');
+      expect(const MonsterFood(FoodKind.broccoli, MonsterColor.green).name, 'зелёная брокколи');
+      expect(const MonsterFood(FoodKind.bread, MonsterColor.black).name, 'чёрный хлеб');
+      expect(const MonsterFood(FoodKind.apple, MonsterColor.red).name, 'красное яблоко');
     });
   });
 }

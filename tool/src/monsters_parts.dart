@@ -21,7 +21,7 @@ class MonstersPart {
 
 String _capitalized(String text) => '${text[0].toUpperCase()}${text.substring(1)}';
 
-/// The 79 phrases of the game cut into parts small enough to record in one
+/// The phrases of the game cut into parts small enough to record in one
 /// breath of concentration. Related phrases stay together — all the «Я
 /// …!», all the food of one colour — so the voice keeps one intonation
 /// across things that will be heard side by side.
@@ -30,14 +30,14 @@ List<MonstersPart> buildMonstersParts() {
   final firstColors = colors.sublist(0, 6);
   final lastColors = colors.sublist(6);
 
-  // Food goes colour by colour, two colours to a part where they fit.
+  // Food goes colour by colour, two or three colours to a part so that
+  // every part has 8–10 phrases.
   const foodGroups = [
-    [MonsterColor.red, MonsterColor.blue],
+    [MonsterColor.red, MonsterColor.blue, MonsterColor.purple],
     [MonsterColor.yellow, MonsterColor.green],
-    [MonsterColor.orange, MonsterColor.purple],
-    [MonsterColor.pink, MonsterColor.brown],
-    [MonsterColor.lightblue, MonsterColor.black],
-    [MonsterColor.white],
+    [MonsterColor.orange, MonsterColor.pink],
+    [MonsterColor.brown, MonsterColor.lightblue],
+    [MonsterColor.white, MonsterColor.black],
   ];
 
   final parts = <(String, List<VoiceClip>)>[
@@ -59,7 +59,7 @@ List<MonstersPart> buildMonstersParts() {
     ('Кому отдать еду — остальные пять', lastColors.map(MonsterPhrases.forColor).toList()),
     for (final group in foodGroups)
       (
-        'Еда: ${group.map((color) => color.feminine).join(' и ')}',
+        'Еда: ${group.map((color) => color.feminine).join(', ')}',
         [for (final color in group) ...foodsFor(color).map(MonsterPhrases.food)],
       ),
   ];

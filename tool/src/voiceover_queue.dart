@@ -21,7 +21,7 @@ bool isUnrecorded(File file) {
 const monstersFilter = 'monsters';
 
 /// The "Монстрики" phrases in parts of 5–10, so they can be recorded in
-/// short sittings instead of 79 in one go: `monsters-1` … `monsters-11`.
+/// short sittings instead of all in one go: `monsters-1` … `monsters-10`.
 final List<MonstersPart> _monstersParts = buildMonstersParts();
 
 /// Every filter value that selects "Монстрики" phrases: the whole set

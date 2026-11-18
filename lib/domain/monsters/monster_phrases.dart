@@ -42,7 +42,7 @@ class MonsterLine {
 /// помидор»), so each colour + food pair is one clip, recorded whole. What
 /// *is* joined are whole exclamations with a natural pause between them:
 /// «Ням!» + «Красная клубника», or «Фу!» + «Синяя черника» + «— синему!».
-/// That keeps the grammar right with 79 recordings instead of 182.
+/// That keeps the grammar right with 71 recordings instead of about 160.
 abstract final class MonsterPhrases {
   static const intro = VoiceClip('intro', 'Покорми монстриков! Красный ест красное, синий — синее.');
   static const yum = VoiceClip('yum', 'Ням!');

@@ -71,7 +71,7 @@ void main() {
       expect(isValidSceneFilter('monsters'), isTrue);
     });
 
-    test('the "Монстрики" phrases come in 11 parts of 5–10 that together cover all 79, once each', () {
+    test('the "Монстрики" phrases come in 10 parts of 5–10 that together cover all 70, once each', () {
       final all = buildMonstersVoiceoverTasks();
       List<String> part(int number) =>
           [for (final t in all) if (taskMatchesFilter(t, 'monsters-$number')) t.text];
@@ -90,36 +90,37 @@ void main() {
       expect(part(6), [
         'Красная клубника',
         'Красный помидор',
-        'Красная конфета',
-        'Красный леденец',
-        'Красное мороженое',
+        'Красное яблоко',
+        'Красная вишня',
         'Синяя черника',
+        'Синяя слива',
         'Синяя конфета',
-        'Синий леденец',
-        'Синее мороженое',
+        'Фиолетовый виноград',
+        'Фиолетовый баклажан',
+        'Фиолетовый леденец',
       ]);
 
-      final parts = [for (var number = 1; number <= 11; number++) part(number)];
+      final parts = [for (var number = 1; number <= 10; number++) part(number)];
       for (final phrases in parts) {
         expect(phrases.length, inInclusiveRange(5, 10));
       }
       final together = parts.expand((phrases) => phrases).toList();
-      expect(together, hasLength(79));
-      expect(together.toSet(), hasLength(79));
+      expect(together, hasLength(70));
+      expect(together.toSet(), hasLength(70));
       expect(together, [for (final t in all) t.text], reason: 'the parts, in order, are the whole list in order');
-      expect(part(12), isEmpty);
+      expect(part(11), isEmpty);
     });
 
     test('every "Монстрики" part is a valid filter, and none leaks into scenes or system', () {
       const kitchen = VoiceoverTask(text: 'Яблоко', outputPath: 'assets/demo_content/kitchen/apple.wav');
       const system = VoiceoverTask(text: 'Где', outputPath: 'assets/audio/system/find_intro.wav');
-      expect(monstersFilters, ['monsters', for (var number = 1; number <= 11; number++) 'monsters-$number']);
+      expect(monstersFilters, ['monsters', for (var number = 1; number <= 10; number++) 'monsters-$number']);
       for (final filter in monstersFilters) {
         expect(isValidSceneFilter(filter), isTrue, reason: filter);
         expect(taskMatchesFilter(kitchen, filter), isFalse, reason: filter);
         expect(taskMatchesFilter(system, filter), isFalse, reason: filter);
       }
-      expect(isValidSceneFilter('monsters-12'), isFalse);
+      expect(isValidSceneFilter('monsters-11'), isFalse);
       expect(isValidSceneFilter('monsters-0'), isFalse);
     });
   });
