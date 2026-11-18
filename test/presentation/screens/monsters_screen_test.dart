@@ -303,7 +303,7 @@ void main() {
     expect(dot.scale, greaterThan(1));
   });
 
-  testWidgets('a full monster waves at once, but stays until «Ням!» has been said', (tester) async {
+  testWidgets('a full monster wiggles until «Ням!» has been said, then waves goodbye as the voice says it', (tester) async {
     final h = await _startGame(tester);
     const seat = 0;
     final departed = h.game.monsters[seat];
@@ -316,25 +316,50 @@ void main() {
     await finger.up();
     await tester.pump();
 
-    // Fed, clapped — and straight into the goodbye wave, no standing about.
-    await h.run(const Duration(milliseconds: 2100));
-    expect(h.voice.said.last, 'Спасибо! Пока-пока!', reason: 'asked for at once; the voice says it in turn');
-    expect(h.figureState(seat).isWaving, isTrue);
+    // Fed and clapped, but «Ням! …» is still sounding: no goodbye yet — and
+    // no standing frozen either.
+    await h.run(const Duration(milliseconds: 2300));
+    expect(h.voice.said.last, startsWith('Ням!'));
+    expect(h.figureState(seat).currentMove, MonsterMove.giggle);
+    expect(h.figureState(seat).isWaving, isFalse);
 
-    // «Ням! …» is still sounding long after the wave: the monster waits.
-    await h.run(const Duration(milliseconds: 1500));
-    expect(h.figureState(seat).currentMove, isNot(MonsterMove.leave));
+    await h.run(const Duration(milliseconds: 1200));
+    expect(h.voice.said.last, startsWith('Ням!'));
+    expect(h.figureState(seat).currentMove, MonsterMove.giggle);
     expect(h.figure(seat).color, departed);
 
-    // Once it has been said, the goodbye gets a moment, then the monster goes.
+    // The moment it has been said: the goodbye, voice and wave together.
     h.voice.finishSpeaking();
-    await h.run(const Duration(milliseconds: 400));
-    expect(h.figureState(seat).currentMove, isNot(MonsterMove.leave));
-    await h.run(const Duration(milliseconds: 500));
+    await h.run(const Duration(milliseconds: 150));
+    expect(h.voice.said.last, 'Спасибо! Пока-пока!');
+    expect(h.figureState(seat).isWaving, isTrue);
+
+    await h.run(const Duration(milliseconds: 1200));
     expect(h.figureState(seat).currentMove, MonsterMove.leave);
 
     await h.run(const Duration(seconds: 3));
     expect(h.figure(seat).color, MonsterColor.orange);
+  });
+
+  testWidgets('the newcomer waits for the goodbye to be said, and says hello as it lands', (tester) async {
+    final h = await _startGame(tester);
+    const seat = 0;
+    final departed = h.game.monsters[seat];
+    await h.feed(h.slotFor(seat), seat);
+    await h.feed(h.slotFor(seat), seat, letItPlay: const Duration(milliseconds: 1850));
+    h.voice.holdSpeech(); // «Спасибо! Пока-пока!» keeps sounding
+    await h.run(const Duration(milliseconds: 2400));
+
+    // The old monster has waved and walked off, but its goodbye is not over.
+    expect(h.voice.said.last, 'Спасибо! Пока-пока!');
+    expect(h.figureState(seat).currentMove, MonsterMove.leave);
+    expect(h.game.monsters[seat], departed, reason: 'nobody new until the goodbye has been said');
+
+    h.voice.finishSpeaking();
+    await h.run(const Duration(milliseconds: 150));
+    expect(h.game.monsters[seat], MonsterColor.orange);
+    expect(h.figureState(seat).currentMove, MonsterMove.enter);
+    expect(h.voice.said.last, 'Привет! Я новенький! Я оранжевый!');
   });
 
   testWidgets('fed while its name is still being said, a treat is not named twice', (tester) async {

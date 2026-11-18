@@ -113,6 +113,22 @@ Future<void> main(List<String> args) async {
     return;
   }
 
+  // A take that starts or stops in the middle of a word has lost part of
+  // it for good; say so now rather than let it be discovered in the app.
+  final cutOff = cutOffEdges(audio.samples, audio.sampleRate);
+  if (cutOff.start) {
+    stdout.writeln(
+      '⚠ Запись начинается прямо с голоса, без тишины: у первой фразы «${tasks.first.text}» '
+      'обрезано начало. Сохрани запись из Logic заново, захватив немного тишины перед первым словом.',
+    );
+  }
+  if (cutOff.end) {
+    stdout.writeln(
+      '⚠ Запись обрывается прямо на голосе: у последней фразы «${tasks.last.text}» обрезан конец. '
+      'Сохрани запись из Logic заново, захватив немного тишины после последнего слова.',
+    );
+  }
+
   // All-or-nothing: the count already matched above, so every segment now
   // gets cleaned and written — no partial output on a failed run.
   for (var i = 0; i < tasks.length; i++) {

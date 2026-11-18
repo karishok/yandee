@@ -441,7 +441,6 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
       });
 
       if (result.monsterIsFull) {
-        setState(() => _growth[seat] = 1);
         await _swap(seat, session, after: yum);
         if (_stale(session)) return;
       }
@@ -478,24 +477,44 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
     _busy = false;
   }
 
-  /// The full monster in [seat] waves goodbye and leaves; the next colour
+  /// Keeps the monster visibly happy — a little wiggle, again and again —
+  /// until [speech] has been said to its end (or, at most, a few seconds).
+  /// Speech is never cut short, so sometimes the picture has to wait for
+  /// the voice; it must not look frozen while it does.
+  Future<void> _wiggleUntilHeard(Future<void> speech, MonsterFigureState? figure, int session) async {
+    var heard = false;
+    final heardOut = _heardOut(speech).then((_) => heard = true);
+    // Give a line that has already ended the chance to say so first.
+    await Future.any([heardOut, _pause(0)]);
+    while (!heard && !_stale(session)) {
+      figure?.play(MonsterMove.giggle);
+      await Future.any([heardOut, _pause(600)]);
+    }
+  }
+
+  /// The full monster in [seat] says goodbye and leaves; the next colour
   /// hops into its place and says hello. [after] is the line still being
-  /// said when the goodbye begins («Ням! …»).
+  /// said when this begins («Ням! …»).
+  ///
+  /// Each step is one thing to see *and* hear at the same time, so a child
+  /// can follow what is going on: first the monster finishes «Ням! …», then
+  /// it waves while the voice says «Спасибо! Пока-пока!» and walks off, and
+  /// only when that has been said does the newcomer pop out, saying hello
+  /// as it lands.
   Future<void> _swap(int seat, int session, {required Future<void> after}) async {
     final figure = _figure(seat);
-    // The goodbye is asked for at once and the monster starts waving at
-    // once — it must not stand frozen while the voice finishes «Ням! …».
-    // The voice gets to «Спасибо! Пока-пока!» when that line ends; the
-    // monster stays until its wave is done and the goodbye has had a moment
-    // to be heard, then goes.
-    unawaited(_voice.say(MonsterPhrases.byeLine));
+    await _wiggleUntilHeard(after, figure, session);
+    if (_stale(session)) return;
+
+    setState(() => _growth[seat] = 1);
+    final bye = _voice.say(MonsterPhrases.byeLine);
     figure?.wave();
-    await Future.wait([_pause(1100), _heardOut(after).then((_) => _pause(700))]);
+    await _pause(1100);
     if (_stale(session)) return;
 
     figure?.play(MonsterMove.leave);
     _voice.playSfx(MonsterSfx.leave);
-    await _pause(700);
+    await Future.wait([_pause(700), _heardOut(bye, milliseconds: 2500)]);
     if (_stale(session)) return;
 
     final result = _game.replaceMonster(seat);
@@ -507,12 +526,12 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
     });
     figure?.play(MonsterMove.enter);
     _voice.playSfx(MonsterSfx.pop);
+    final hello = _voice.say(MonsterPhrases.greet(result.newcomer, firstMeeting: result.firstMeeting));
     await _pause(450);
     if (_stale(session)) return;
 
     figure?.clap();
     _voice.playSfx(MonsterSfx.clap);
-    final hello = _voice.say(MonsterPhrases.greet(result.newcomer, firstMeeting: result.firstMeeting));
 
     if (result.metEveryColor) {
       // The last colour has arrived: everybody dances.

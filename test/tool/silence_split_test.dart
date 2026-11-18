@@ -102,4 +102,34 @@ void main() {
       expect(segments.last.endSample, samples.length);
     });
   });
+
+  group('cutOffEdges', () {
+    test('a take with silence on both sides is whole', () {
+      final take = _concat([_silence(400), _tone(600), _silence(1500), _tone(600), _silence(400)]);
+      expect(cutOffEdges(take, _sampleRate), (start: false, end: false));
+    });
+
+    test('a take that begins right on a word has lost that word\'s start', () {
+      final take = _concat([_tone(600), _silence(1500), _tone(600), _silence(400)]);
+      expect(cutOffEdges(take, _sampleRate), (start: true, end: false));
+    });
+
+    test('a take that stops right on a word has lost that word\'s end', () {
+      final take = _concat([_silence(400), _tone(600), _silence(1500), _tone(600)]);
+      expect(cutOffEdges(take, _sampleRate), (start: false, end: true));
+    });
+
+    test('room hiss at the edges is not mistaken for a word', () {
+      final random = math.Random(1);
+      Float64List hiss(int ms) => Float64List.fromList(
+            [for (var i = 0; i < _sampleRate * ms ~/ 1000; i++) (random.nextDouble() - 0.5) * 0.004],
+          );
+      final take = _concat([hiss(400), _tone(600), hiss(1500), _tone(600), hiss(400)]);
+      expect(cutOffEdges(take, _sampleRate), (start: false, end: false));
+    });
+
+    test('a clip too short to judge is left alone', () {
+      expect(cutOffEdges(_tone(30), _sampleRate), (start: false, end: false));
+    });
+  });
 }

@@ -106,3 +106,39 @@ List<WordSegment> splitOnSilence(
       ),
   ];
 }
+
+/// Whether a recording begins, or ends, in the middle of sound instead of
+/// in silence.
+///
+/// A take bounced from a DAW with the range starting right at the first
+/// word comes out with that word's beginning missing — and nothing in the
+/// file to restore it from. The count of segments still matches, so the
+/// slicing succeeds and the damage is only heard later, in the app
+/// («…ранжевый апельсин»). Checking the very first and very last instant
+/// of the file against the same adaptive noise floor [splitOnSilence] uses
+/// catches it at slicing time.
+({bool start, bool end}) cutOffEdges(
+  Float64List samples,
+  int sampleRate, {
+  double windowMs = 20,
+  double silencePercentile = 0.2,
+  double thresholdMultiplier = 4,
+}) {
+  final winSamples = (sampleRate * windowMs / 1000).round();
+  final numWindows = winSamples <= 0 ? 0 : samples.length ~/ winSamples;
+  if (numWindows < 3) return (start: false, end: false);
+
+  final envelope = Float64List(numWindows);
+  for (var w = 0; w < numWindows; w++) {
+    var sumSquares = 0.0;
+    for (var i = w * winSamples; i < (w + 1) * winSamples; i++) {
+      sumSquares += samples[i] * samples[i];
+    }
+    envelope[w] = math.sqrt(sumSquares / winSamples);
+  }
+  final sorted = Float64List.fromList(envelope)..sort();
+  final noiseFloor = sorted[((numWindows - 1) * silencePercentile).round()];
+  final threshold = noiseFloor * thresholdMultiplier;
+
+  return (start: envelope.first > threshold, end: envelope.last > threshold);
+}
