@@ -145,6 +145,35 @@ void main() {
       }
     });
 
+    test('the treat that comes next is never the one just eaten', () {
+      for (var seed = 0; seed < 40; seed++) {
+        final random = Random(seed);
+        final game = MonstersGame(random: random);
+        for (var turn = 0; turn < 60; turn++) {
+          final seat = random.nextInt(MonstersGame.seatCount);
+          final slot = _slotFor(game, game.monsters[seat]);
+          final eaten = game.tray[slot]!;
+          final result = game.feed(traySlot: slot, seat: seat);
+          final next = game.refill(slot);
+          expect(next, isNot(eaten), reason: 'seed $seed, turn $turn');
+          if (result.monsterIsFull) game.replaceMonster(seat);
+        }
+      }
+    });
+
+    test('the tray never holds two identical treats', () {
+      for (var seed = 0; seed < 40; seed++) {
+        final random = Random(seed);
+        final game = MonstersGame(random: random);
+        for (var turn = 0; turn < 60; turn++) {
+          final tray = game.tray.whereType<MonsterFood>().toList();
+          expect(tray.toSet(), hasLength(tray.length), reason: 'seed $seed, turn $turn: $tray');
+          final result = _feedOnce(game, random.nextInt(MonstersGame.seatCount));
+          if (result.monsterIsFull) game.replaceMonster(game.monsters.indexOf(result.monster));
+        }
+      }
+    });
+
     test('refilling a slot that still holds a treat is a programming error', () {
       expect(() => MonstersGame(random: Random(1)).refill(0), throwsStateError);
     });

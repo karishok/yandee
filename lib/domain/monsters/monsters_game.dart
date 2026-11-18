@@ -85,6 +85,10 @@ class MonstersGame {
   final List<MonsterFood?> _tray = List.filled(traySize, null);
   final Set<MonsterColor> _met = {};
 
+  // The treat of each colour that was eaten last, so the next treat of
+  // that colour is a different one.
+  final Map<MonsterColor, MonsterFood> _lastEaten = {};
+
   // Index in MonsterColor.values of the next colour to introduce.
   int _nextNewColor = MonsterColor.startingCount;
 
@@ -115,6 +119,7 @@ class MonstersGame {
       return FeedResult(food: food, monster: monster.color, accepted: false, monsterIsFull: false);
     }
     _tray[traySlot] = null;
+    _lastEaten[food.color] = food;
     monster.eaten++;
     return FeedResult(
       food: food,
@@ -188,9 +193,18 @@ class MonstersGame {
     return _randomFoodFor(hungriest);
   }
 
+  // A treat for [color] that is not already lying in the tray and is not
+  // the one of that colour just eaten — so the same food never comes up
+  // twice in a row, and the tray never shows two identical treats. Every
+  // colour has at least three treats, so there is always one to pick; the
+  // fallbacks only guard against a shorter menu.
   MonsterFood _randomFoodFor(MonsterColor color) {
     final foods = foodsFor(color);
-    return foods[_random.nextInt(foods.length)];
+    final inTray = _tray.whereType<MonsterFood>().toSet();
+    final fresh = foods.where((food) => !inTray.contains(food) && food != _lastEaten[color]).toList();
+    final notInTray = foods.where((food) => !inTray.contains(food)).toList();
+    final choices = fresh.isNotEmpty ? fresh : (notInTray.isNotEmpty ? notInTray : foods);
+    return choices[_random.nextInt(choices.length)];
   }
 }
 
