@@ -34,6 +34,8 @@ void main() {
       expect(File(p.join(dir.path, 'thumb.png')).existsSync(), isTrue, reason: 'thumb.png');
       for (final object in scene.objects) {
         expect(File(p.join(dir.path, object.audio)).existsSync(), isTrue, reason: object.audio);
+        final sound = object.sound;
+        if (sound != null) expect(File(p.join(dir.path, sound)).existsSync(), isTrue, reason: sound);
       }
       final realistic = scene.realistic;
       if (realistic != null) {

@@ -9,7 +9,8 @@ enum SystemPhrase { findIntro, wrongHint, correct, roundComplete }
 /// makes `ExploreMode`/`FindMode` unit-testable with a plain fake, and lets
 /// `SceneController` own all audio/timing/UI side effects.
 abstract class SceneModeEffects {
-  /// Play an object's own recorded name.
+  /// Play an object's own recorded name, followed by the sound the thing
+  /// itself makes when it has one (an animal's voice).
   void playObjectAudio(SceneObject object);
 
   /// Announces [target] as the next thing to find: its name audio, with

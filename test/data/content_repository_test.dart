@@ -242,6 +242,64 @@ void main() {
       expect(await File(cached!.realisticBackgroundPath!).readAsBytes(), [9, 9]);
     });
 
+    test("an object's own sound is downloaded along with its name", () async {
+      final client = MockClient((request) async {
+        final path = request.url.path;
+        if (path == '/v1/index.json') {
+          return http.Response(
+            jsonEncode({
+              'scenesVersion': 1,
+              'scenes': [
+                {'id': 'farm', 'version': 1, 'title': 'Ферма', 'thumbnail': 'farm/thumb.png'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        }
+        if (path == '/v1/farm/scene.json') {
+          return http.Response(
+            jsonEncode({
+              'id': 'farm',
+              'version': 1,
+              'title': 'Ферма',
+              'minAgeMonths': 12,
+              'background': 'background.png',
+              'objects': [
+                {
+                  'id': 'cow',
+                  'label': 'Корова',
+                  'audio': 'cow.wav',
+                  'sound': 'cow_sound.wav',
+                  'rect': {'x': 0.1, 'y': 0.1, 'width': 0.1, 'height': 0.1},
+                },
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        }
+        if (path == '/v1/farm/background.png') return http.Response.bytes([1, 2, 3], 200);
+        if (path == '/v1/farm/thumb.png') return http.Response.bytes([4, 5], 200);
+        if (path == '/v1/farm/cow.wav') return http.Response.bytes([6], 200);
+        if (path == '/v1/farm/cow_sound.wav') return http.Response.bytes([7, 7], 200);
+        return http.Response('not found', 404);
+      });
+      final repo = ContentRepository(
+        httpClient: client,
+        baseUrl: Uri.parse('https://example.invalid/v1/'),
+        cacheRootProvider: () async => cacheRoot,
+      );
+
+      await repo.refresh();
+
+      final cached = await repo.loadScene('farm');
+      expect(cached, isNotNull);
+      final cow = cached!.scene.objects.single;
+      expect(await File(cached.audioPathFor(cow)).readAsBytes(), [6]);
+      expect(await File(cached.soundPathFor(cow)!).readAsBytes(), [7, 7]);
+    });
+
     test('a failed asset download leaves a previously cached scene untouched', () async {
       await _seedScene(cacheRoot, 'city', version: 1, title: 'Город');
       final client = MockClient((request) async {

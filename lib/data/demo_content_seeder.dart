@@ -48,9 +48,12 @@ class DemoContentSeeder {
     final cachedVersion = await _cachedVersion(targetDir);
     if (cachedVersion != null && cachedVersion >= (sceneJson['version'] as int)) return;
 
-    final objectAudioFiles = (sceneJson['objects'] as List<dynamic>)
-        .map((object) => (object as Map<String, dynamic>)['audio'] as String)
-        .toSet();
+    final objects = (sceneJson['objects'] as List<dynamic>).cast<Map<String, dynamic>>();
+    final objectAudioFiles = {
+      for (final object in objects) object['audio'] as String,
+      for (final object in objects)
+        if (object['sound'] != null) object['sound'] as String,
+    };
     // A scene may also ship a realistic picture the child can switch to.
     final realisticBackground = (sceneJson['realistic'] as Map<String, dynamic>?)?['background'] as String?;
     // scene.json goes last: it is what marks the scene as cached at this

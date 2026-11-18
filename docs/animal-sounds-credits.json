@@ -1,0 +1,202 @@
+{
+ "cow": {
+  "scene": "farm",
+  "title": "Mudchute cow 1.ogg",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/4/48/Mudchute_cow_1.ogg",
+  "page": "https://commons.wikimedia.org/wiki/File:Mudchute_cow_1.ogg",
+  "license": "CC BY-SA 3.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+  "artist": "Secretlondon",
+  "seconds": 1.48
+ },
+ "pig": {
+  "scene": "farm",
+  "title": "Pig - Multiple Snorts 2 (2 pigs) - 96kHz.wav",
+  "url": "https://cdn.freesound.org/previews/233/233183_4056007-hq.mp3",
+  "page": "https://freesound.org/people/JarredGibb/sounds/233183/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "JarredGibb",
+  "seconds": 1.56
+ },
+ "chicken": {
+  "scene": "farm",
+  "title": "20110503_clucking.05.wav",
+  "url": "https://cdn.freesound.org/previews/120/120587_8043-hq.mp3",
+  "page": "https://freesound.org/people/dobroide/sounds/120587/",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "artist": "dobroide",
+  "seconds": 1.26
+ },
+ "rooster": {
+  "scene": "farm",
+  "title": "Rooster Calling, Close, A.wav",
+  "url": "https://cdn.freesound.org/previews/439/439472_5121236-hq.mp3",
+  "page": "https://freesound.org/people/InspectorJ/sounds/439472/",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "artist": "InspectorJ",
+  "seconds": 1.84
+ },
+ "horse": {
+  "scene": "farm",
+  "title": "Horse_Whinny.wav",
+  "url": "https://cdn.freesound.org/previews/149/149024_2581089-hq.mp3",
+  "page": "https://freesound.org/people/foxen10/sounds/149024/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "foxen10",
+  "seconds": 2.0
+ },
+ "sheep": {
+  "scene": "farm",
+  "title": "Sheep_Bleat.wav",
+  "url": "https://cdn.freesound.org/previews/321/321967_3554699-hq.mp3",
+  "page": "https://freesound.org/people/n_audioman/sounds/321967/",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "artist": "n_audioman",
+  "seconds": 1.06
+ },
+ "goat": {
+  "scene": "farm",
+  "title": "goat.aif",
+  "url": "https://cdn.freesound.org/previews/273/273911_1031833-hq.mp3",
+  "page": "https://freesound.org/people/beskhu/sounds/273911/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "beskhu",
+  "seconds": 1.3
+ },
+ "duck": {
+  "scene": "farm",
+  "title": "Ducks",
+  "url": "https://cdn.freesound.org/previews/607/607226_887696-hq.mp3",
+  "page": "https://freesound.org/people/D4XX/sounds/607226/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "D4XX",
+  "seconds": 1.94
+ },
+ "dog": {
+  "scene": "farm",
+  "title": "dog tripple bark",
+  "url": "https://cdn.freesound.org/previews/418/418108_6078577-hq.mp3",
+  "page": "https://freesound.org/people/crazymonke9/sounds/418108/",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "artist": "crazymonke9",
+  "seconds": 1.6
+ },
+ "fox": {
+  "scene": "forest",
+  "title": "vixen calling",
+  "url": "https://cdn.freesound.org/previews/362/362127_6140831-hq.mp3",
+  "page": "https://freesound.org/people/AndrewJonesFoto/sounds/362127/",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "artist": "AndrewJonesFoto",
+  "seconds": 0.74
+ },
+ "hedgehog": {
+  "scene": "forest",
+  "title": "Hedgehog smell and run.mp3",
+  "url": "https://cdn.freesound.org/previews/570/570301_8559194-hq.mp3",
+  "page": "https://freesound.org/people/ffdown/sounds/570301/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "ffdown",
+  "seconds": 0.96
+ },
+ "squirrel": {
+  "scene": "forest",
+  "title": "Red Squirrel.wav",
+  "url": "https://cdn.freesound.org/previews/509/509507_10449307-hq.mp3",
+  "page": "https://freesound.org/people/BullSam/sounds/509507/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "BullSam",
+  "seconds": 2.0
+ },
+ "bear": {
+  "scene": "forest",
+  "title": "Bear Angry Growl",
+  "url": "https://cdn.freesound.org/previews/763/763026_1764719-hq.mp3",
+  "page": "https://freesound.org/people/celldroid/sounds/763026/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "celldroid",
+  "seconds": 2.0
+ },
+ "elephant": {
+  "scene": "zoo",
+  "title": "Voice elephant.mp3",
+  "url": "https://cdn.freesound.org/previews/148/148873_2378499-hq.mp3",
+  "page": "https://freesound.org/people/vataaa/sounds/148873/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "vataaa",
+  "seconds": 1.68
+ },
+ "lion": {
+  "scene": "zoo",
+  "title": "Lion lament",
+  "url": "https://cdn.freesound.org/previews/223/223978_639300-hq.mp3",
+  "page": "https://freesound.org/people/roman_cgr/sounds/223978/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "roman_cgr",
+  "seconds": 1.9
+ },
+ "monkey": {
+  "scene": "zoo",
+  "title": "S27-30 Chimpanzee Loud screams.wav",
+  "url": "https://cdn.freesound.org/previews/675/675430_2524442-hq.mp3",
+  "page": "https://freesound.org/people/craigsmith/sounds/675430/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "craigsmith",
+  "seconds": 2.0
+ },
+ "zebra": {
+  "scene": "zoo",
+  "title": "Zebras - Grant's Zebra Braying",
+  "url": "https://cdn.freesound.org/previews/850/850661_15895934-hq.mp3",
+  "page": "https://freesound.org/people/TheKingOfGeeks360/sounds/850661/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "TheKingOfGeeks360",
+  "seconds": 2.0
+ },
+ "tiger": {
+  "scene": "zoo",
+  "title": "tiger roar",
+  "url": "https://cdn.freesound.org/previews/149/149190_2688492-hq.mp3",
+  "page": "https://freesound.org/people/videog/sounds/149190/",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "artist": "videog",
+  "seconds": 1.26
+ },
+ "hippo": {
+  "scene": "zoo",
+  "title": "Shipandeni_Hippos.wav",
+  "url": "https://cdn.freesound.org/previews/612/612318_13563349-hq.mp3",
+  "page": "https://freesound.org/people/noisymichael/sounds/612318/",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "artist": "noisymichael",
+  "seconds": 2.0
+ },
+ "seagull": {
+  "scene": "sea",
+  "title": "Seagull",
+  "url": "https://cdn.freesound.org/previews/318/318092_3200265-hq.mp3",
+  "page": "https://freesound.org/people/Vurca/sounds/318092/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "Vurca",
+  "seconds": 2.0
+ }
+}
