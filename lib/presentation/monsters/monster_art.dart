@@ -7,8 +7,8 @@ import '../../domain/monsters/monster_food.dart';
 /// prototype (`docs/prototypes/monsters.html`) as SVG text.
 ///
 /// A monster is not one picture but a stack of layers sharing one view box
-/// — body, eyes, pupils, each mouth shape, each arm — so the screen can
-/// move the pupils, swap the mouth and swing the arms on their own.
+/// — body, eyes, pupils, each mouth shape, each hand — so the screen can
+/// move the pupils, swap the mouth and move the hands on their own.
 
 /// The three shades a colour is drawn with: the fill, a darker outline and
 /// a lighter highlight.
@@ -65,9 +65,14 @@ const double _viewBoxTop = -10;
 /// The middle of the mouth — where food flies to.
 final monsterMouthAt = _fraction(100, 132);
 
-/// The shoulders the arms swing around.
-final monsterLeftShoulderAt = _fraction(46, 132);
-final monsterRightShoulderAt = _fraction(154, 132);
+/// Where each hand rests, at the monster's side — the point a hand turns
+/// around when it claps or waves.
+final monsterLeftHandAt = _fraction(_leftHandX, _handY);
+final monsterRightHandAt = _fraction(_rightHandX, _handY);
+
+const double _leftHandX = 24;
+const double _rightHandX = 176;
+const double _handY = 140;
 
 // Monsters come in four looks, so neighbours don't look like recolours of
 // one another: horns with two eyes, a tuft with one big eye, antennae with
@@ -178,20 +183,21 @@ String _mouthYuckContent(MonsterColor color) =>
     '<path d="M70 130 q8 -8 15 0 t15 0 t15 0 t15 0" stroke="${_ink(color)}" stroke-width="6" fill="none" stroke-linecap="round"/>'
     '<path d="M96 132 q6 22 16 4" fill="#ff7a92" stroke="#c84a64" stroke-width="3"/>';
 
-// Arms hang down and outwards; clapping swings both hands to meet in front
-// of the belly.
+// Hands are short, plump mittens in the colour of the body, resting against
+// its sides and tilted a little outwards — no stick arms. The screen slides
+// them together in front of the belly to clap.
 String _armContent(MonsterColor color, {required bool left}) {
   final k = monsterShades[color]!;
-  final shoulderX = left ? 46 : 154;
-  final handX = left ? 18 : 182;
-  return '<path d="M$shoulderX 132 L$handX 180" stroke="${k.dark}" stroke-width="12" stroke-linecap="round"/>'
-      '<path d="M$shoulderX 132 L$handX 180" stroke="${k.fill}" stroke-width="6" stroke-linecap="round"/>'
-      '<circle cx="$handX" cy="180" r="13" fill="${k.light}" stroke="${k.dark}" stroke-width="4"/>';
+  final x = _n(left ? _leftHandX : _rightHandX);
+  final y = _n(_handY);
+  final tilt = left ? 18 : -18;
+  return '<ellipse cx="$x" cy="$y" rx="14" ry="21" transform="rotate($tilt $x $y)" '
+      'fill="${k.fill}" stroke="${k.dark}" stroke-width="5"/>';
 }
 
 /// The separate layers of one monster, bottom to top: [body], then
 /// [eyeWhites] with [pupils] (or [squint] instead of both), one of the four
-/// mouths, and the arms on top.
+/// mouths, and the two hands on top.
 class MonsterLayers {
   MonsterLayers._(MonsterColor color)
       : body = _monsterSvg(_bodyContent(color)),

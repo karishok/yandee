@@ -198,7 +198,7 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget); // SceneScreen's own loading state
   });
 
-  testWidgets('shows the "Монстрики" game card above the scenes, and it opens the game', (tester) async {
+  testWidgets('shows the "Монстрики" game as the first card of the grid, and it opens the game', (tester) async {
     late Directory cacheRoot;
 
     await tester.runAsync(() async {
@@ -224,10 +224,11 @@ void main() {
     final card = find.byKey(const ValueKey('monsters_card'));
     expect(card, findsOneWidget);
     expect(find.descendant(of: card, matching: find.text('Монстрики')), findsOneWidget);
-    expect(
-      tester.getTopLeft(card).dy,
-      lessThan(tester.getTopLeft(find.byKey(const ValueKey('scene_card_city'))).dy),
-    );
+    // A card like any scene's: same size, same row, in front of the first scene.
+    final firstScene = find.byKey(const ValueKey('scene_card_city'));
+    expect(tester.getSize(card), tester.getSize(firstScene));
+    expect(tester.getTopLeft(card).dy, tester.getTopLeft(firstScene).dy);
+    expect(tester.getTopLeft(card).dx, lessThan(tester.getTopLeft(firstScene).dx));
 
     await tester.tap(card);
     await tester.pump();

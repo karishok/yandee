@@ -71,24 +71,14 @@ class _SceneListScreenState extends State<SceneListScreen> {
     }
     return Scaffold(
       appBar: AppBar(title: const Text('Yandee'), actions: [_settingsButton(context)]),
-      body: CustomScrollView(
-        slivers: [
-          // The colour game is not a scene, so it gets a wide card of its
-          // own above the grid of scenes.
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            sliver: SliverToBoxAdapter(child: _buildMonstersCard()),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverGrid.count(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              children: scenes.map(_buildCard).toList(),
-            ),
-          ),
-        ],
+      body: GridView.count(
+        crossAxisCount: 2,
+        padding: const EdgeInsets.all(16),
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        // The colour game is not a scene, but it is entered the same way:
+        // a card like the others, first in the grid.
+        children: [_buildMonstersCard(), ...scenes.map(_buildCard)],
       ),
     );
   }
@@ -101,34 +91,30 @@ class _SceneListScreenState extends State<SceneListScreen> {
       ),
       child: Card(
         clipBehavior: Clip.antiAlias,
-        color: const Color(0xFFD9EFFF),
-        child: SizedBox(
-          height: 150,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _cardMonster(MonsterColor.red),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8),
-                child: Text(
-                  'Монстрики',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF23324A)),
+        child: Column(
+          children: [
+            Expanded(
+              // Where a scene card shows its thumbnail, this one shows two
+              // of the monsters on the game's sky-blue background.
+              child: ColoredBox(
+                color: const Color(0xFFD9EFFF),
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Row(
+                    children: [
+                      Expanded(child: SvgPicture.string(MonsterLayers.of(MonsterColor.red).whole)),
+                      Expanded(child: SvgPicture.string(MonsterLayers.of(MonsterColor.blue).whole)),
+                    ],
+                  ),
                 ),
               ),
-              _cardMonster(MonsterColor.blue),
-            ],
-          ),
+            ),
+            const Padding(padding: EdgeInsets.all(8), child: Text('Монстрики')),
+          ],
         ),
       ),
     );
   }
-
-  Widget _cardMonster(MonsterColor color) => Flexible(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: SvgPicture.string(MonsterLayers.of(color).whole),
-        ),
-      );
 
   Widget _settingsButton(BuildContext context) {
     return Padding(

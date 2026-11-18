@@ -26,6 +26,16 @@ enum MonsterMove { chomp, shake, giggle, enter, leave }
 
 enum _ArmMove { clap, wave }
 
+/// Where a hand is, relative to where it rests: shifted by ([dx], [dy])
+/// view-box units and turned by [turn] radians about its own middle.
+class _HandPose {
+  const _HandPose(this.dx, this.dy, this.turn);
+  static const rest = _HandPose(0, 0, 0);
+  final double dx;
+  final double dy;
+  final double turn;
+}
+
 /// One animated monster, drawn into a square.
 ///
 /// What it looks like at rest comes from the widget's fields; movements are
@@ -197,20 +207,27 @@ class MonsterFigureState extends State<MonsterFigure> with TickerProviderStateMi
     return (transform: transform, opacity: opacity.clamp(0.0, 1.0));
   }
 
-  // How far each arm is swung, in radians, for the left arm; the right arm
-  // mirrors a clap. A wave moves the right arm only.
-  ({double left, double right}) _armAngles() {
+  // Where each hand is for this frame, relative to its resting place at
+  // the monster's side: a shift in view-box units and a turn in radians.
+  ({_HandPose left, _HandPose right}) _handPoses() {
     final t = _arms.value;
     switch (_armMove) {
       case _ArmMove.clap:
-        final angle =
-            _deg(_track(t, const [0, .25, .45, .65, 1], const [0, -100, -70, -100, 0], Curves.easeInOut));
-        return (left: angle, right: -angle);
-      case _ArmMove.wave:
-        final angle = _deg(
-          _track(t, const [0, .2, .4, .6, .8, 1], const [0, -150, -120, -150, -120, 0], Curves.easeInOut),
+        // Both hands slide in front of the belly and meet twice: together
+        // at 25% and 65% of the move, a little apart in between.
+        final together = _track(t, const [0, .25, .45, .65, 1], const [0, 1, .7, 1, 0], Curves.easeInOut);
+        return (
+          left: _HandPose(58 * together, 16 * together, _deg(44 * together)),
+          right: _HandPose(-58 * together, 16 * together, _deg(-44 * together)),
         );
-        return (left: 0, right: angle);
+      case _ArmMove.wave:
+        // The right hand goes up beside the head and wags from side to side.
+        final lifted = _track(t, const [0, .2, .8, 1], const [0, 1, 1, 0], Curves.easeInOut);
+        final wag = _track(t, const [0, .2, .4, .6, .8, 1], const [0, 1, -1, 1, -1, 0], Curves.easeInOut);
+        return (
+          left: _HandPose.rest,
+          right: _HandPose(12 * lifted, -54 * lifted, _deg(38 * lifted + 15 * wag)),
+        );
     }
   }
 
@@ -232,10 +249,13 @@ class MonsterFigureState extends State<MonsterFigure> with TickerProviderStateMi
               child: SvgPicture.string(svg, width: side, height: side),
             );
 
-        Widget arm(String svg, ({double x, double y}) shoulder, double angle) => Transform.rotate(
-              angle: angle,
-              alignment: FractionalOffset(shoulder.x, shoulder.y),
-              child: layer(svg),
+        Widget hand(String svg, ({double x, double y}) restingAt, _HandPose pose) => Transform.translate(
+              offset: Offset(pose.dx, pose.dy) * viewBoxUnit,
+              child: Transform.rotate(
+                angle: pose.turn,
+                alignment: FractionalOffset(restingAt.x, restingAt.y),
+                child: layer(svg),
+              ),
             );
 
         return Center(
@@ -249,7 +269,7 @@ class MonsterFigureState extends State<MonsterFigure> with TickerProviderStateMi
                 animation: Listenable.merge([_move, _arms, _dance]),
                 builder: (context, _) {
                   final pose = _bodyPose(side / 180);
-                  final arms = _armAngles();
+                  final hands = _handPoses();
                   return Opacity(
                     opacity: pose.opacity,
                     child: Transform(
@@ -272,8 +292,8 @@ class MonsterFigureState extends State<MonsterFigure> with TickerProviderStateMi
                           layer(layers.mouthOpen, visible: widget.mouth == MonsterMouth.open),
                           layer(layers.mouthChomp, visible: widget.mouth == MonsterMouth.chomp),
                           layer(layers.mouthYuck, visible: widget.mouth == MonsterMouth.yuck),
-                          arm(layers.leftArm, monsterLeftShoulderAt, arms.left),
-                          arm(layers.rightArm, monsterRightShoulderAt, arms.right),
+                          hand(layers.leftArm, monsterLeftHandAt, hands.left),
+                          hand(layers.rightArm, monsterRightHandAt, hands.right),
                         ],
                       ),
                     ),
