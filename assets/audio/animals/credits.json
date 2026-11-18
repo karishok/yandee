@@ -98,5 +98,15 @@
   "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
   "artist": "Jugrü",
   "seconds": 3.1
+ },
+ "hedgehog": {
+  "scene": "forest",
+  "title": "Braunigel Drohgeräusche.ogg",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/1/19/Braunigel_Drohger%C3%A4usche.ogg",
+  "page": "https://commons.wikimedia.org/wiki/File:Braunigel_Drohger%C3%A4usche.ogg",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "artist": "Richard Huber",
+  "seconds": 3.16
  }
 }

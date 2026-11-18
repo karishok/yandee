@@ -17,6 +17,7 @@ also asks that the edited clip stays under the same license.
 | `duck.wav` | farm | Jonathon Jongsma | CC BY-SA 3.0 | [Anas platyrhynchos - Mallard - XC62258.ogg](https://commons.wikimedia.org/wiki/File:Anas_platyrhynchos_-_Mallard_-_XC62258.ogg) |
 | `dog.wav` | farm | Amada44 | CC BY-SA 3.0 | [Barking of a dog.ogg](https://commons.wikimedia.org/wiki/File:Barking_of_a_dog.ogg) |
 | `fox.wav` | forest | Jugrü | CC BY-SA 3.0 | [Bellender Fuchs.ogg](https://commons.wikimedia.org/wiki/File:Bellender_Fuchs.ogg) |
+| `hedgehog.wav` | forest | Richard Huber | CC BY-SA 4.0 | [Braunigel Drohgeräusche.ogg](https://commons.wikimedia.org/wiki/File:Braunigel_Drohger%C3%A4usche.ogg) |
 
-Not yet downloaded (Wikimedia rate limit): hedgehog, squirrel, bear, elephant,
-lion, monkey, zebra, tiger, seagull. No usable recording found: hare, giraffe, hippo.
+Not yet downloaded (Wikimedia rate limit): squirrel, bear, elephant, lion, monkey, zebra, tiger, seagull.
+No usable recording found: hare, giraffe, hippo.
