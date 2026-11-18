@@ -444,6 +444,11 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
       if (result.monsterIsFull) {
         await _swap(seat, session, after: yum);
         if (_stale(session)) return;
+      } else {
+        // The next turn starts only once «Ням! …» has been said, so what is
+        // heard always belongs to what is on screen.
+        await _wiggleUntilHeard(yum, figure, session);
+        if (_stale(session)) return;
       }
     } else {
       // Wrong colour: a grimace, and the treat is spat back into the tray.
@@ -452,7 +457,7 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
       _voice.playSfx(MonsterSfx.yuck);
       // Always the whole line, name included: «Фу! — зелёному!» on its own
       // doesn't say what is meant for the green one.
-      unawaited(_voice.say(MonsterPhrases.refused(food)));
+      final refusal = _voice.say(MonsterPhrases.refused(food));
       final home = _layout.slot(slot).center;
       await _fly(
         food,
@@ -471,7 +476,11 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
       if (_stale(session)) return;
       _floating.value = null;
       setState(() => _hiddenSlots.remove(slot));
-      await _pause(250);
+      // The grimace stays until «Фу! Синяя черника — синему!» has been said
+      // to its end: only then can the child try again. Letting them go on
+      // sooner had the voice still saying «— синему!» about the last treat
+      // while the next one was already on its way somewhere else.
+      await Future.wait([_pause(250), _heardOut(refusal)]);
       if (_stale(session)) return;
       setState(() => _mouths.remove(seat));
     }

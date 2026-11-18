@@ -252,6 +252,57 @@ void main() {
     }
   });
 
+  testWidgets('after a refusal, the next turn waits until «Фу! … — …му!» has been said', (tester) async {
+    final h = await _startGame(tester);
+    final wrongSlot = h.slotFor(1);
+    final food = h.game.tray[wrongSlot]!;
+    await tester.tapAt(h.slotCenter(wrongSlot));
+    await tester.pump();
+    h.voice.holdSpeech(); // the refusal that follows keeps sounding
+    await tester.tapAt(h.seatCenter(0));
+    await tester.pump();
+    await h.run(const Duration(seconds: 2));
+
+    expect(h.voice.said.last, 'Фу! ${MonsterPhrases.foodName(food).text} — ${food.color.dative}!');
+    expect(h.figure(0).mouth, MonsterMouth.yuck, reason: 'still grimacing while it speaks');
+
+    // Picking up another treat now does nothing: the voice is not done.
+    final saidSoFar = h.voice.said.length;
+    await tester.tapAt(h.slotCenter(h.slotFor(2)));
+    await tester.pump();
+    expect(h.voice.said, hasLength(saidSoFar));
+
+    h.voice.finishSpeaking();
+    await h.run(const Duration(milliseconds: 300));
+    expect(h.figure(0).mouth, MonsterMouth.idle);
+    await tester.tapAt(h.slotCenter(h.slotFor(2)));
+    await tester.pump();
+    expect(h.voice.said, hasLength(saidSoFar + 1), reason: 'now the next treat can be picked up');
+  });
+
+  testWidgets('after eating, the next turn waits until «Ням! …» has been said', (tester) async {
+    final h = await _startGame(tester);
+    final slot = h.slotFor(0);
+    final finger = await tester.startGesture(h.slotCenter(slot));
+    await finger.moveTo(h.seatCenter(0));
+    await tester.pump();
+    h.voice.holdSpeech(); // «Ням! …» keeps sounding
+    await finger.up();
+    await tester.pump();
+    await h.run(const Duration(seconds: 3));
+
+    final saidSoFar = h.voice.said.length;
+    await tester.tapAt(h.seatCenter(2));
+    await tester.pump();
+    expect(h.voice.said, hasLength(saidSoFar), reason: 'no «Я …!» over the top of «Ням!»');
+
+    h.voice.finishSpeaking();
+    await h.run(const Duration(milliseconds: 700));
+    await tester.tapAt(h.seatCenter(2));
+    await tester.pump();
+    expect(h.voice.said.last, 'Я ${h.game.monsters[2].masculine}!');
+  });
+
   testWidgets('touches wait while a feeding is playing out', (tester) async {
     final h = await _startGame(tester);
     await h.feed(h.slotFor(0), 0, letItPlay: const Duration(milliseconds: 200));
