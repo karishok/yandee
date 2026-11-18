@@ -198,5 +198,65 @@
   "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
   "artist": "Vurca",
   "seconds": 2.0
+ },
+ "tractor": {
+  "scene": "farm",
+  "title": "Steyr tractor.wav",
+  "url": "https://cdn.freesound.org/previews/592/592655_10152894-hq.mp3",
+  "page": "https://freesound.org/people/dibko/sounds/592655/",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "artist": "dibko",
+  "seconds": 2.0
+ },
+ "car": {
+  "scene": "street",
+  "title": "claxon.wav",
+  "url": "https://cdn.freesound.org/previews/19/19026_45540-hq.mp3",
+  "page": "https://freesound.org/people/han1/sounds/19026/",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "artist": "han1",
+  "seconds": 0.9
+ },
+ "bus": {
+  "scene": "street",
+  "title": "Bus Pop",
+  "url": "https://cdn.freesound.org/previews/263/263116_672090-hq.mp3",
+  "page": "https://freesound.org/people/lauramellis/sounds/263116/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "lauramellis",
+  "seconds": 2.0
+ },
+ "truck": {
+  "scene": "street",
+  "title": "Dump Truck",
+  "url": "https://cdn.freesound.org/previews/134/134897_2392879-hq.mp3",
+  "page": "https://freesound.org/people/jberkuta14/sounds/134897/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "jberkuta14",
+  "seconds": 2.0
+ },
+ "bicycle": {
+  "scene": "street",
+  "title": "Bicycle_Bell.wav",
+  "url": "https://cdn.freesound.org/previews/330/330956_2436991-hq.mp3",
+  "page": "https://freesound.org/people/nikiforov5000/sounds/330956/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "nikiforov5000",
+  "seconds": 1.32
+ },
+ "boat": {
+  "scene": "sea",
+  "title": "Rowing Oar.wav",
+  "url": "https://cdn.freesound.org/previews/389/389237_5778180-hq.mp3",
+  "page": "https://freesound.org/people/pugaeme/sounds/389237/",
+  "license": "CC BY 3.0",
+  "license_url": "https://creativecommons.org/licenses/by/3.0/",
+  "artist": "pugaeme",
+  "seconds": 2.0
  }
 }

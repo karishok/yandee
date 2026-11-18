@@ -1,12 +1,14 @@
-# Animal sounds — credits
+# Animal and vehicle sounds — credits
 
-The animal voices in `assets/demo_content/<scene>/<id>_sound.wav` (each
-object's `sound` in scene.json) are real recordings: the cow from Wikimedia
-Commons, the rest from Freesound (their HQ MP3 previews).
-`tool/fetch_animal_sounds.py` cuts each one down to its main call, at most
+The animal voices and vehicle sounds in `assets/demo_content/<scene>/<id>_sound.wav`
+(each object's `sound` in scene.json) are real recordings: the cow from
+Wikimedia Commons, the rest from Freesound (their HQ MP3 previews).
+`tool/fetch_animal_sounds.py` cuts each one down to its main part, at most
 2 seconds, and matches the loudness. Licenses marked CC BY / CC BY-SA require
 crediting the author (e.g. on an About screen); CC BY-SA also asks that the
 edited clip stays under the same license. CC0 needs no credit.
+
+## Animals
 
 | File | Scene | Author | License | Source |
 |---|---|---|---|---|
@@ -31,10 +33,22 @@ edited clip stays under the same license. CC0 needs no credit.
 | `zoo/hippo_sound.wav` | zoo | noisymichael | CC BY 4.0 | [Shipandeni_Hippos.wav](https://freesound.org/people/noisymichael/sounds/612318/) |
 | `sea/seagull_sound.wav` | sea | Vurca | CC0 | [Seagull](https://freesound.org/people/Vurca/sounds/318092/) |
 
+## Vehicles
+
+| File | Scene | Author | License | Source |
+|---|---|---|---|---|
+| `farm/tractor_sound.wav` | farm | dibko | CC BY 4.0 | [Steyr tractor.wav](https://freesound.org/people/dibko/sounds/592655/) |
+| `street/car_sound.wav` | street | han1 | CC BY 4.0 | [claxon.wav](https://freesound.org/people/han1/sounds/19026/) |
+| `street/bus_sound.wav` | street | lauramellis | CC0 | [Bus Pop](https://freesound.org/people/lauramellis/sounds/263116/) |
+| `street/truck_sound.wav` | street | jberkuta14 | CC0 | [Dump Truck](https://freesound.org/people/jberkuta14/sounds/134897/) |
+| `street/bicycle_sound.wav` | street | nikiforov5000 | CC0 | [Bicycle_Bell.wav](https://freesound.org/people/nikiforov5000/sounds/330956/) |
+| `sea/boat_sound.wav` | sea | pugaeme | CC BY 3.0 | [Rowing Oar.wav](https://freesound.org/people/pugaeme/sounds/389237/) |
+
 InspectorJ asks to be credited as: "Rooster Calling, Close, A.wav" by InspectorJ
 (www.jshaw.co.uk) of Freesound.org.
 
 The uploaders of the horse, goat and elephant say nothing about how the
 recording was made; their CC0 license is as declared on Freesound.
 
-No usable recording found: hare, giraffe.
+No usable recording found: hare, giraffe. The scooter is name-only by choice
+(a kick scooter makes little sound of its own).
