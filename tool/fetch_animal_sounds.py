@@ -1,13 +1,13 @@
-"""Download the chosen animal recordings and cut each into a short (at most
-MAX_LEN seconds), loudness-matched 44.1 kHz mono 16-bit WAV clip.
+"""Download the chosen animal and vehicle recordings and cut each into a short
+(at most MAX_LEN seconds), loudness-matched 44.1 kHz mono 16-bit WAV clip.
 
 usage: python3 -I tool/fetch_animal_sounds.py RAW_DIR OUT_DIR
 Writes OUT_DIR/<id>.wav (copy to assets/demo_content/<scene>/<id>_sound.wav) and
 OUT_DIR/credits.json. Needs ffmpeg, curl and numpy.
 
 The recordings are Freesound's HQ MP3 previews, which need no API key; the cow is
-a Wikimedia Commons file. Only recordings of the real animal that allow commercial
-use belong in CHOICES: no CC BY-NC, no imitations, no synthesised sounds.
+a Wikimedia Commons file. Only real recordings of the animal or vehicle that allow
+commercial use belong in CHOICES: no CC BY-NC, no imitations, no synthesised sounds.
 """
 import html, json, re, subprocess, sys, time
 from pathlib import Path
@@ -45,6 +45,13 @@ CHOICES = {
     "tiger":    ("zoo",    "videog/149190"),
     "hippo":    ("zoo",    "noisymichael/612318"),
     "seagull":  ("sea",    "Vurca/318092"),
+    # vehicles
+    "tractor":  ("farm",   "dibko/592655"),
+    "car":      ("street", "han1/19026"),
+    "bus":      ("street", "lauramellis/263116"),
+    "truck":    ("street", "jberkuta14/134897"),
+    "bicycle":  ("street", "nikiforov5000/330956"),
+    "boat":     ("sea",    "pugaeme/389237"),
 }
 
 
