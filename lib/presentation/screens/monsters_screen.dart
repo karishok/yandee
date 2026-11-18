@@ -165,6 +165,10 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
   final List<double> _growth = List.filled(MonstersGame.seatCount, 1);
   Offset? _lookAt;
 
+  // The treat whose name is being said because it was just picked up, with
+  // the future that ends when the name has been said.
+  ({MonsterFood food, Future<void> speech})? _naming;
+
   // The colour that has just been met for the first time — its dot glows.
   MonsterColor? _justMet;
   int _confettiRun = 0;
@@ -213,6 +217,7 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
     _growth.fillRange(0, _growth.length, 1);
     _lookAt = null;
     _justMet = null;
+    _naming = null;
     for (var slot = 0; slot < _slotVersions.length; slot++) {
       _slotVersions[slot]++;
     }
@@ -336,8 +341,19 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
     });
     if (slot == null) return;
     _voice.playSfx(MonsterSfx.boing);
-    unawaited(_voice.say(MonsterPhrases.foodName(_game.tray[slot]!)));
+    final food = _game.tray[slot]!;
+    final naming = _voice.say(MonsterPhrases.foodName(food));
+    _naming = (food: food, speech: naming);
+    naming.whenComplete(() {
+      if (identical(_naming?.speech, naming)) _naming = null;
+    });
   }
+
+  /// The voice is still busy naming [food] from when it was picked up. What
+  /// the monster says next can then skip the name: «Красная клубника» …
+  /// «Ням!» says it all, where «Красная клубника» … «Ням! Красная клубника»
+  /// says it twice and keeps everyone waiting.
+  bool _stillNaming(MonsterFood food) => _naming?.food == food;
 
   // ----------------------------------------------------------- sequences
 
@@ -404,7 +420,7 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
       setState(() => _mouths[seat] = MonsterMouth.chomp);
       figure?.play(MonsterMove.chomp);
       _voice.playSfx(MonsterSfx.chomp);
-      final yum = _voice.say(MonsterPhrases.ate(food));
+      final yum = _voice.say(_stillNaming(food) ? MonsterPhrases.ateJustNamed : MonsterPhrases.ate(food));
       await _pause(500);
       if (_stale(session)) return;
 
@@ -425,11 +441,8 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
       });
 
       if (result.monsterIsFull) {
-        // Let «Ням! Красная клубника» be heard out before the goodbye.
-        await _heardOut(yum);
-        if (_stale(session)) return;
         setState(() => _growth[seat] = 1);
-        await _swap(seat, session);
+        await _swap(seat, session, after: yum);
         if (_stale(session)) return;
       }
     } else {
@@ -437,7 +450,9 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
       setState(() => _mouths[seat] = MonsterMouth.yuck);
       figure?.play(MonsterMove.shake);
       _voice.playSfx(MonsterSfx.yuck);
-      unawaited(_voice.say(MonsterPhrases.refused(food)));
+      unawaited(
+        _voice.say(_stillNaming(food) ? MonsterPhrases.refusedJustNamed(food) : MonsterPhrases.refused(food)),
+      );
       final home = _layout.slot(slot).center;
       await _fly(
         food,
@@ -464,12 +479,18 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
   }
 
   /// The full monster in [seat] waves goodbye and leaves; the next colour
-  /// hops into its place and says hello.
-  Future<void> _swap(int seat, int session) async {
+  /// hops into its place and says hello. [after] is the line still being
+  /// said when the goodbye begins («Ням! …»).
+  Future<void> _swap(int seat, int session, {required Future<void> after}) async {
     final figure = _figure(seat);
+    // The goodbye is asked for at once and the monster starts waving at
+    // once — it must not stand frozen while the voice finishes «Ням! …».
+    // The voice gets to «Спасибо! Пока-пока!» when that line ends; the
+    // monster stays until its wave is done and the goodbye has had a moment
+    // to be heard, then goes.
     unawaited(_voice.say(MonsterPhrases.byeLine));
     figure?.wave();
-    await _pause(1100);
+    await Future.wait([_pause(1100), _heardOut(after).then((_) => _pause(700))]);
     if (_stale(session)) return;
 
     figure?.play(MonsterMove.leave);

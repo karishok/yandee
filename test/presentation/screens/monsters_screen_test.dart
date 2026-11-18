@@ -303,24 +303,76 @@ void main() {
     expect(dot.scale, greaterThan(1));
   });
 
-  testWidgets('«Ням!» is heard out before the goodbye starts', (tester) async {
+  testWidgets('a full monster waves at once, but stays until «Ням!» has been said', (tester) async {
     final h = await _startGame(tester);
     const seat = 0;
+    final departed = h.game.monsters[seat];
     await h.feed(h.slotFor(seat), seat);
 
-    await tester.tapAt(h.slotCenter(h.slotFor(seat)));
+    final finger = await tester.startGesture(h.slotCenter(h.slotFor(seat)));
+    await finger.moveTo(h.seatCenter(seat));
     await tester.pump();
     h.voice.holdSpeech(); // the «Ням! …» that follows keeps sounding
+    await finger.up();
+    await tester.pump();
+
+    // Fed, clapped — and straight into the goodbye wave, no standing about.
+    await h.run(const Duration(milliseconds: 2100));
+    expect(h.voice.said.last, 'Спасибо! Пока-пока!', reason: 'asked for at once; the voice says it in turn');
+    expect(h.figureState(seat).isWaving, isTrue);
+
+    // «Ням! …» is still sounding long after the wave: the monster waits.
+    await h.run(const Duration(milliseconds: 1500));
+    expect(h.figureState(seat).currentMove, isNot(MonsterMove.leave));
+    expect(h.figure(seat).color, departed);
+
+    // Once it has been said, the goodbye gets a moment, then the monster goes.
+    h.voice.finishSpeaking();
+    await h.run(const Duration(milliseconds: 400));
+    expect(h.figureState(seat).currentMove, isNot(MonsterMove.leave));
+    await h.run(const Duration(milliseconds: 500));
+    expect(h.figureState(seat).currentMove, MonsterMove.leave);
+
+    await h.run(const Duration(seconds: 3));
+    expect(h.figure(seat).color, MonsterColor.orange);
+  });
+
+  testWidgets('fed while its name is still being said, a treat is not named twice', (tester) async {
+    final h = await _startGame(tester);
+    const seat = 0;
+    final slot = h.slotFor(seat);
+    final name = MonsterPhrases.foodName(h.game.tray[slot]!).text;
+    h.voice.said.clear();
+
+    h.voice.holdSpeech(); // «Красная клубника» keeps sounding
+    await tester.tapAt(h.slotCenter(slot));
+    await tester.pump();
     await tester.tapAt(h.seatCenter(seat));
     await tester.pump();
-    await h.run(const Duration(milliseconds: 2500));
+    await h.run(const Duration(milliseconds: 600));
 
-    expect(h.voice.said.last, startsWith('Ням!'));
-    expect(h.voice.said, isNot(contains('Спасибо! Пока-пока!')));
-
+    expect(h.voice.said, [name, 'Ням!']);
     h.voice.finishSpeaking();
-    await h.run(const Duration(milliseconds: 200));
-    expect(h.voice.said.last, 'Спасибо! Пока-пока!');
+    await h.run(const Duration(seconds: 3));
+    expect(h.game.eatenBy(seat), 1);
+  });
+
+  testWidgets('refused while its name is still being said, a treat is not named twice either', (tester) async {
+    final h = await _startGame(tester);
+    final slot = h.slotFor(1);
+    final food = h.game.tray[slot]!;
+    h.voice.said.clear();
+
+    h.voice.holdSpeech();
+    await tester.tapAt(h.slotCenter(slot));
+    await tester.pump();
+    await tester.tapAt(h.seatCenter(0));
+    await tester.pump();
+    await h.run(const Duration(milliseconds: 600));
+
+    expect(h.voice.said, [MonsterPhrases.foodName(food).text, 'Фу! — ${food.color.dative}!']);
+    h.voice.finishSpeaking();
+    await h.run(const Duration(seconds: 2));
   });
 
   testWidgets('meeting the last colour starts the celebration, once', (tester) async {
