@@ -30,6 +30,10 @@ enum FoodKind {
   cookie('cookie', 'печенье', Gender.neuter),
   nut('nut', 'орех', Gender.masculine),
   mushroom('mushroom', 'гриб', Gender.masculine),
+  bogBlueberry('bog_blueberry', 'голубика', Gender.feminine),
+  fish('fish', 'рыбка', Gender.feminine),
+  iceCube('ice_cube', 'льдинка', Gender.feminine),
+  water('water', 'вода', Gender.feminine),
   egg('egg', 'яйцо', Gender.neuter),
   milk('milk', 'молоко', Gender.neuter),
   rice('rice', 'рис', Gender.masculine),
@@ -51,9 +55,10 @@ enum FoodKind {
 }
 
 /// What a monster of each colour eats: real food of that colour wherever
-/// there is some, and a sweet only where there isn't — blue and purple
-/// have few foods of their own, and nothing you'd give a child is truly
-/// light blue except sweets.
+/// there is some. Blue and purple have few foods of their own, so each gets
+/// one sweet; pink is the colour of sweets anyway. Hardly any food is truly
+/// light blue, so that monster gets a berry named after the colour, a
+/// little fish, a piece of ice and a glass of water.
 const Map<MonsterColor, List<FoodKind>> foodsByColor = {
   MonsterColor.red: [FoodKind.strawberry, FoodKind.tomato, FoodKind.apple, FoodKind.cherry],
   MonsterColor.blue: [FoodKind.blueberry, FoodKind.plum, FoodKind.candy],
@@ -63,7 +68,7 @@ const Map<MonsterColor, List<FoodKind>> foodsByColor = {
   MonsterColor.purple: [FoodKind.grapes, FoodKind.eggplant, FoodKind.lollipop],
   MonsterColor.pink: [FoodKind.donut, FoodKind.marshmallow, FoodKind.cottonCandy, FoodKind.iceCream],
   MonsterColor.brown: [FoodKind.chocolate, FoodKind.cookie, FoodKind.nut, FoodKind.mushroom],
-  MonsterColor.lightblue: [FoodKind.cottonCandy, FoodKind.iceCream, FoodKind.lollipop],
+  MonsterColor.lightblue: [FoodKind.bogBlueberry, FoodKind.fish, FoodKind.iceCube, FoodKind.water],
   MonsterColor.white: [FoodKind.egg, FoodKind.milk, FoodKind.rice, FoodKind.garlic],
   MonsterColor.black: [FoodKind.blackberry, FoodKind.olive, FoodKind.bread, FoodKind.currant],
 };

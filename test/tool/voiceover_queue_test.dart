@@ -71,7 +71,7 @@ void main() {
       expect(isValidSceneFilter('monsters'), isTrue);
     });
 
-    test('the "Монстрики" phrases come in 10 parts of 5–10 that together cover all 70, once each', () {
+    test('the "Монстрики" phrases come in 10 parts of 5–10 that together cover all 71, once each', () {
       final all = buildMonstersVoiceoverTasks();
       List<String> part(int number) =>
           [for (final t in all) if (taskMatchesFilter(t, 'monsters-$number')) t.text];
@@ -105,8 +105,8 @@ void main() {
         expect(phrases.length, inInclusiveRange(5, 10));
       }
       final together = parts.expand((phrases) => phrases).toList();
-      expect(together, hasLength(70));
-      expect(together.toSet(), hasLength(70));
+      expect(together, hasLength(71));
+      expect(together.toSet(), hasLength(71));
       expect(together, [for (final t in all) t.text], reason: 'the parts, in order, are the whole list in order');
       expect(part(11), isEmpty);
     });

@@ -18,6 +18,15 @@ void main() {
   stdout.writeln('docs/monsters_phrases.md ($total фраз)');
 }
 
+// «1 фраза», «3 фразы», «5 фраз», «71 фраза».
+String _phrasesWord(int count) {
+  final lastTwo = count % 100, last = count % 10;
+  if (lastTwo >= 11 && lastTwo <= 14) return 'фраз';
+  if (last == 1) return 'фраза';
+  if (last >= 2 && last <= 4) return 'фразы';
+  return 'фраз';
+}
+
 String buildMonstersPhrasesDoc() {
   final parts = buildMonstersParts();
   final total = parts.fold<int>(0, (sum, part) => sum + part.clips.length);
@@ -27,7 +36,7 @@ String buildMonstersPhrasesDoc() {
     ..writeln('<!-- Этот файл создан командой `dart run tool/write_monsters_phrases_doc.dart`. '
         'Не правь его руками — правки пропадут при следующем запуске. -->')
     ..writeln()
-    ..writeln('Всего **$total фраз**, они разбиты на **${parts.length} частей по 5–10 фраз**. '
+    ..writeln('Всего **$total ${_phrasesWord(total)}**, они разбиты на **${parts.length} частей по 5–10 фраз**. '
         'Одна часть — одна запись в Logic и одна команда. Части можно записывать в любом порядке '
         'и в разные дни.')
     ..writeln()
@@ -90,7 +99,7 @@ String buildMonstersPhrasesDoc() {
     out
       ..writeln('## Часть ${part.number}. ${part.title}')
       ..writeln()
-      ..writeln('${part.clips.length} фраз. Команда после записи:')
+      ..writeln('${part.clips.length} ${_phrasesWord(part.clips.length)}. Команда после записи:')
       ..writeln()
       ..writeln('```bash')
       ..writeln('dart run tool/slice_voiceover.dart ${part.filter} запись.wav')

@@ -34,13 +34,13 @@ void main() {
     expect(byPath['assets/audio/monsters/food_red_tomato.wav'], 'Красный помидор');
     expect(byPath['assets/audio/monsters/iam_orange.wav'], 'Я оранжевый!');
     expect(byPath['assets/audio/monsters/for_blue.wav'], '— синему!');
-    expect(buildMonstersVoiceoverTasks(), hasLength(70));
+    expect(buildMonstersVoiceoverTasks(), hasLength(71));
   });
 
-  test('produces exactly 185 tasks with no duplicate output paths', () {
-    // 115 for the scenes and system phrases, 70 for the "Монстрики" game.
+  test('produces exactly 186 tasks with no duplicate output paths', () {
+    // 115 for the scenes and system phrases, 71 for the "Монстрики" game.
     final tasks = buildVoiceoverTasks();
-    expect(tasks.length, 185);
-    expect(tasks.map((t) => t.outputPath).toSet().length, 185);
+    expect(tasks.length, 186);
+    expect(tasks.map((t) => t.outputPath).toSet().length, 186);
   });
 }

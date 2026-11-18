@@ -337,6 +337,32 @@ String _foodContent(FoodKind kind, MonsterShades k) {
       return '<path d="M66 26 C88 40 92 76 70 88 C48 98 18 84 14 66 C10 50 30 46 44 40 C54 36 58 22 66 26Z" fill="${k.fill}" stroke="${k.dark}" $_round/>'
           '<path d="M56 30 L66 16 L76 30 L70 38 L62 36Z" fill="$_leaf" stroke="$_leafDark" stroke-width="3" stroke-linejoin="round"/>'
           '<ellipse cx="36" cy="64" rx="5" ry="12" fill="#fff" opacity=".3" transform="rotate(60 36 64)"/>';
+    case FoodKind.bogBlueberry:
+      return '<path d="M50 24 Q36 6 20 12 Q30 30 50 24Z" fill="$_leaf" stroke="$_leafDark" stroke-width="3" stroke-linejoin="round"/>'
+          '<path d="M50 24 Q64 6 80 12 Q70 30 50 24Z" fill="$_leaf" stroke="$_leafDark" stroke-width="3" stroke-linejoin="round"/>'
+          '${_circles(const [(32, 66), (68, 66), (50, 44)], (x, y) => '<circle cx="$x" cy="$y" r="20" fill="${k.fill}" stroke="${k.dark}" stroke-width="4"/>'
+              '<path d="M${x - 6} ${y + 4} l3 -5 l3 5 l3 -5 l3 5" stroke="${k.dark}" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+              '<circle cx="${x - 8}" cy="${y - 8}" r="5" fill="#fff" opacity=".6"/>')}';
+    case FoodKind.fish:
+      return '<path d="M64 50 L92 28 L86 50 L92 72Z" fill="${k.light}" stroke="${k.dark}" $_round/>'
+          '<path d="M38 30 Q50 12 62 32Z" fill="${k.light}" stroke="${k.dark}" stroke-width="3" stroke-linejoin="round"/>'
+          '<path d="M10 50 C24 24 56 22 72 50 C56 78 24 76 10 50Z" fill="${k.fill}" stroke="${k.dark}" $_round/>'
+          '<path d="M46 42 q7 8 0 16 M57 44 q5 6 0 12" stroke="${k.dark}" stroke-width="2.5" fill="none" stroke-linecap="round" opacity=".55"/>'
+          '<circle cx="28" cy="44" r="7" fill="#fff" stroke="${k.dark}" stroke-width="2.5"/><circle cx="27" cy="44" r="3.2" fill="$_pupilInk"/>'
+          '<path d="M16 56 q5 4 10 0" stroke="${k.dark}" stroke-width="2.5" fill="none" stroke-linecap="round"/>';
+    case FoodKind.iceCube:
+      return '<path d="M16 32 L50 48 L50 90 L16 72Z" fill="${k.fill}" stroke="${k.dark}" $_round/>'
+          '<path d="M84 32 L50 48 L50 90 L84 72Z" fill="${k.light}" stroke="${k.dark}" $_round/>'
+          '<path d="M50 14 L84 32 L50 48 L16 32Z" fill="#effbff" stroke="${k.dark}" $_round/>'
+          '<path d="M24 46 V62 M31 50 v8" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".8"/>'
+          '<path d="M66 56 l10 -5" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".8"/>'
+          '<path d="M88 12 v10 M83 17 h10" stroke="${k.dark}" stroke-width="3" stroke-linecap="round"/>';
+    case FoodKind.water:
+      return '<path d="M26 12 H74 L68 92 H32Z" fill="#f4fbff" stroke="${k.dark}" $_round/>'
+          '<path d="M29 32 q10 -6 21 0 t21 0 L67 88 H33Z" fill="${k.fill}"/>'
+          '<path d="M29 32 q10 -6 21 0 t21 0" stroke="${k.light}" stroke-width="3" fill="none" stroke-linecap="round"/>'
+          '<circle cx="42" cy="56" r="4" fill="#fff" opacity=".7"/><circle cx="56" cy="70" r="3" fill="#fff" opacity=".7"/><circle cx="50" cy="44" r="2.5" fill="#fff" opacity=".7"/>'
+          '<path d="M36 22 L39 78" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".6"/>';
     case FoodKind.apple:
       return '<path d="M50 30 C38 18 14 24 14 50 C14 76 32 94 50 88 C68 94 86 76 86 50 C86 24 62 18 50 30Z" fill="${k.fill}" stroke="${k.dark}" $_round/>'
           '<path d="M50 30 Q50 18 56 10" stroke="$_stem" stroke-width="5" fill="none" stroke-linecap="round"/>'

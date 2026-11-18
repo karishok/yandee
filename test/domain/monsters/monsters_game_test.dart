@@ -261,7 +261,7 @@ void main() {
     test('most treats are real food: sweets only fill in where a colour has little of its own', () {
       const sweets = {FoodKind.candy, FoodKind.lollipop, FoodKind.iceCream, FoodKind.cottonCandy};
       for (final color in MonsterColor.values) {
-        if (color == MonsterColor.lightblue || color == MonsterColor.pink) continue;
+        if (color == MonsterColor.pink) continue;
         final sweetCount = foodsFor(color).where((food) => sweets.contains(food.kind)).length;
         expect(sweetCount, lessThanOrEqualTo(1), reason: '$color');
       }
@@ -272,9 +272,9 @@ void main() {
       expect(used, FoodKind.values.toSet());
     });
 
-    test('there are 41 different treats in all', () {
-      expect(allFoods, hasLength(41));
-      expect(allFoods.toSet(), hasLength(41));
+    test('there are 42 different treats in all', () {
+      expect(allFoods, hasLength(42));
+      expect(allFoods.toSet(), hasLength(42));
     });
 
     test('the colour word agrees with the food\'s gender', () {
@@ -287,6 +287,10 @@ void main() {
       expect(const MonsterFood(FoodKind.cottonCandy, MonsterColor.pink).name, 'розовая сахарная вата');
       expect(const MonsterFood(FoodKind.broccoli, MonsterColor.green).name, 'зелёная брокколи');
       expect(const MonsterFood(FoodKind.bread, MonsterColor.black).name, 'чёрный хлеб');
+      expect(const MonsterFood(FoodKind.bogBlueberry, MonsterColor.lightblue).name, 'голубая голубика');
+      expect(const MonsterFood(FoodKind.fish, MonsterColor.lightblue).name, 'голубая рыбка');
+      expect(const MonsterFood(FoodKind.iceCube, MonsterColor.lightblue).name, 'голубая льдинка');
+      expect(const MonsterFood(FoodKind.water, MonsterColor.lightblue).name, 'голубая вода');
       expect(const MonsterFood(FoodKind.apple, MonsterColor.red).name, 'красное яблоко');
     });
   });
