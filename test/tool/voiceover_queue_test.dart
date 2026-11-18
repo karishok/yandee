@@ -70,6 +70,58 @@ void main() {
       expect(taskMatchesFilter(kitchenTask, 'monsters'), isFalse);
       expect(isValidSceneFilter('monsters'), isTrue);
     });
+
+    test('the "Монстрики" phrases come in 11 parts of 5–10 that together cover all 79, once each', () {
+      final all = buildMonstersVoiceoverTasks();
+      List<String> part(int number) =>
+          [for (final t in all) if (taskMatchesFilter(t, 'monsters-$number')) t.text];
+
+      expect(part(1), [
+        'Покорми монстриков! Красный ест красное, синий — синее.',
+        'Ням!',
+        'Фу!',
+        'Спасибо! Пока-пока!',
+        'Привет!',
+        'Привет! Я новенький!',
+        'Ура! Ты знаешь все цвета!',
+      ]);
+      expect(part(2), ['Я красный!', 'Я синий!', 'Я жёлтый!', 'Я зелёный!', 'Я оранжевый!', 'Я фиолетовый!']);
+      expect(part(4).first, '— красному!');
+      expect(part(6), [
+        'Красная клубника',
+        'Красный помидор',
+        'Красная конфета',
+        'Красный леденец',
+        'Красное мороженое',
+        'Синяя черника',
+        'Синяя конфета',
+        'Синий леденец',
+        'Синее мороженое',
+      ]);
+
+      final parts = [for (var number = 1; number <= 11; number++) part(number)];
+      for (final phrases in parts) {
+        expect(phrases.length, inInclusiveRange(5, 10));
+      }
+      final together = parts.expand((phrases) => phrases).toList();
+      expect(together, hasLength(79));
+      expect(together.toSet(), hasLength(79));
+      expect(together, [for (final t in all) t.text], reason: 'the parts, in order, are the whole list in order');
+      expect(part(12), isEmpty);
+    });
+
+    test('every "Монстрики" part is a valid filter, and none leaks into scenes or system', () {
+      const kitchen = VoiceoverTask(text: 'Яблоко', outputPath: 'assets/demo_content/kitchen/apple.wav');
+      const system = VoiceoverTask(text: 'Где', outputPath: 'assets/audio/system/find_intro.wav');
+      expect(monstersFilters, ['monsters', for (var number = 1; number <= 11; number++) 'monsters-$number']);
+      for (final filter in monstersFilters) {
+        expect(isValidSceneFilter(filter), isTrue, reason: filter);
+        expect(taskMatchesFilter(kitchen, filter), isFalse, reason: filter);
+        expect(taskMatchesFilter(system, filter), isFalse, reason: filter);
+      }
+      expect(isValidSceneFilter('monsters-12'), isFalse);
+      expect(isValidSceneFilter('monsters-0'), isFalse);
+    });
   });
 
   group('buildRecordingQueue', () {

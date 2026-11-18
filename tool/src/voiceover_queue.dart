@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'monsters_parts.dart';
 import 'scene_vocabulary.dart';
 import 'voiceover_tasks.dart';
 
@@ -16,26 +17,52 @@ bool isUnrecorded(File file) {
   return file.lengthSync() == placeholderWavSizeBytes;
 }
 
-/// The filter value that selects the phrases of the "Монстрики" game.
+/// The filter value that selects every phrase of the "Монстрики" game.
 const monstersFilter = 'monsters';
+
+/// The "Монстрики" phrases in parts of 5–10, so they can be recorded in
+/// short sittings instead of 79 in one go: `monsters-1` … `monsters-11`.
+final List<MonstersPart> _monstersParts = buildMonstersParts();
+
+/// Every filter value that selects "Монстрики" phrases: the whole set
+/// first, then each part.
+final List<String> monstersFilters = [
+  monstersFilter,
+  for (final part in _monstersParts) part.filter,
+];
+
+/// How long a silence has to be, in a single-take recording of "Монстрики"
+/// phrases, to count as the gap between two phrases rather than a pause
+/// inside one.
+const double monstersPhraseGapMs = 900;
+
+/// True if [filter] is about the "Монстрики" game at all.
+bool isMonstersFilter(String? filter) => filter != null && monstersFilters.contains(filter);
+
+bool _matchesMonstersFilter(VoiceoverTask task, String filter) {
+  if (!task.outputPath.startsWith(monstersVoiceoverDir)) return false;
+  if (filter == monstersFilter) return true;
+  final part = _monstersParts.firstWhere((part) => part.filter == filter);
+  return part.clips.any((clip) => task.outputPath == '$monstersVoiceoverDir${clip.id}.wav');
+}
 
 /// True if [task] belongs to the requested recording session. `null`
 /// matches everything; `'system'` matches only the 4 system phrases;
-/// `'monsters'` matches only the "Монстрики" game's phrases; any scene id
-/// matches only that scene's objects.
+/// `'monsters'` and its parts `'monsters-1'`… match the "Монстрики" game's
+/// phrases; any scene id matches only that scene's objects.
 bool taskMatchesFilter(VoiceoverTask task, String? sceneFilter) {
   if (sceneFilter == null) return true;
   if (sceneFilter == 'system') return task.outputPath.startsWith('assets/audio/system/');
-  if (sceneFilter == monstersFilter) return task.outputPath.startsWith(monstersVoiceoverDir);
+  if (isMonstersFilter(sceneFilter)) return _matchesMonstersFilter(task, sceneFilter);
   return task.outputPath.startsWith('assets/demo_content/$sceneFilter/');
 }
 
 /// True if [filter] is a value `taskMatchesFilter` can actually match
-/// against: `null` (everything), `'system'`, `'monsters'`, or a real scene id. Guards
-/// against a typo'd/mis-cased scene filter silently matching nothing and
-/// being reported as "already fully recorded".
+/// against: `null` (everything), `'system'`, one of [monstersFilters], or
+/// a real scene id. Guards against a typo'd/mis-cased scene filter silently
+/// matching nothing and being reported as "already fully recorded".
 bool isValidSceneFilter(String? filter) {
-  if (filter == null || filter == 'system' || filter == monstersFilter) return true;
+  if (filter == null || filter == 'system' || isMonstersFilter(filter)) return true;
   return scenes.any((s) => s.id == filter);
 }
 

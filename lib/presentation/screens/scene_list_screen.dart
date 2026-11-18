@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../data/cached_scene.dart';
 import '../../data/content_repository.dart';
 import '../../domain/monsters/monster_color.dart';
+import '../../domain/monsters/monster_food.dart';
 import '../monsters/monster_art.dart';
 import 'monsters_screen.dart';
 import 'scene_screen.dart';
@@ -93,22 +94,10 @@ class _SceneListScreenState extends State<SceneListScreen> {
         clipBehavior: Clip.antiAlias,
         child: Column(
           children: [
-            Expanded(
-              // Where a scene card shows its thumbnail, this one shows two
-              // of the monsters on the game's sky-blue background.
-              child: ColoredBox(
-                color: const Color(0xFFD9EFFF),
-                child: Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Row(
-                    children: [
-                      Expanded(child: SvgPicture.string(MonsterLayers.of(MonsterColor.red).whole)),
-                      Expanded(child: SvgPicture.string(MonsterLayers.of(MonsterColor.blue).whole)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            // Where a scene card shows its upright thumbnail, this one
+            // shows the game screen in miniature, in the same upright
+            // shape: the four starting monsters over the tray of treats.
+            const Expanded(child: AspectRatio(aspectRatio: 2 / 3, child: _MonstersThumbnail())),
             const Padding(padding: EdgeInsets.all(8), child: Text('Монстрики')),
           ],
         ),
@@ -151,6 +140,63 @@ class _SceneListScreenState extends State<SceneListScreen> {
               ),
             ),
             Padding(padding: const EdgeInsets.all(8), child: Text(scene.title)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The "Монстрики" game screen in miniature — the picture on its card.
+class _MonstersThumbnail extends StatelessWidget {
+  const _MonstersThumbnail();
+
+  static const _monsters = [
+    [MonsterColor.red, MonsterColor.blue],
+    [MonsterColor.yellow, MonsterColor.green],
+  ];
+
+  static const _treats = [
+    MonsterFood(FoodKind.strawberry, MonsterColor.red),
+    MonsterFood(FoodKind.banana, MonsterColor.yellow),
+    MonsterFood(FoodKind.pear, MonsterColor.green),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: const Color(0xFFD9EFFF),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Column(
+          children: [
+            for (final row in _monsters)
+              Expanded(
+                flex: 4,
+                child: Row(
+                  children: [
+                    for (final color in row)
+                      Expanded(child: SvgPicture.string(MonsterLayers.of(color).whole)),
+                  ],
+                ),
+              ),
+            Expanded(
+              flex: 3,
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(3),
+                  child: Row(
+                    children: [
+                      for (final treat in _treats) Expanded(child: SvgPicture.string(foodSvg(treat))),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),

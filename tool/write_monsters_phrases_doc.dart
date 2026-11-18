@@ -1,11 +1,9 @@
 import 'dart:io';
 
-import 'package:yandee/domain/monsters/monster_color.dart';
-import 'package:yandee/domain/monsters/monster_food.dart';
-import 'package:yandee/domain/monsters/monster_phrases.dart';
+import 'src/monsters_parts.dart';
 
-/// Writes `docs/monsters_phrases.md` — the list of every phrase of the
-/// "Монстрики" game to record, with its file name — from the game's own
+/// Writes `docs/monsters_phrases.md` — every phrase of the "Монстрики"
+/// game to record, part by part, with its file name — from the game's own
 /// phrase list, so the document can't drift from the code.
 ///
 /// Usage: `dart run tool/write_monsters_phrases_doc.dart`
@@ -16,44 +14,53 @@ void main() {
     return;
   }
   File('docs/monsters_phrases.md').writeAsStringSync(buildMonstersPhrasesDoc());
-  stdout.writeln('docs/monsters_phrases.md (${MonsterPhrases.allClips.length} фраз)');
-}
-
-String _capitalized(String text) => '${text[0].toUpperCase()}${text.substring(1)}';
-
-String _table(Iterable<VoiceClip> clips) {
-  final rows = StringBuffer('| Что сказать | Файл |\n|---|---|\n');
-  for (final clip in clips) {
-    rows.writeln('| ${clip.text} | `${clip.id}.wav` |');
-  }
-  return rows.toString();
+  final total = buildMonstersParts().fold<int>(0, (sum, part) => sum + part.clips.length);
+  stdout.writeln('docs/monsters_phrases.md ($total фраз)');
 }
 
 String buildMonstersPhrasesDoc() {
-  final total = MonsterPhrases.allClips.length;
+  final parts = buildMonstersParts();
+  final total = parts.fold<int>(0, (sum, part) => sum + part.clips.length);
   final out = StringBuffer()
     ..writeln('# Игра «Монстрики» — фразы для записи')
     ..writeln()
     ..writeln('<!-- Этот файл создан командой `dart run tool/write_monsters_phrases_doc.dart`. '
         'Не правь его руками — правки пропадут при следующем запуске. -->')
     ..writeln()
-    ..writeln('Всего нужно записать **$total фраз**. Каждая фраза — отдельный файл в папке '
-        '`assets/audio/monsters/`.')
-    ..writeln()
-    ..writeln('## Как записывать')
-    ..writeln()
-    ..writeln('В терминале, из папки проекта:')
-    ..writeln()
-    ..writeln('```bash')
-    ..writeln('dart run tool/record_voiceover.dart monsters')
-    ..writeln('```')
-    ..writeln()
-    ..writeln('Программа сама по очереди показывает, что сказать, и сама кладёт запись в нужный файл '
-        'с нужным именем — названия файлов из таблиц ниже запоминать не нужно. Запись можно прервать '
-        'в любой момент: при следующем запуске она продолжит с первой ещё не записанной фразы.')
+    ..writeln('Всего **$total фраз**, они разбиты на **${parts.length} частей по 5–10 фраз**. '
+        'Одна часть — одна запись в Logic и одна команда. Части можно записывать в любом порядке '
+        'и в разные дни.')
     ..writeln()
     ..writeln('Пока фраза не записана, игра говорит её временным компьютерным голосом. '
-        'Как только появляется твоя запись, игра сама начинает использовать её.')
+        'Как только появляется твоя запись, игра сама начинает использовать её '
+        '(приложение после этого нужно заново поставить на телефон).')
+    ..writeln()
+    ..writeln('## Как записать одну часть в Logic')
+    ..writeln()
+    ..writeln('1. Открой таблицу нужной части ниже и прочитай её фразы **подряд, сверху вниз**, '
+        'одним дублем.')
+    ..writeln('2. **Между фразами молчи примерно 2 секунды.** По этим паузам программа понимает, '
+        'где кончается одна фраза и начинается другая.')
+    ..writeln('3. **Внутри фразы не останавливайся** дольше, чем на обычный вдох (меньше полсекунды). '
+        '«Спасибо! Пока-пока!» — это одна фраза, говори её слитно.')
+    ..writeln('4. Оговорилась — вырежи неудачный кусок в Logic. В готовой записи каждая фраза '
+        'должна звучать ровно один раз и в том же порядке, что в таблице.')
+    ..writeln('5. Сохрани запись в файл (Bounce) в формате WAV. Моно или стерео, 16 или 24 бита — '
+        'неважно.')
+    ..writeln('6. В терминале, из папки проекта, запусти команду этой части — она написана над '
+        'таблицей. Вместо `запись.wav` подставь путь к своему файлу (файл можно просто перетащить '
+        'в окно терминала).')
+    ..writeln()
+    ..writeln('Программа сама разрежет запись на фразы, почистит шум и разложит файлы с нужными '
+        'именами в `assets/audio/monsters/`. Названия файлов из таблиц запоминать не нужно.')
+    ..writeln()
+    ..writeln('Если кусков получилось больше или меньше, чем фраз в части, программа **ничего не '
+        'запишет** и покажет список найденных кусков с их длиной и фразой, которая на это место '
+        'ожидалась. Обычно причина одна из двух: слишком короткая пауза между фразами (две фразы '
+        'склеились в один длинный кусок) или слишком длинная пауза внутри фразы (фраза развалилась '
+        'на два коротких). Поправь это место в Logic и запусти команду снова.')
+    ..writeln()
+    ..writeln('Часть можно перезаписать сколько угодно раз — новая запись просто заменит старую.')
     ..writeln()
     ..writeln('## Почему фраз $total, а не 182')
     ..writeln()
@@ -70,47 +77,42 @@ String buildMonstersPhrasesDoc() {
     ..writeln('Поэтому «Красная клубника» записывается один раз, а звучит в трёх местах: когда ребёнок '
         'берёт еду, когда монстрик её съел и когда выплюнул.')
     ..writeln()
-    ..writeln('## Советы')
+    ..writeln('## Советы по интонации')
     ..writeln()
     ..writeln('- Названия еды («Красная клубника») говори ровно и радостно, без вопроса и без '
         'восклицания в конце — эта запись должна подходить и после «Ням!», и после «Фу!».')
     ..writeln('- Фразы «— синему!», «— красному!» — это концовка от «Фу! Синяя черника — синему!». '
         'Тире читать не нужно: скажи одно слово «синему!» так, будто подсказываешь, кому отдать.')
     ..writeln('- «Ням!» и «Фу!» — коротко и с выражением, это голос монстрика.')
-    ..writeln()
-    ..writeln('## Общие фразы')
-    ..writeln()
-    ..write(_table(const [
-      MonsterPhrases.intro,
-      MonsterPhrases.yum,
-      MonsterPhrases.yuck,
-      MonsterPhrases.bye,
-      MonsterPhrases.hello,
-      MonsterPhrases.helloNew,
-      MonsterPhrases.win,
-    ]))
-    ..writeln()
-    ..writeln('## Монстрик называет свой цвет')
-    ..writeln()
-    ..writeln('Звучит, когда ребёнок тыкает в монстрика, и в конце приветствия новенького.')
-    ..writeln()
-    ..write(_table(MonsterColor.values.map(MonsterPhrases.iAm)))
-    ..writeln()
-    ..writeln('## Кому отдать еду')
-    ..writeln()
-    ..writeln('Концовка фразы «Фу! … — синему!».')
-    ..writeln()
-    ..write(_table(MonsterColor.values.map(MonsterPhrases.forColor)))
-    ..writeln()
-    ..writeln('## Еда')
     ..writeln();
 
-  for (final color in MonsterColor.values) {
+  for (final part in parts) {
     out
-      ..writeln('### ${_capitalized(color.masculine)}')
+      ..writeln('## Часть ${part.number}. ${part.title}')
       ..writeln()
-      ..write(_table(foodsFor(color).map(MonsterPhrases.food)))
-      ..writeln();
+      ..writeln('${part.clips.length} фраз. Команда после записи:')
+      ..writeln()
+      ..writeln('```bash')
+      ..writeln('dart run tool/slice_voiceover.dart ${part.filter} запись.wav')
+      ..writeln('```')
+      ..writeln()
+      ..writeln('| № | Что сказать | Файл |')
+      ..writeln('|---|---|---|');
+    for (var i = 0; i < part.clips.length; i++) {
+      final clip = part.clips[i];
+      out.writeln('| ${i + 1} | ${clip.text} | `${clip.id}.wav` |');
+    }
+    out.writeln();
   }
+
+  out
+    ..writeln('## Если захочется записать без Logic')
+    ..writeln()
+    ..writeln('Те же части можно записать прямо в микрофон компьютера, по одной фразе: программа '
+        'показывает, что сказать, и даёт переслушать каждый дубль.')
+    ..writeln()
+    ..writeln('```bash')
+    ..writeln('dart run tool/record_voiceover.dart monsters-1')
+    ..writeln('```');
   return out.toString();
 }

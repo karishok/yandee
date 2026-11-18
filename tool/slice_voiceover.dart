@@ -7,13 +7,15 @@ import 'src/voiceover_queue.dart';
 import 'src/voiceover_tasks.dart';
 import 'src/wav_io.dart';
 
-/// Slices a single Logic Pro bounce — one scene's (or `system`'s) words,
-/// said in order with a pause between each — into per-word `assets/*.wav`
+/// Slices a single Logic Pro bounce — one scene's (or `system`'s) words, or
+/// one part of the "Монстрики" game's phrases (`monsters-1` … `monsters-11`,
+/// see docs/monsters_phrases.md), said in order with a pause between each — into
+/// per-word `assets/*.wav`
 /// files, replacing the mic-capture path in `record_voiceover.dart` for
 /// people who'd rather record in a proper DAW than through
 /// `ffmpeg -f avfoundation`.
 ///
-/// Usage: `dart run tool/slice_voiceover.dart <scene-id|system> <path/to/bounce.wav>`
+/// Usage: `dart run tool/slice_voiceover.dart <scene-id|system|monsters…> <path/to/bounce.wav>`
 Future<void> main(List<String> args) async {
   if (!File('pubspec.yaml').existsSync()) {
     stderr.writeln('Запусти из корня репозитория.');
@@ -22,7 +24,7 @@ Future<void> main(List<String> args) async {
   }
 
   if (args.length != 2) {
-    stderr.writeln('Использование: dart run tool/slice_voiceover.dart <scene-id|system> <path/to/bounce.wav>');
+    stderr.writeln('Использование: dart run tool/slice_voiceover.dart <scene-id|system|monsters…> <path/to/bounce.wav>');
     exitCode = 1;
     return;
   }
@@ -31,7 +33,7 @@ Future<void> main(List<String> args) async {
   final bouncePath = args[1];
 
   if (!isValidSceneFilter(sceneFilter)) {
-    final validValues = [...scenes.map((s) => s.id), 'system'];
+    final validValues = [...scenes.map((s) => s.id), 'system', ...monstersFilters];
     stderr.writeln('Неизвестный фильтр сцены: "$sceneFilter".');
     stderr.writeln('Допустимые значения: ${validValues.join(', ')}.');
     exitCode = 1;
@@ -66,7 +68,14 @@ Future<void> main(List<String> args) async {
   }
 
   final audio = readMonoWav16(tempFile);
-  final segments = splitOnSilence(audio.samples, audio.sampleRate);
+  // A scene's words are single words, so half a second of silence is
+  // always a gap between two of them. The "Монстрики" phrases are whole
+  // sentences with pauses of their own («Спасибо! Пока-пока!»), so there a
+  // gap only counts as "between phrases" once it is close to a second —
+  // the reading instructions ask for two.
+  final segments = isMonstersFilter(sceneFilter)
+      ? splitOnSilence(audio.samples, audio.sampleRate, minSilenceMs: monstersPhraseGapMs)
+      : splitOnSilence(audio.samples, audio.sampleRate);
 
   if (segments.length != tasks.length) {
     stderr.writeln('Ожидалось ${tasks.length} слов ($sceneFilter), найдено ${segments.length} кусков:');
@@ -74,9 +83,16 @@ Future<void> main(List<String> args) async {
       final startSec = segments[i].startSample / audio.sampleRate;
       final endSec = segments[i].endSample / audio.sampleRate;
       final durationSec = endSec - startSec;
+      // Next to each chunk, the phrase it would become — reading down the
+      // list, the first one that doesn't fit its length is where it went off.
+      final expected = i < tasks.length ? '«${tasks[i].text}»' : '— лишний кусок';
       stderr.writeln(
-        '  $i: ${startSec.toStringAsFixed(2)}–${endSec.toStringAsFixed(2)}с (${durationSec.toStringAsFixed(2)}с)',
+        '  ${i + 1}: ${startSec.toStringAsFixed(2)}–${endSec.toStringAsFixed(2)}с '
+        '(${durationSec.toStringAsFixed(2)}с)  $expected',
       );
+    }
+    for (var i = segments.length; i < tasks.length; i++) {
+      stderr.writeln('  ${i + 1}: нет куска для «${tasks[i].text}»');
     }
     stderr.writeln(
       'Проверь дубль в Logic на волну — где-то не хватает паузы (слова склеились) или пауза внутри слова (слово разрезано).',
