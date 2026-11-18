@@ -1,33 +1,40 @@
 # Animal sounds — credits
 
 The animal voices in `assets/demo_content/<scene>/<id>_sound.wav` (each
-object's `sound` in scene.json) are real recordings from Wikimedia Commons, cut to the loudest few seconds and
-loudness-matched by `tool/fetch_animal_sounds.py`. The hippo comes from
-Freesound instead (its HQ MP3 preview, seconds 18.5–25 of the recording, put
-through the same `cut()`). Licenses marked CC BY /
-CC BY-SA require crediting the author (e.g. on an About screen); CC BY-SA
-also asks that the edited clip stays under the same license.
+object's `sound` in scene.json) are real recordings: the cow from Wikimedia
+Commons, the rest from Freesound (their HQ MP3 previews).
+`tool/fetch_animal_sounds.py` cuts each one down to its main call, at most
+2 seconds, and matches the loudness. Licenses marked CC BY / CC BY-SA require
+crediting the author (e.g. on an About screen); CC BY-SA also asks that the
+edited clip stays under the same license. CC0 needs no credit.
 
 | File | Scene | Author | License | Source |
 |---|---|---|---|---|
 | `farm/cow_sound.wav` | farm | Secretlondon | CC BY-SA 3.0 | [Mudchute cow 1.ogg](https://commons.wikimedia.org/wiki/File:Mudchute_cow_1.ogg) |
-| `farm/pig_sound.wav` | farm | erdie | CC BY 3.0 | [Pig grunt - Erdie.ogg](https://commons.wikimedia.org/wiki/File:Pig_grunt_-_Erdie.ogg) |
-| `farm/chicken_sound.wav` | farm | alys | Public domain | [Hen announcing shes lain an egg.ogg](https://commons.wikimedia.org/wiki/File:Hen_announcing_shes_lain_an_egg.ogg) |
-| `farm/rooster_sound.wav` | farm | alys | Public domain | [Medium rooster crowing.ogg](https://commons.wikimedia.org/wiki/File:Medium_rooster_crowing.ogg) |
-| `farm/horse_sound.wav` | farm | Hü. | Public domain | [Wiehern.ogg](https://commons.wikimedia.org/wiki/File:Wiehern.ogg) |
-| `farm/sheep_sound.wav` | farm | earthcalling | Public domain | [Sheep bleating.ogg](https://commons.wikimedia.org/wiki/File:Sheep_bleating.ogg) |
-| `farm/goat_sound.wav` | farm | stephan | Public domain | [Herd of goats bleating.ogg](https://commons.wikimedia.org/wiki/File:Herd_of_goats_bleating.ogg) |
-| `farm/duck_sound.wav` | farm | Jonathon Jongsma | CC BY-SA 3.0 | [Anas platyrhynchos - Mallard - XC62258.ogg](https://commons.wikimedia.org/wiki/File:Anas_platyrhynchos_-_Mallard_-_XC62258.ogg) |
-| `farm/dog_sound.wav` | farm | Amada44 | CC BY-SA 3.0 | [Barking of a dog.ogg](https://commons.wikimedia.org/wiki/File:Barking_of_a_dog.ogg) |
-| `forest/fox_sound.wav` | forest | Jugrü | CC BY-SA 3.0 | [Bellender Fuchs.ogg](https://commons.wikimedia.org/wiki/File:Bellender_Fuchs.ogg) |
-| `forest/hedgehog_sound.wav` | forest | Richard Huber | CC BY-SA 4.0 | [Braunigel Drohgeräusche.ogg](https://commons.wikimedia.org/wiki/File:Braunigel_Drohger%C3%A4usche.ogg) |
-| `forest/squirrel_sound.wav` | forest | Arunasank | CC BY-SA 4.0 | [Squirrel calls.wav](https://commons.wikimedia.org/wiki/File:Squirrel_calls.wav) |
-| `forest/bear_sound.wav` | forest | NPS & MSU Acoustic Atlas / Jennifer Jerrett | Public domain | [Yellowstone sound library - Grizzly Bears Roar - 001.mp3](https://commons.wikimedia.org/wiki/File:Yellowstone_sound_library_-_Grizzly_Bears_Roar_-_001.mp3) |
-| `zoo/elephant_sound.wav` | zoo | தகவலுழவன் | CC0 | [Elephant voice - trumpeting.ogg](https://commons.wikimedia.org/wiki/File:Elephant_voice_-_trumpeting.ogg) |
-| `zoo/lion_sound.wav` | zoo | த*உழவன் | Public domain | [Lion raring-sound1TamilNadu178.ogg](https://commons.wikimedia.org/wiki/File:Lion_raring-sound1TamilNadu178.ogg) |
-| `zoo/monkey_sound.wav` | zoo | Pawel Fedurek et al. | CC BY 4.0 | [Pant-hoot call made by a male chimpanzee.ogg](https://commons.wikimedia.org/wiki/File:Pant-hoot_call_made_by_a_male_chimpanzee.ogg) |
-| `zoo/zebra_sound.wav` | zoo | DiegoC472 | CC BY-SA 4.0 | [Grévys zebra (Sound Effects).ogg](https://commons.wikimedia.org/wiki/File:Gr%C3%A9vys_zebra_%28Sound_Effects%29.ogg) |
-| `zoo/tiger_sound.wav` | zoo | schots (via freesound.org/s/439280) | CC0 | [439280 schots angry-tiger.wav](https://commons.wikimedia.org/wiki/File:439280_schots_angry-tiger.wav) |
-| `zoo/hippo_sound.wav` | zoo | YleArkisto | CC BY 4.0 | [Virtahevot ääntelevät / Hippopotamus, hippos making sounds nearby in the river](https://freesound.org/people/YleArkisto/sounds/253082/) |
-| `sea/seagull_sound.wav` | sea | avphillips | Public domain | [Gull 2.ogg](https://commons.wikimedia.org/wiki/File:Gull_2.ogg) |
+| `farm/pig_sound.wav` | farm | JarredGibb | CC0 | [Pig - Multiple Snorts 2 (2 pigs) - 96kHz.wav](https://freesound.org/people/JarredGibb/sounds/233183/) |
+| `farm/chicken_sound.wav` | farm | dobroide | CC BY 4.0 | [20110503_clucking.05.wav](https://freesound.org/people/dobroide/sounds/120587/) |
+| `farm/rooster_sound.wav` | farm | InspectorJ | CC BY 4.0 | [Rooster Calling, Close, A.wav](https://freesound.org/people/InspectorJ/sounds/439472/) |
+| `farm/horse_sound.wav` | farm | foxen10 | CC0 | [Horse_Whinny.wav](https://freesound.org/people/foxen10/sounds/149024/) |
+| `farm/sheep_sound.wav` | farm | n_audioman | CC BY 4.0 | [Sheep_Bleat.wav](https://freesound.org/people/n_audioman/sounds/321967/) |
+| `farm/goat_sound.wav` | farm | beskhu | CC0 | [goat.aif](https://freesound.org/people/beskhu/sounds/273911/) |
+| `farm/duck_sound.wav` | farm | D4XX | CC0 | [Ducks](https://freesound.org/people/D4XX/sounds/607226/) |
+| `farm/dog_sound.wav` | farm | crazymonke9 | CC BY 4.0 | [dog tripple bark](https://freesound.org/people/crazymonke9/sounds/418108/) |
+| `forest/fox_sound.wav` | forest | AndrewJonesFoto | CC BY 4.0 | [vixen calling](https://freesound.org/people/AndrewJonesFoto/sounds/362127/) |
+| `forest/hedgehog_sound.wav` | forest | ffdown | CC0 | [Hedgehog smell and run.mp3](https://freesound.org/people/ffdown/sounds/570301/) |
+| `forest/squirrel_sound.wav` | forest | BullSam | CC0 | [Red Squirrel.wav](https://freesound.org/people/BullSam/sounds/509507/) |
+| `forest/bear_sound.wav` | forest | celldroid | CC0 | [Bear Angry Growl](https://freesound.org/people/celldroid/sounds/763026/) |
+| `zoo/elephant_sound.wav` | zoo | vataaa | CC0 | [Voice elephant.mp3](https://freesound.org/people/vataaa/sounds/148873/) |
+| `zoo/lion_sound.wav` | zoo | roman_cgr | CC0 | [Lion lament](https://freesound.org/people/roman_cgr/sounds/223978/) |
+| `zoo/monkey_sound.wav` | zoo | craigsmith | CC0 | [S27-30 Chimpanzee Loud screams.wav](https://freesound.org/people/craigsmith/sounds/675430/) |
+| `zoo/zebra_sound.wav` | zoo | TheKingOfGeeks360 | CC0 | [Zebras - Grant's Zebra Braying](https://freesound.org/people/TheKingOfGeeks360/sounds/850661/) |
+| `zoo/tiger_sound.wav` | zoo | videog | CC BY 4.0 | [tiger roar](https://freesound.org/people/videog/sounds/149190/) |
+| `zoo/hippo_sound.wav` | zoo | noisymichael | CC BY 4.0 | [Shipandeni_Hippos.wav](https://freesound.org/people/noisymichael/sounds/612318/) |
+| `sea/seagull_sound.wav` | sea | Vurca | CC0 | [Seagull](https://freesound.org/people/Vurca/sounds/318092/) |
+
+InspectorJ asks to be credited as: "Rooster Calling, Close, A.wav" by InspectorJ
+(www.jshaw.co.uk) of Freesound.org.
+
+The uploaders of the horse, goat and elephant say nothing about how the
+recording was made; their CC0 license is as declared on Freesound.
+
 No usable recording found: hare, giraffe.

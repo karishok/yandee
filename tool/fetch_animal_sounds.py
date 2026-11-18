@@ -1,110 +1,148 @@
-"""Download chosen Wikimedia Commons recordings and cut each into a short,
-loudness-matched 44.1 kHz mono 16-bit WAV clip.
+"""Download the chosen animal recordings and cut each into a short (at most
+MAX_LEN seconds), loudness-matched 44.1 kHz mono 16-bit WAV clip.
 
-usage: WM_CONTACT=<your contact> python3 -I tool/fetch_animal_sounds.py RAW_DIR OUT_DIR
-(Wikimedia throttles anonymous clients hard; a contact in the User-Agent lifts it.)
+usage: python3 -I tool/fetch_animal_sounds.py RAW_DIR OUT_DIR
+Writes OUT_DIR/<id>.wav (copy to assets/demo_content/<scene>/<id>_sound.wav) and
+OUT_DIR/credits.json. Needs ffmpeg, curl and numpy.
+
+The recordings are Freesound's HQ MP3 previews, which need no API key; the cow is
+a Wikimedia Commons file. Only recordings of the real animal that allow commercial
+use belong in CHOICES: no CC BY-NC, no imitations, no synthesised sounds.
 """
-import json, re, subprocess, sys, time, urllib.parse, urllib.request
+import html, json, re, subprocess, sys, time
 from pathlib import Path
 import numpy as np
 
-import os
-UA = "yandee-sound-fetcher/1.0 (educational kids app; " + os.environ["WM_CONTACT"] + ")" if os.environ.get("WM_CONTACT") else "yandee-sound-fetcher/1.0 (educational kids app)"
-API = "https://commons.wikimedia.org/w/api.php"
+UA = "yandee-sound-fetcher/1.0 (educational kids app)"
 SR = 44100
+HOP = int(0.02 * SR)
+MAX_LEN = 2.0  # seconds, lead-in and tail included
 
-# id -> (scene, Commons file title, max clip seconds)
+# id -> (scene, Freesound "user/sound id"), or (scene, credits of a file from elsewhere)
 CHOICES = {
-    "cow":      ("farm",   "Mudchute cow 1.ogg", 3.0),
-    "pig":      ("farm",   "Pig grunt - Erdie.ogg", 3.0),
-    "chicken":  ("farm",   "Hen announcing shes lain an egg.ogg", 3.0),
-    "rooster":  ("farm",   "Medium rooster crowing.ogg", 4.0),
-    "horse":    ("farm",   "Wiehern.ogg", 3.0),
-    "sheep":    ("farm",   "Sheep bleating.ogg", 3.0),
-    "goat":     ("farm",   "Herd of goats bleating.ogg", 3.0),
-    "duck":     ("farm",   "Anas platyrhynchos - Mallard - XC62258.ogg", 3.0),
-    "dog":      ("farm",   "Barking of a dog.ogg", 3.0),
-    "fox":      ("forest", "Bellender Fuchs.ogg", 3.0),
-    "hedgehog": ("forest", "Braunigel Drohgeräusche.ogg", 3.0),
-    "squirrel": ("forest", "Squirrel calls.wav", 3.0),
-    "bear":     ("forest", "Yellowstone sound library - Grizzly Bears Roar - 001.mp3", 3.5),
-    "elephant": ("zoo",    "Elephant voice - trumpeting.ogg", 3.0),
-    "lion":     ("zoo",    "Lion raring-sound1TamilNadu178.ogg", 4.0),
-    "monkey":   ("zoo",    "Pant-hoot call made by a male chimpanzee.ogg", 4.0),
-    "zebra":    ("zoo",    "Grévys zebra (Sound Effects).ogg", 3.5),
-    "tiger":    ("zoo",    "439280 schots angry-tiger.wav", 3.5),
-    "seagull":  ("sea",    "Gull 2.ogg", 3.0),
+    "cow":      ("farm",   {"title": "Mudchute cow 1.ogg",
+                            "url": "https://upload.wikimedia.org/wikipedia/commons/4/48/Mudchute_cow_1.ogg",
+                            "page": "https://commons.wikimedia.org/wiki/File:Mudchute_cow_1.ogg",
+                            "license": "CC BY-SA 3.0",
+                            "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+                            "artist": "Secretlondon"}),
+    "pig":      ("farm",   "JarredGibb/233183"),
+    "chicken":  ("farm",   "dobroide/120587"),
+    "rooster":  ("farm",   "InspectorJ/439472"),
+    "horse":    ("farm",   "foxen10/149024"),
+    "sheep":    ("farm",   "n_audioman/321967"),
+    "goat":     ("farm",   "beskhu/273911"),
+    "duck":     ("farm",   "D4XX/607226"),
+    "dog":      ("farm",   "crazymonke9/418108"),
+    "fox":      ("forest", "AndrewJonesFoto/362127"),
+    "hedgehog": ("forest", "ffdown/570301"),
+    "squirrel": ("forest", "BullSam/509507"),
+    "bear":     ("forest", "celldroid/763026"),
+    "elephant": ("zoo",    "vataaa/148873"),
+    "lion":     ("zoo",    "roman_cgr/223978"),
+    "monkey":   ("zoo",    "craigsmith/675430"),
+    "zebra":    ("zoo",    "TheKingOfGeeks360/850661"),
+    "tiger":    ("zoo",    "videog/149190"),
+    "hippo":    ("zoo",    "noisymichael/612318"),
+    "seagull":  ("sea",    "Vurca/318092"),
 }
 
 
-def http(url, binary=False):
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
-    for attempt in range(40):
-        try:
-            data = urllib.request.urlopen(req, timeout=60).read()
-            time.sleep(5)
-            return data if binary else json.loads(data)
-        except urllib.error.HTTPError as e:
-            if e.code != 429:
-                raise
-            # Anonymous clients get long Retry-After values; honour them.
-            wait = int(e.headers.get("Retry-After") or 0) or 30 * (attempt + 1)
-            print(f"  429, waiting {wait + 5}s", file=sys.stderr, flush=True)
-            time.sleep(wait + 5)
-    raise RuntimeError("rate limited: " + url)
+def http(url):
+    # curl rather than urllib: python.org builds for macOS ship without a CA bundle.
+    data = subprocess.run(["curl", "-sS", "--fail", "--max-time", "120", "-A", UA, url],
+                          check=True, capture_output=True).stdout
+    time.sleep(1.5)
+    return data
 
 
-def clean(html):
-    return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", html or "")).strip()
-
-
-def info(title):
-    q = urllib.parse.urlencode({"action": "query", "titles": "File:" + title, "prop": "imageinfo",
-                                "iiprop": "url|extmetadata", "format": "json"})
-    page = next(iter(http(API + "?" + q)["query"]["pages"].values()))
-    ii = page["imageinfo"][0]
-    em = ii["extmetadata"]
+def info(ref):
+    """Title, license and preview URL, read from the public sound page."""
+    user, sid = ref.split("/")
+    page = f"https://freesound.org/people/{user}/sounds/{sid}/"
+    t = http(page).decode("utf-8", "replace")
+    lic = re.search(r"creativecommons\.org/(licenses|publicdomain)/([a-z\-]+)/([0-9.]+)", t)
+    kind = lic.group(2)
+    if kind not in ("zero", "by"):
+        raise SystemExit(f"{ref}: license {kind} is not CC0 or CC BY")
     return {
-        "url": ii["url"],
-        "page": ii["descriptionurl"],
-        "license": clean(em.get("LicenseShortName", {}).get("value")),
-        "license_url": clean(em.get("LicenseUrl", {}).get("value")),
-        "artist": clean(em.get("Artist", {}).get("value")) or "unknown",
+        "title": html.unescape(re.search(r'og:audio:title" content="([^"]*)"', t).group(1)),
+        "url": re.search(r'https://cdn\.freesound\.org/previews/[^"]*?-hq\.mp3', t).group(0),
+        "page": page,
+        "license": "CC0" if kind == "zero" else "CC BY " + lic.group(3),
+        "license_url": "https://creativecommons.org/" + "/".join(lic.groups()) + "/",
+        "artist": user,
     }
 
 
 def decode(path):
+    # Two high-pass stages take out rumble below ~90 Hz: phone speakers cannot play
+    # it, and it would otherwise decide both which fragment is "loudest" and how
+    # loud the clip is made.
     raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-ac", "1", "-ar", str(SR),
-                          "-f", "f32le", "-"], check=True, capture_output=True).stdout
+                          "-af", "highpass=f=90,highpass=f=90", "-f", "f32le", "-"],
+                         check=True, capture_output=True).stdout
     return np.frombuffer(raw, dtype=np.float32).copy()
 
 
 def cut(x, max_len):
-    hop = int(0.02 * SR)
-    n = len(x) // hop
-    env = np.sqrt(np.mean(x[: n * hop].reshape(n, hop) ** 2, axis=1) + 1e-12)
-    win = max(1, int(max_len / 0.02))
-    if n > win:
-        energy = np.convolve(env ** 2, np.ones(win), mode="valid")
-        start = int(np.argmax(energy))
-    else:
-        start, win = 0, n
-    seg_env = env[start:start + win]
-    thresh = seg_env.max() * 10 ** (-32 / 20)
-    loud = np.nonzero(seg_env > thresh)[0]
-    a = max(0, start + loud[0] - 3)          # 60 ms of lead-in
-    b = min(n, start + loud[-1] + 1 + 5)     # 100 ms of tail
-    y = x[a * hop: b * hop].astype(np.float64)
+    """The most energetic run of whole calls that fits in max_len seconds."""
+    n = len(x) // HOP
+    env = np.sqrt(np.mean(x[: n * HOP].reshape(n, HOP) ** 2, axis=1) + 1e-12)
+    peak, floor = env.max(), np.percentile(env, 10)
+    thr = max(peak * 10 ** (-26 / 20), min(floor * 2.5, peak * 10 ** (-12 / 20)))
+    act = env > thr
+    # Runs of loud frames are calls; a gap under 0.35 s stays inside one call.
+    runs, i = [], 0
+    while i < n:
+        if act[i]:
+            j = i
+            while j < n and act[j]:
+                j += 1
+            if runs and i - runs[-1][1] < 17:
+                runs[-1][1] = j
+            else:
+                runs.append([i, j])
+            i = j
+        else:
+            i += 1
+    runs = [r for r in runs if r[1] - r[0] >= 4] or runs or [[0, n]]
+    lead, tail = 3, 8                   # 60 ms before the call, 160 ms after it
+    win = int(round(max_len / 0.02)) - lead - tail
+    best = None
+    for k, (s, e) in enumerate(runs):
+        end = e
+        for _, e2 in runs[k + 1:]:
+            if e2 - s > win:
+                break
+            end = e2
+        whole = end - s <= win
+        if not whole:
+            # One call longer than the clip: keep its loudest stretch, from the
+            # onset when that is nearly as loud, so the call still starts naturally.
+            energy = np.convolve(env[s:e] ** 2, np.ones(win), mode="valid")
+            k2 = int(np.argmax(energy))
+            if energy[0] >= 0.8 * energy[k2]:
+                k2 = 0
+            s, end = s + k2, s + k2 + win
+        # Prefer fragments made of whole calls over a piece of a longer one.
+        score = float(np.sum(env[s:end] ** 2)) * (1.0 if whole else 0.6)
+        if best is None or score > best[0]:
+            best = (score, s, end, whole, whole or k2 == 0)
+    _, s, end, whole, onset = best
+    a, b = max(0, s - lead), min(n, end + tail)
+    y = x[a * HOP: b * HOP].astype(np.float64)
     y -= y.mean()
-    fi, fo = int(0.015 * SR), min(int(0.12 * SR), len(y) // 3)
+    fi = int((0.015 if onset else 0.08) * SR)
+    fo = min(int((0.12 if whole else 0.30) * SR), len(y) // 3)
     y[:fi] *= np.linspace(0, 1, fi)
     y[-fo:] *= np.linspace(1, 0, fo)
     # Same loudness for every clip (RMS of the loud part), peaks capped at -1 dBFS.
     loud_rms = np.sqrt(np.mean(y[np.abs(y) > np.abs(y).max() * 0.05] ** 2))
     y *= 10 ** (-16 / 20) / max(loud_rms, 1e-9)
-    peak = np.abs(y).max()
-    if peak > 10 ** (-1 / 20):
-        y *= 10 ** (-1 / 20) / peak
+    pk = np.abs(y).max()
+    if pk > 10 ** (-1 / 20):
+        y *= 10 ** (-1 / 20) / pk
     return y.astype(np.float32)
 
 
@@ -118,20 +156,17 @@ def main():
     raw_dir, out_dir = Path(sys.argv[1]), Path(sys.argv[2])
     raw_dir.mkdir(parents=True, exist_ok=True)
     out_dir.mkdir(parents=True, exist_ok=True)
-    credits_path = out_dir / "credits.json"
-    credits = json.loads(credits_path.read_text()) if credits_path.exists() else {}
-    for key, (scene, title, max_len) in CHOICES.items():
-        if key in credits and credits[key]["title"] == title and (out_dir / f"{key}.wav").exists():
-            continue  # done in an earlier, interrupted run
-        meta = info(title)
-        src = raw_dir / (key + Path(urllib.parse.urlparse(meta["url"]).path).suffix)
+    credits = {}
+    for key, (scene, ref) in CHOICES.items():
+        meta = info(ref) if isinstance(ref, str) else ref
+        src = raw_dir / (key + Path(meta["url"]).suffix)
         if not src.exists():
-            src.write_bytes(http(meta["url"], binary=True))
-        y = cut(decode(src), max_len)
+            src.write_bytes(http(meta["url"]))
+        y = cut(decode(src), MAX_LEN)
         encode(y, out_dir / f"{key}.wav")
-        credits[key] = {"scene": scene, "title": title, **meta, "seconds": round(len(y) / SR, 2)}
-        credits_path.write_text(json.dumps(credits, ensure_ascii=False, indent=1))
-        print(f"{key:9} {len(y)/SR:4.1f}s  {meta['license']:14} {title}", flush=True)
+        credits[key] = {"scene": scene, **meta, "seconds": round(len(y) / SR, 2)}
+        print(f"{key:9} {len(y)/SR:4.2f}s  {meta['license']:12} {meta['artist']}: {meta['title']}", flush=True)
+    (out_dir / "credits.json").write_text(json.dumps(credits, ensure_ascii=False, indent=1))
 
 
 main()
