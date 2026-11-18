@@ -527,7 +527,7 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
     });
     figure?.play(MonsterMove.enter);
     _voice.playSfx(MonsterSfx.pop);
-    final hello = _voice.say(MonsterPhrases.greet(result.newcomer, firstMeeting: result.firstMeeting));
+    final hello = _voice.say(MonsterPhrases.greet(result.newcomer, firstMeeting: result.saysItIsNew));
     await _pause(450);
     if (_stale(session)) return;
 

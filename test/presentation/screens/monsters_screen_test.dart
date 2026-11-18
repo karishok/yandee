@@ -303,6 +303,16 @@ void main() {
     expect(dot.scale, greaterThan(1));
   });
 
+  testWidgets('the second newcomer greets with a plain hello, without «Я новенький!»', (tester) async {
+    final h = await _startGame(tester);
+    await h.feedUntilReplaced(0);
+    expect(h.voice.said.last, 'Привет! Я новенький! Я оранжевый!');
+    await h.feedUntilReplaced(1);
+    expect(h.voice.said.last, 'Привет! Я фиолетовый!');
+    await h.feedUntilReplaced(2);
+    expect(h.voice.said.last, 'Привет! Я новенький! Я розовый!');
+  });
+
   testWidgets('a full monster wiggles until «Ням!» has been said, then waves goodbye as the voice says it', (tester) async {
     final h = await _startGame(tester);
     const seat = 0;

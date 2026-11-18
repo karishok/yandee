@@ -30,6 +30,7 @@ class NewcomerResult {
     required this.departed,
     required this.newcomer,
     required this.firstMeeting,
+    required this.saysItIsNew,
     required this.metEveryColor,
     required this.replacedTraySlots,
   });
@@ -39,6 +40,12 @@ class NewcomerResult {
 
   /// The child has never seen a monster of this colour before.
   final bool firstMeeting;
+
+  /// The newcomer introduces itself as new: «Привет! Я новенький! Я
+  /// оранжевый!». Said by every other new colour only — hearing it seven
+  /// times in a row gets tiresome — so the ones in between greet with just
+  /// «Привет! Я фиолетовый!». Never true for a colour met before.
+  final bool saysItIsNew;
 
   /// This newcomer was the last colour left to meet — time to celebrate.
   /// True exactly once per game.
@@ -88,6 +95,9 @@ class MonstersGame {
   // The treat of each colour that was eaten last, so the next treat of
   // that colour is a different one.
   final Map<MonsterColor, MonsterFood> _lastEaten = {};
+
+  // How many colours have been met for the first time since the start.
+  int _firstMeetings = 0;
 
   // Index in MonsterColor.values of the next colour to introduce.
   int _nextNewColor = MonsterColor.startingCount;
@@ -160,10 +170,12 @@ class MonstersGame {
       }
     }
 
+    if (firstMeeting) _firstMeetings++;
     return NewcomerResult(
       departed: departed,
       newcomer: newcomer,
       firstMeeting: firstMeeting,
+      saysItIsNew: firstMeeting && _firstMeetings.isOdd,
       metEveryColor: firstMeeting && _met.length == MonsterColor.values.length,
       replacedTraySlots: replaced,
     );

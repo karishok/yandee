@@ -245,6 +245,27 @@ void main() {
       }
     });
 
+    test('only every other new colour says it is new; old friends never do', () {
+      final game = MonstersGame(random: Random(11));
+      final greetings = <String>[];
+      for (var i = 0; i < 20; i++) {
+        final result = _feedUntilReplaced(game, i % MonstersGame.seatCount);
+        greetings.add('${result.newcomer.name}:${result.firstMeeting ? 'first' : 'again'}:${result.saysItIsNew ? 'new' : 'hi'}');
+      }
+      expect(greetings.take(7), [
+        'orange:first:new',
+        'purple:first:hi',
+        'pink:first:new',
+        'brown:first:hi',
+        'lightblue:first:new',
+        'white:first:hi',
+        'black:first:new',
+      ]);
+      for (final greeting in greetings.skip(7)) {
+        expect(greeting, endsWith(':again:hi'));
+      }
+    });
+
     test('the celebration fires once, when the last colour arrives', () {
       final game = MonstersGame(random: Random(8));
       final celebrations = <MonsterColor>[];
