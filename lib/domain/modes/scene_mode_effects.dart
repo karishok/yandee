@@ -20,9 +20,9 @@ abstract class SceneModeEffects {
   /// top of adding a full phrase's worth of delay to every tap in a row.
   void promptFind(SceneObject target, {bool announceIntro = true});
 
-  /// Say an object's name in turn with the other spoken effects (after
-  /// whatever is already being said, never cutting it off), completing
-  /// once the name has been said to the end.
+  /// Like [playObjectAudio], for a caller that has something to do after
+  /// the name: completes once the name has been said to its end (or right
+  /// away, if a later name took its place before its turn came).
   Future<void> announceObject(SceneObject object);
 
   /// Play a bundled system phrase (hint, correct, fanfare, ...).

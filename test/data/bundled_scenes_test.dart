@@ -89,11 +89,28 @@ void main() {
     expect(withRealistic, containsAll(['forest', 'zoo']));
   });
 
-  // In the scenes that have the flashlight game everything on the picture
-  // is something to find, so every object needs its outline. The versions
+  // Every scene has the flashlight game, and everything on the picture is
+  // something to find, so every object needs its outline. The versions
   // are the ones that added them: bumping a scene's version is what gets
   // it re-seeded on devices that already have the scene.
-  for (final (sceneId, version) in [('forest', 6), ('zoo', 4), ('farm', 6)]) {
+  const flashlightVersions = {
+    'bathroom': 5,
+    'farm': 6,
+    'forest': 6,
+    'home': 3,
+    'kitchen': 3,
+    'playground': 3,
+    'sea': 3,
+    'street': 4,
+    'toys': 3,
+    'zoo': 4,
+  };
+
+  test('every bundled scene has the flashlight game', () {
+    expect(sceneDirs.map((dir) => p.basename(dir.path)).toSet(), flashlightVersions.keys.toSet());
+  });
+
+  for (final MapEntry(key: sceneId, value: version) in flashlightVersions.entries) {
     test('$sceneId: every object can be found in the flashlight game', () {
       final scene = readScene(sceneDirs.singleWhere((dir) => p.basename(dir.path) == sceneId));
       expect(scene.version, greaterThanOrEqualTo(version));

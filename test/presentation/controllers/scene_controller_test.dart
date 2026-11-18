@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yandee/data/cached_scene.dart';
 import 'package:yandee/domain/models/object_outline.dart';
@@ -39,7 +41,7 @@ void main() {
     expect(audio.playedFiles, [cachedScene.audioPathFor(ball)]);
   });
 
-  test('explore mode plays the current object then only the final object from a fast sweep', () async {
+  test('a name being said is said to its end; of those asked for meanwhile only the last follows', () async {
     final audio = FakeAudioSink();
     final controller = SceneController(cachedScene: cachedScene, audioSink: audio);
     final ballPath = cachedScene.audioPathFor(ball);
@@ -57,6 +59,55 @@ void main() {
     await Future<void>.delayed(Duration.zero);
 
     expect(audio.playedFiles, [ballPath, catPath]);
+  });
+
+  test('a name asked for and then overtaken by a later one is skipped, not said late', () async {
+    final audio = FakeAudioSink();
+    final controller = SceneController(cachedScene: cachedScene, audioSink: audio);
+    final ballPath = cachedScene.audioPathFor(ball);
+    final catPath = cachedScene.audioPathFor(cat);
+    audio.holdFile(ballPath);
+    audio.holdFile(catPath);
+    controller.onObjectTapped(ball); // being said
+
+    var firstCatDone = false;
+    var secondBallDone = false;
+    var lastCatDone = false;
+    unawaited(controller.announceObject(cat).then((_) => firstCatDone = true));
+    unawaited(controller.announceObject(ball).then((_) => secondBallDone = true));
+    unawaited(controller.announceObject(cat).then((_) => lastCatDone = true));
+    await Future<void>.delayed(Duration.zero);
+
+    // The two that were overtaken are over with already — nothing waits on
+    // a name that will never be said — while the last one is still to come.
+    expect(firstCatDone, isTrue);
+    expect(secondBallDone, isTrue);
+    expect(lastCatDone, isFalse);
+    expect(audio.playedFiles, [ballPath]);
+
+    audio.releaseFile(ballPath);
+    await Future<void>.delayed(Duration.zero);
+    expect(audio.playedFiles, [ballPath, catPath]);
+    expect(lastCatDone, isFalse, reason: 'it is only done once it has been said to its end');
+
+    audio.releaseFile(catPath);
+    await Future<void>.delayed(Duration.zero);
+    expect(lastCatDone, isTrue);
+  });
+
+  test('a name still waiting its turn is not said after the scene is closed', () async {
+    final audio = FakeAudioSink();
+    final controller = SceneController(cachedScene: cachedScene, audioSink: audio);
+    final ballPath = cachedScene.audioPathFor(ball);
+    audio.holdFile(ballPath);
+    controller.onObjectTapped(ball);
+    controller.onObjectTapped(cat);
+
+    controller.dispose();
+    audio.releaseFile(ballPath);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(audio.playedFiles, [ballPath]);
   });
 
   test('switching to find mode prompts the first object', () async {

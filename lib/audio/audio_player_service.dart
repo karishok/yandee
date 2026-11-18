@@ -16,11 +16,9 @@ const Map<SystemPhrase, String> _systemPhraseAssets = {
 class AudioPlayerService implements AudioSink {
   AudioPlayerService({
     AudioPlayer? player,
-    AudioPlayer? explorePlayer,
     AudioPlayer? interruptiblePlayer,
     AudioPlayer Function() clipPlayerFactory = AudioPlayer.new,
   })  : _player = player ?? AudioPlayer(),
-        _explorePlayer = explorePlayer ?? AudioPlayer(),
         _interruptiblePlayer = interruptiblePlayer ?? AudioPlayer(),
         _clipPlayerFactory = clipPlayerFactory;
 
@@ -29,7 +27,6 @@ class AudioPlayerService implements AudioSink {
   final AudioPlayer Function() _clipPlayerFactory;
 
   final AudioPlayer _player;
-  final AudioPlayer _explorePlayer;
 
   // The game queues things up behind these calls — the next name, the
   // round-complete fanfare, the return to Explore — so none of them may
@@ -61,10 +58,6 @@ class AudioPlayerService implements AudioSink {
 
   @override
   Future<void> playFileToEnd(String absolutePath) => _playToEnd(DeviceFileSource(absolutePath));
-
-  @override
-  Future<void> playExploreFile(String absolutePath) =>
-      _playSafely(DeviceFileSource(absolutePath), player: _explorePlayer);
 
   @override
   Future<void> playSystemPhrase(SystemPhrase phrase) => _playToEnd(_phraseSource(phrase));
@@ -146,9 +139,9 @@ class AudioPlayerService implements AudioSink {
     }
   }
 
-  Future<void> _playSafely(Source source, {AudioPlayer? player}) async {
+  Future<void> _playSafely(Source source) async {
     try {
-      await (player ?? _player).play(source).timeout(_startLimit);
+      await _player.play(source).timeout(_startLimit);
     } catch (error, stackTrace) {
       developer.log('Audio playback failed', name: 'AudioPlayerService', error: error, stackTrace: stackTrace);
     }
@@ -157,7 +150,6 @@ class AudioPlayerService implements AudioSink {
   @override
   void dispose() {
     unawaited(_player.dispose());
-    unawaited(_explorePlayer.dispose());
     unawaited(_interruptiblePlayer.dispose());
   }
 }
