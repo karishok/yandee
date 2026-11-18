@@ -307,9 +307,14 @@ String _foodContent(FoodKind kind, MonsterShades k) {
             '<circle cx="${x - 8}" cy="${y + 2}" r="4" fill="#fff" opacity=".45"/>',
       );
     case FoodKind.banana:
-      return '<path d="M14 26 C20 70 58 90 90 70 C93 64 89 61 84 63 C58 74 34 58 28 26 C26 20 16 20 14 26Z" fill="${k.fill}" stroke="${k.dark}" $_round/>'
-          '<path d="M14 26 L12 18" stroke="$_stem" stroke-width="6" stroke-linecap="round"/>'
-          '<path d="M30 40 C36 58 52 68 72 70" stroke="${k.dark}" stroke-width="3" fill="none" opacity=".6"/>';
+      // A plump banana lying on its side, curved like a smile: green-brown
+      // stem at the top left, a dark little tip at the right, a ridge along
+      // its length and a shine on its belly.
+      return '<path d="M22 22 C14 52 30 82 64 86 C76 87 86 84 92 76 C90 72 86 71 82 72 C66 74 48 66 40 50 C34 38 34 28 36 20 C32 15 25 16 22 22Z" fill="${k.fill}" stroke="${k.dark}" $_round/>'
+          '<path d="M30 26 C28 52 44 72 76 78" stroke="${k.dark}" stroke-width="3" fill="none" stroke-linecap="round" opacity=".45"/>'
+          '<path d="M22 44 C24 60 34 72 48 78" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" opacity=".55"/>'
+          '<path d="M24 20 L22 9 Q29 5 35 9 L35 20" fill="#8fae3a" stroke="#5e7a1f" stroke-width="3" stroke-linejoin="round"/>'
+          '<path d="M86 73 Q91 72 93 76 Q90 80 86 79Z" fill="$_stem" stroke="$_stem" stroke-width="2" stroke-linejoin="round"/>';
     case FoodKind.cheese:
       return '<path d="M10 66 L84 30 L92 40 L92 80 L10 80Z" fill="${k.fill}" stroke="${k.dark}" $_round/>'
           '<path d="M10 66 L92 40" stroke="${k.dark}" stroke-width="3"/>'
