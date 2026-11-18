@@ -79,12 +79,12 @@ Future<void> main(List<String> args) async {
 
   final audio = readMonoWav16(tempFile);
   // A scene's words are single words, so half a second of silence is
-  // always a gap between two of them. The "Монстрики" phrases are whole
-  // sentences with pauses of their own («Спасибо! Пока-пока!»), so there a
-  // gap only counts as "between phrases" once it is close to a second —
-  // the reading instructions ask for two.
+  // always a gap between two of them. Some "Монстрики" phrases are whole
+  // sentences with pauses of their own («Спасибо! Пока-пока!»); in a part
+  // that has such phrases a gap only counts as "between phrases" once it
+  // is close to a second.
   final segments = isMonstersFilter(sceneFilter)
-      ? splitOnSilence(audio.samples, audio.sampleRate, minSilenceMs: monstersPhraseGapMs)
+      ? splitOnSilence(audio.samples, audio.sampleRate, minSilenceMs: monstersPhraseGapMsFor(sceneFilter))
       : splitOnSilence(audio.samples, audio.sampleRate);
 
   if (segments.length != tasks.length) {

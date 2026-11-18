@@ -33,8 +33,31 @@ final List<String> monstersFilters = [
 
 /// How long a silence has to be, in a single-take recording of "Монстрики"
 /// phrases, to count as the gap between two phrases rather than a pause
-/// inside one.
+/// inside one — for phrases that are several sentences long («Спасибо!
+/// Пока-пока!») and so have pauses of their own.
 const double monstersPhraseGapMs = 900;
+
+/// The same, for phrases said in one breath («Я красный!», «Красная
+/// клубника»): there any half-second of silence is a gap between two of
+/// them, exactly as with the single words of a scene.
+const double monstersShortPhraseGapMs = 500;
+
+// A phrase has a pause of its own if a sentence ends, or a dash or comma
+// falls, somewhere before its last word. The leading dash of «— синему!»
+// is punctuation for the reader, not a pause.
+final RegExp _innerPause = RegExp(r'[!?.,—]\s+\S');
+
+bool _hasInnerPause(String text) => _innerPause.hasMatch(text.replaceFirst(RegExp(r'^—\s*'), ''));
+
+/// The silence that separates two phrases in a recording of the
+/// "Монстрики" part [filter] selects: long if any phrase of that part has
+/// a pause inside it, short if every phrase is said in one breath.
+double monstersPhraseGapMsFor(String filter) {
+  final clips = filter == monstersFilter
+      ? _monstersParts.expand((part) => part.clips)
+      : _monstersParts.firstWhere((part) => part.filter == filter).clips;
+  return clips.any((clip) => _hasInnerPause(clip.text)) ? monstersPhraseGapMs : monstersShortPhraseGapMs;
+}
 
 /// True if [filter] is about the "Монстрики" game at all.
 bool isMonstersFilter(String? filter) => filter != null && monstersFilters.contains(filter);

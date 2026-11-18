@@ -111,6 +111,16 @@ void main() {
       expect(part(11), isEmpty);
     });
 
+    test('only parts with multi-sentence phrases need a long gap between phrases', () {
+      // Part 1 has «Спасибо! Пока-пока!» and the like; the whole set includes it.
+      expect(monstersPhraseGapMsFor('monsters-1'), monstersPhraseGapMs);
+      expect(monstersPhraseGapMsFor('monsters'), monstersPhraseGapMs);
+      // «Я красный!», «— красному!» and food names are said in one breath.
+      for (var number = 2; number <= 10; number++) {
+        expect(monstersPhraseGapMsFor('monsters-$number'), monstersShortPhraseGapMs, reason: 'part $number');
+      }
+    });
+
     test('every "Монстрики" part is a valid filter, and none leaks into scenes or system', () {
       const kitchen = VoiceoverTask(text: 'Яблоко', outputPath: 'assets/demo_content/kitchen/apple.wav');
       const system = VoiceoverTask(text: 'Где', outputPath: 'assets/audio/system/find_intro.wav');
