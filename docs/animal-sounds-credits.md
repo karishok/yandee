@@ -2,7 +2,9 @@
 
 The animal voices in `assets/demo_content/<scene>/<id>_sound.wav` (each
 object's `sound` in scene.json) are real recordings from Wikimedia Commons, cut to the loudest few seconds and
-loudness-matched by `tool/fetch_animal_sounds.py`. Licenses marked CC BY /
+loudness-matched by `tool/fetch_animal_sounds.py`. The hippo comes from
+Freesound instead (its HQ MP3 preview, seconds 18.5–25 of the recording, put
+through the same `cut()`). Licenses marked CC BY /
 CC BY-SA require crediting the author (e.g. on an About screen); CC BY-SA
 also asks that the edited clip stays under the same license.
 
@@ -26,5 +28,6 @@ also asks that the edited clip stays under the same license.
 | `zoo/monkey_sound.wav` | zoo | Pawel Fedurek et al. | CC BY 4.0 | [Pant-hoot call made by a male chimpanzee.ogg](https://commons.wikimedia.org/wiki/File:Pant-hoot_call_made_by_a_male_chimpanzee.ogg) |
 | `zoo/zebra_sound.wav` | zoo | DiegoC472 | CC BY-SA 4.0 | [Grévys zebra (Sound Effects).ogg](https://commons.wikimedia.org/wiki/File:Gr%C3%A9vys_zebra_%28Sound_Effects%29.ogg) |
 | `zoo/tiger_sound.wav` | zoo | schots (via freesound.org/s/439280) | CC0 | [439280 schots angry-tiger.wav](https://commons.wikimedia.org/wiki/File:439280_schots_angry-tiger.wav) |
+| `zoo/hippo_sound.wav` | zoo | YleArkisto | CC BY 4.0 | [Virtahevot ääntelevät / Hippopotamus, hippos making sounds nearby in the river](https://freesound.org/people/YleArkisto/sounds/253082/) |
 | `sea/seagull_sound.wav` | sea | avphillips | Public domain | [Gull 2.ogg](https://commons.wikimedia.org/wiki/File:Gull_2.ogg) |
-No usable recording found: hare, giraffe, hippo.
+No usable recording found: hare, giraffe.

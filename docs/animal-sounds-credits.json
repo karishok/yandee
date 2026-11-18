@@ -179,6 +179,16 @@
   "artist": "schots (via freesound.org/s/439280)",
   "seconds": 3.66
  },
+ "hippo": {
+  "scene": "zoo",
+  "title": "Virtahevot ääntelevät / Hippopotamus, hippos making sounds nearby in the river",
+  "url": "https://cdn.freesound.org/previews/253/253082_4415905-hq.mp3",
+  "page": "https://freesound.org/people/YleArkisto/sounds/253082/",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "artist": "YleArkisto",
+  "seconds": 4.16
+ },
  "seagull": {
   "scene": "sea",
   "title": "Gull 2.ogg",
