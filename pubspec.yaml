@@ -17,6 +17,7 @@ dependencies:
   cupertino_icons: ^1.0.9
   url_launcher: ^6.3.2
   android_intent_plus: ^6.1.0
+  flutter_svg: ^2.4.0
 
 dev_dependencies:
   flutter_test:
@@ -28,6 +29,10 @@ flutter:
   uses-material-design: true
   assets:
     - assets/audio/system/
+    # "Монстрики" phrases: live recordings (preferred), and the stand-in
+    # computer voice used until a phrase has been recorded.
+    - assets/audio/monsters/
+    - assets/audio/monsters_tts/
     - assets/demo_content/home/
     - assets/demo_content/kitchen/
     - assets/demo_content/farm/

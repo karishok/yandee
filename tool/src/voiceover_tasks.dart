@@ -1,3 +1,5 @@
+import 'package:yandee/domain/monsters/monster_phrases.dart';
+
 import 'scene_vocabulary.dart';
 
 /// One word or phrase to synthesize, and where the resulting WAV belongs —
@@ -19,8 +21,22 @@ const _systemPhrases = [
   VoiceoverTask(text: 'Ура, ты всё нашёл!', outputPath: 'assets/audio/system/round_complete.wav'),
 ];
 
-/// The full list of voiceover tasks: 4 system phrases, then every scene
-/// object's name, in scene/object declaration order.
+/// Where the phrases of the "Монстрики" colour game are recorded to — the
+/// folder `MonsterVoicePlayer` looks in before falling back to the
+/// computer voice.
+const monstersVoiceoverDir = 'assets/audio/monsters/';
+
+/// One task per phrase of the "Монстрики" game. The text and file name
+/// both come straight from the game's own phrase list, so the recordings
+/// can never drift from what the game asks to play.
+List<VoiceoverTask> buildMonstersVoiceoverTasks() => [
+      for (final clip in MonsterPhrases.allClips)
+        VoiceoverTask(text: clip.text, outputPath: '$monstersVoiceoverDir${clip.id}.wav'),
+    ];
+
+/// The full list of voiceover tasks: the system phrases, then every scene
+/// object's name, in scene/object declaration order, then the phrases of
+/// the "Монстрики" game.
 List<VoiceoverTask> buildVoiceoverTasks() {
   final tasks = <VoiceoverTask>[..._systemPhrases];
   for (final scene in scenes) {
@@ -31,5 +47,6 @@ List<VoiceoverTask> buildVoiceoverTasks() {
       ));
     }
   }
+  tasks.addAll(buildMonstersVoiceoverTasks());
   return tasks;
 }

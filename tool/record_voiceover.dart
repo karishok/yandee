@@ -26,7 +26,7 @@ Future<void> main(List<String> args) async {
   final sceneFilter = remaining.isNotEmpty ? remaining.first : null;
 
   if (!isValidSceneFilter(sceneFilter)) {
-    final validValues = [...scenes.map((s) => s.id), 'system'];
+    final validValues = [...scenes.map((s) => s.id), 'system', monstersFilter];
     stderr.writeln('Неизвестный фильтр сцены: "$sceneFilter".');
     stderr.writeln('Допустимые значения: ${validValues.join(', ')}.');
     exitCode = 1;

@@ -16,21 +16,26 @@ bool isUnrecorded(File file) {
   return file.lengthSync() == placeholderWavSizeBytes;
 }
 
+/// The filter value that selects the phrases of the "Монстрики" game.
+const monstersFilter = 'monsters';
+
 /// True if [task] belongs to the requested recording session. `null`
-/// matches everything; `'system'` matches only the 4 system phrases; any
-/// scene id matches only that scene's objects.
+/// matches everything; `'system'` matches only the 4 system phrases;
+/// `'monsters'` matches only the "Монстрики" game's phrases; any scene id
+/// matches only that scene's objects.
 bool taskMatchesFilter(VoiceoverTask task, String? sceneFilter) {
   if (sceneFilter == null) return true;
   if (sceneFilter == 'system') return task.outputPath.startsWith('assets/audio/system/');
+  if (sceneFilter == monstersFilter) return task.outputPath.startsWith(monstersVoiceoverDir);
   return task.outputPath.startsWith('assets/demo_content/$sceneFilter/');
 }
 
 /// True if [filter] is a value `taskMatchesFilter` can actually match
-/// against: `null` (everything), `'system'`, or a real scene id. Guards
+/// against: `null` (everything), `'system'`, `'monsters'`, or a real scene id. Guards
 /// against a typo'd/mis-cased scene filter silently matching nothing and
 /// being reported as "already fully recorded".
 bool isValidSceneFilter(String? filter) {
-  if (filter == null || filter == 'system') return true;
+  if (filter == null || filter == 'system' || filter == monstersFilter) return true;
   return scenes.any((s) => s.id == filter);
 }
 

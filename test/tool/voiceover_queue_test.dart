@@ -60,6 +60,16 @@ void main() {
       expect(taskMatchesFilter(systemTask, 'system'), isTrue);
       expect(taskMatchesFilter(kitchenTask, 'system'), isFalse);
     });
+
+    test('"monsters" filter matches only the colour game\'s phrases', () {
+      const monstersTask = VoiceoverTask(text: 'Ням!', outputPath: 'assets/audio/monsters/yum.wav');
+      expect(taskMatchesFilter(monstersTask, 'monsters'), isTrue);
+      expect(taskMatchesFilter(monstersTask, 'system'), isFalse);
+      expect(taskMatchesFilter(monstersTask, 'kitchen'), isFalse);
+      expect(taskMatchesFilter(systemTask, 'monsters'), isFalse);
+      expect(taskMatchesFilter(kitchenTask, 'monsters'), isFalse);
+      expect(isValidSceneFilter('monsters'), isTrue);
+    });
   });
 
   group('buildRecordingQueue', () {

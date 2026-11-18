@@ -1,16 +1,24 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../data/cached_scene.dart';
 import '../../data/content_repository.dart';
+import '../../domain/monsters/monster_color.dart';
+import '../monsters/monster_art.dart';
+import 'monsters_screen.dart';
 import 'scene_screen.dart';
 import 'settings_screen.dart';
 
 class SceneListScreen extends StatefulWidget {
-  const SceneListScreen({super.key, required this.contentRepository});
+  const SceneListScreen({super.key, required this.contentRepository, this.monstersScreenBuilder});
 
   final ContentRepository contentRepository;
+
+  /// Builds the screen the "Монстрики" card opens. Defaults to the real
+  /// game; tests pass one that needs no audio plugin.
+  final WidgetBuilder? monstersScreenBuilder;
 
   @override
   State<SceneListScreen> createState() => _SceneListScreenState();
@@ -63,15 +71,64 @@ class _SceneListScreenState extends State<SceneListScreen> {
     }
     return Scaffold(
       appBar: AppBar(title: const Text('Yandee'), actions: [_settingsButton(context)]),
-      body: GridView.count(
-        crossAxisCount: 2,
-        padding: const EdgeInsets.all(16),
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        children: scenes.map(_buildCard).toList(),
+      body: CustomScrollView(
+        slivers: [
+          // The colour game is not a scene, so it gets a wide card of its
+          // own above the grid of scenes.
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            sliver: SliverToBoxAdapter(child: _buildMonstersCard()),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverGrid.count(
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              children: scenes.map(_buildCard).toList(),
+            ),
+          ),
+        ],
       ),
     );
   }
+
+  Widget _buildMonstersCard() {
+    return GestureDetector(
+      key: const ValueKey('monsters_card'),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: widget.monstersScreenBuilder ?? (_) => const MonstersScreen()),
+      ),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        color: const Color(0xFFD9EFFF),
+        child: SizedBox(
+          height: 150,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _cardMonster(MonsterColor.red),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  'Монстрики',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF23324A)),
+                ),
+              ),
+              _cardMonster(MonsterColor.blue),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _cardMonster(MonsterColor color) => Flexible(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: SvgPicture.string(MonsterLayers.of(color).whole),
+        ),
+      );
 
   Widget _settingsButton(BuildContext context) {
     return Padding(
