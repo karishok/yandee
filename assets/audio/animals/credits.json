@@ -108,5 +108,85 @@
   "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
   "artist": "Richard Huber",
   "seconds": 3.16
+ },
+ "squirrel": {
+  "scene": "forest",
+  "title": "Squirrel calls.wav",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/7/75/Squirrel_calls.wav",
+  "page": "https://commons.wikimedia.org/wiki/File:Squirrel_calls.wav",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "artist": "Arunasank",
+  "seconds": 3.16
+ },
+ "bear": {
+  "scene": "forest",
+  "title": "Yellowstone sound library - Grizzly Bears Roar - 001.mp3",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/e/ef/Yellowstone_sound_library_-_Grizzly_Bears_Roar_-_001.mp3",
+  "page": "https://commons.wikimedia.org/wiki/File:Yellowstone_sound_library_-_Grizzly_Bears_Roar_-_001.mp3",
+  "license": "Public domain",
+  "license_url": "",
+  "artist": "NPS & MSU Acoustic Atlas / Jennifer Jerrett",
+  "seconds": 3.66
+ },
+ "elephant": {
+  "scene": "zoo",
+  "title": "Elephant voice - trumpeting.ogg",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/4/40/Elephant_voice_-_trumpeting.ogg",
+  "page": "https://commons.wikimedia.org/wiki/File:Elephant_voice_-_trumpeting.ogg",
+  "license": "CC0",
+  "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+  "artist": "தகவலுழவன்",
+  "seconds": 1.34
+ },
+ "lion": {
+  "scene": "zoo",
+  "title": "Lion raring-sound1TamilNadu178.ogg",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/7/7d/Lion_raring-sound1TamilNadu178.ogg",
+  "page": "https://commons.wikimedia.org/wiki/File:Lion_raring-sound1TamilNadu178.ogg",
+  "license": "Public domain",
+  "license_url": "",
+  "artist": "த*உழவன்",
+  "seconds": 4.16
+ },
+ "monkey": {
+  "scene": "zoo",
+  "title": "Pant-hoot call made by a male chimpanzee.ogg",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/5/56/Pant-hoot_call_made_by_a_male_chimpanzee.ogg",
+  "page": "https://commons.wikimedia.org/wiki/File:Pant-hoot_call_made_by_a_male_chimpanzee.ogg",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0",
+  "artist": "Pawel Fedurek et al.",
+  "seconds": 4.16
+ },
+ "zebra": {
+  "scene": "zoo",
+  "title": "Grévys zebra (Sound Effects).ogg",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Gr%C3%A9vys_zebra_%28Sound_Effects%29.ogg",
+  "page": "https://commons.wikimedia.org/wiki/File:Gr%C3%A9vys_zebra_%28Sound_Effects%29.ogg",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "artist": "DiegoC472",
+  "seconds": 3.66
+ },
+ "tiger": {
+  "scene": "zoo",
+  "title": "439280 schots angry-tiger.wav",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/2/29/439280_schots_angry-tiger.wav",
+  "page": "https://commons.wikimedia.org/wiki/File:439280_schots_angry-tiger.wav",
+  "license": "CC0",
+  "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+  "artist": "schots (via freesound.org/s/439280)",
+  "seconds": 3.66
+ },
+ "seagull": {
+  "scene": "sea",
+  "title": "Gull 2.ogg",
+  "url": "https://upload.wikimedia.org/wikipedia/commons/c/c6/Gull_2.ogg",
+  "page": "https://commons.wikimedia.org/wiki/File:Gull_2.ogg",
+  "license": "Public domain",
+  "license_url": "",
+  "artist": "avphillips",
+  "seconds": 3.16
  }
 }
