@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'src/denoise.dart';
+import 'src/loudness.dart';
 import 'src/scene_vocabulary.dart';
 import 'src/silence_split.dart';
 import 'src/voiceover_queue.dart';
@@ -121,7 +122,11 @@ Future<void> main(List<String> args) async {
     // Same cleanup pipeline mic takes get, for consistent loudness/noise
     // floor with older words and to smooth away any click the
     // silence-padding might leave at a cut edge.
-    final cleaned = cleanRecording(wordSamples, audio.sampleRate);
+    var cleaned = cleanRecording(wordSamples, audio.sampleRate);
+    // The game's phrases are joined back to back («Ням!» + «Красная
+    // клубника»), so a part bounced quieter than another is heard at once;
+    // every phrase is brought to the same level.
+    if (isMonstersFilter(sceneFilter)) cleaned = normalizeLoudness(cleaned, audio.sampleRate);
 
     final outputFile = File(task.outputPath);
     await outputFile.parent.create(recursive: true);

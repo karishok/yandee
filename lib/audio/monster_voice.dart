@@ -34,15 +34,16 @@ enum MonsterSfx {
 /// Everything the "Монстрики" screen needs to make a sound — the seam that
 /// lets tests run the game with no audio plugin behind it.
 abstract class MonsterVoice {
-  /// Says [line], cutting off whatever line was being said before: the
-  /// newest thing a child did is the one that gets an answer. Completes
-  /// when the line has been said to its end, or has itself been cut off.
+  /// Says [line] — but never over another line: whatever is being said is
+  /// said to its end first, and of the lines asked for meanwhile only the
+  /// latest is said next (the same rule scene taps follow). Completes when
+  /// the line has been said to its end, or has been skipped or stopped.
   Future<void> say(MonsterLine line);
 
   /// Plays a sound effect on top of whatever else is sounding.
   void playSfx(MonsterSfx sfx);
 
-  /// Silences the line being said, if any.
+  /// Silences the line being said and forgets the one waiting, if any.
   void stop();
 
   /// Releases the native players. Call exactly once.

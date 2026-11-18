@@ -5,6 +5,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
 
 import '../domain/monsters/monster_phrases.dart';
+import 'latest_only_queue.dart';
 import 'monster_voice.dart';
 
 /// Where the live recordings of the game's phrases go, one `.wav` per
@@ -54,12 +55,17 @@ class MonsterVoicePlayer implements MonsterVoice {
     }
   }
 
+  // A line is never cut off by the next one: it is said to its end, and
+  // then comes the latest line asked for meanwhile (see [LatestOnlyQueue]).
+  late final LatestOnlyQueue<MonsterLine> _lines = LatestOnlyQueue(_speak);
+
   @override
-  Future<void> say(MonsterLine line) async {
-    stop();
+  Future<void> say(MonsterLine line) => _disposed ? Future<void>.value() : _lines.add(line);
+
+  Future<void> _speak(MonsterLine line) async {
     if (_disposed) return;
-    // Each line gets a player of its own: a line that is cut off can then
-    // never be mistaken for the one that replaced it having finished.
+    // Each line gets a player of its own, so a line stopped by [stop] can
+    // never be mistaken for a later one having finished.
     final speaker = _Speaker(_playerFactory());
     _speaker = speaker;
     try {
@@ -84,6 +90,7 @@ class MonsterVoicePlayer implements MonsterVoice {
 
   @override
   void stop() {
+    _lines.clear();
     _speaker?.cancel();
     _speaker = null;
   }
