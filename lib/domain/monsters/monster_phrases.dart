@@ -81,10 +81,6 @@ abstract final class MonsterPhrases {
   /// was picked up: just «Ням!», so the name isn't said twice in a row.
   static const ateJustNamed = MonsterLine([yum]);
 
-  /// A monster spat out a treat whose name is still being said: «Фу! —
-  /// синему!», again without repeating the name.
-  static MonsterLine refusedJustNamed(MonsterFood food) => MonsterLine([yuck, forColor(food.color)]);
-
   /// A monster was poked with no treat in hand: «Я красный!».
   static MonsterLine introduce(MonsterColor color) => MonsterLine([iAm(color)]);
 

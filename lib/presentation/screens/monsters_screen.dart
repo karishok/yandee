@@ -349,10 +349,11 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
     });
   }
 
-  /// The voice is still busy naming [food] from when it was picked up. What
-  /// the monster says next can then skip the name: «Красная клубника» …
+  /// The voice is still busy naming [food] from when it was picked up. A
+  /// monster eating it can then say just «Ням!»: «Красная клубника» …
   /// «Ням!» says it all, where «Красная клубника» … «Ням! Красная клубника»
-  /// says it twice and keeps everyone waiting.
+  /// says it twice and keeps everyone waiting. (A refusal always names the
+  /// food — see [_feed].)
   bool _stillNaming(MonsterFood food) => _naming?.food == food;
 
   // ----------------------------------------------------------- sequences
@@ -449,9 +450,9 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
       setState(() => _mouths[seat] = MonsterMouth.yuck);
       figure?.play(MonsterMove.shake);
       _voice.playSfx(MonsterSfx.yuck);
-      unawaited(
-        _voice.say(_stillNaming(food) ? MonsterPhrases.refusedJustNamed(food) : MonsterPhrases.refused(food)),
-      );
+      // Always the whole line, name included: «Фу! — зелёному!» on its own
+      // doesn't say what is meant for the green one.
+      unawaited(_voice.say(MonsterPhrases.refused(food)));
       final home = _layout.slot(slot).center;
       await _fly(
         food,

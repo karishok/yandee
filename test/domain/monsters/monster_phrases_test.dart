@@ -27,8 +27,6 @@ void main() {
 
   test('right after the treat was named, the monster does not say its name again', () {
     expect(MonsterPhrases.ateJustNamed.text, 'Ням!');
-    expect(MonsterPhrases.refusedJustNamed(blueberry).text, 'Фу! — синему!');
-    expect(MonsterPhrases.refusedJustNamed(blueberry).clips.map((clip) => clip.id), ['yuck', 'for_blue']);
   });
 
   test('a poked monster names its colour: «Я красный!»', () {

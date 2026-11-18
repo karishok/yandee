@@ -382,10 +382,11 @@ void main() {
     expect(h.game.eatenBy(seat), 1);
   });
 
-  testWidgets('refused while its name is still being said, a treat is not named twice either', (tester) async {
+  testWidgets('a refusal always names the treat, even right after it was named', (tester) async {
     final h = await _startGame(tester);
     final slot = h.slotFor(1);
     final food = h.game.tray[slot]!;
+    final name = MonsterPhrases.foodName(food).text;
     h.voice.said.clear();
 
     h.voice.holdSpeech();
@@ -395,7 +396,8 @@ void main() {
     await tester.pump();
     await h.run(const Duration(milliseconds: 600));
 
-    expect(h.voice.said, [MonsterPhrases.foodName(food).text, 'Фу! — ${food.color.dative}!']);
+    // «Фу! — зелёному!» alone would not say *what* is for the green one.
+    expect(h.voice.said, [name, 'Фу! $name — ${food.color.dative}!']);
     h.voice.finishSpeaking();
     await h.run(const Duration(seconds: 2));
   });
