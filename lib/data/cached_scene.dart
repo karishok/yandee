@@ -29,4 +29,10 @@ class CachedScene {
   }
 
   String audioPathFor(SceneObject object) => p.join(directoryPath, object.audio);
+
+  /// The object's own sound (see [SceneObject.sound]), or null if it has none.
+  String? soundPathFor(SceneObject object) {
+    final sound = object.sound;
+    return sound == null ? null : p.join(directoryPath, sound);
+  }
 }

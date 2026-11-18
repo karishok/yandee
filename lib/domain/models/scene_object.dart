@@ -11,6 +11,7 @@ class SceneObject {
     required this.audio,
     required this.rect,
     this.outline,
+    this.sound,
   });
 
   final String id;
@@ -23,6 +24,10 @@ class SceneObject {
   /// object something to find in the flashlight game.
   final ObjectOutline? outline;
 
+  /// The sound the thing itself makes (an animal's voice), played right
+  /// after its name. Most objects have none.
+  final String? sound;
+
   factory SceneObject.fromJson(Map<String, dynamic> json) {
     return SceneObject(
       id: json['id'] as String,
@@ -30,12 +35,13 @@ class SceneObject {
       audio: json['audio'] as String,
       rect: ObjectRect.fromJson(json['rect'] as Map<String, dynamic>),
       outline: json['outline'] == null ? null : ObjectOutline.fromJson(json['outline'] as List<dynamic>),
+      sound: json['sound'] as String?,
     );
   }
 
   /// The same object as it sits on a different picture.
   SceneObject placedAt({required ObjectRect rect, required ObjectOutline? outline}) =>
-      SceneObject(id: id, label: label, audio: audio, rect: rect, outline: outline);
+      SceneObject(id: id, label: label, audio: audio, rect: rect, outline: outline, sound: sound);
 
   /// Objects are identified by id everywhere in the app (mode logic,
   /// widget-test finders), so equality/hashing only look at it.

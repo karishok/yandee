@@ -39,6 +39,17 @@ void main() {
     expect(object.rect.height, 0.20);
   });
 
+  test('SceneObject.fromJson reads an optional sound of its own', () {
+    expect(Scene.fromJson(json).objects.first.sound, isNull);
+    final withSound = {
+      ...json,
+      'objects': [
+        {...(json['objects'] as List<dynamic>).first as Map<String, dynamic>, 'sound': 'tree_1_sound.wav'},
+      ],
+    };
+    expect(Scene.fromJson(withSound).objects.first.sound, 'tree_1_sound.wav');
+  });
+
   test('SceneObject equality compares by id', () {
     final a = Scene.fromJson(json).objects.first;
     final b = Scene.fromJson(json).objects.first;

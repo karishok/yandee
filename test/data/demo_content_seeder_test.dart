@@ -73,8 +73,19 @@ void main() {
       for (final object in objects) {
         final audio = (object as Map<String, dynamic>)['audio'] as String;
         expect(await File(p.join(sceneDir.path, audio)).exists(), isTrue);
+        final sound = object['sound'] as String?;
+        if (sound != null) expect(await File(p.join(sceneDir.path, sound)).exists(), isTrue, reason: sound);
       }
     }
+  });
+
+  test("seeds the animals' own sounds next to their names", () async {
+    await const DemoContentSeeder().seed(cacheRoot);
+
+    final farm = await readCachedSceneJson('farm');
+    final cow = (farm['objects'] as List<dynamic>).cast<Map<String, dynamic>>().firstWhere((o) => o['id'] == 'cow');
+    expect(cow['sound'], 'cow_sound.wav');
+    expect(await File(p.join(cachedSceneDir('farm').path, 'cow_sound.wav')).exists(), isTrue);
   });
 
   test("seeds a scene's realistic picture alongside its default one", () async {
