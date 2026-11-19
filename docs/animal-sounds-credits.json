@@ -308,5 +308,115 @@
   "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
   "artist": "itinerantmonk108",
   "seconds": 2.0
+ },
+ "duck_toy": {
+  "scene": "bathroom",
+  "title": "Duck Toy Sounds",
+  "url": "https://cdn.freesound.org/previews/454/454575_685248-hq.mp3",
+  "page": "https://freesound.org/people/The-Sacha-Rush/sounds/454575/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "The-Sacha-Rush",
+  "seconds": 2.0
+ },
+ "door": {
+  "scene": "home",
+  "title": "Door - Creak.wav",
+  "url": "https://cdn.freesound.org/previews/219/219499_4056007-hq.mp3",
+  "page": "https://freesound.org/people/JarredGibb/sounds/219499/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "JarredGibb",
+  "seconds": 0.9
+ },
+ "book": {
+  "scene": "home",
+  "title": "Page Turn",
+  "url": "https://cdn.freesound.org/previews/136/136778_2207512-hq.mp3",
+  "page": "https://freesound.org/people/davidbain/sounds/136778/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "davidbain",
+  "seconds": 1.42
+ },
+ "lamp": {
+  "scene": "home",
+  "title": "Light Switch ON / OFF",
+  "url": "https://cdn.freesound.org/previews/257/257958_3025911-hq.mp3",
+  "page": "https://freesound.org/people/FillSoko/sounds/257958/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "FillSoko",
+  "seconds": 0.28
+ },
+ "toy_car": {
+  "scene": "toys",
+  "title": "friction toy race car stops.wav",
+  "url": "https://cdn.freesound.org/previews/39/39911_409629-hq.mp3",
+  "page": "https://freesound.org/people/afterguard/sounds/39911/",
+  "license": "CC BY 3.0",
+  "license_url": "https://creativecommons.org/licenses/by/3.0/",
+  "artist": "afterguard",
+  "seconds": 2.0
+ },
+ "cup": {
+  "scene": "kitchen",
+  "title": "stir tea in cup.wav",
+  "url": "https://cdn.freesound.org/previews/433/433539_1030167-hq.mp3",
+  "page": "https://freesound.org/people/cupido-1/sounds/433539/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "cupido-1",
+  "seconds": 0.88
+ },
+ "pot": {
+  "scene": "kitchen",
+  "title": "Lid_IronPan.mp3",
+  "url": "https://cdn.freesound.org/previews/457/457468_611277-hq.mp3",
+  "page": "https://freesound.org/people/vicoughetto/sounds/457468/",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "artist": "vicoughetto",
+  "seconds": 0.9
+ },
+ "ball": {
+  "scene": "playground",
+  "title": "Plastic Bouncing Ball.wav",
+  "url": "https://cdn.freesound.org/previews/329/329684_2812020-hq.mp3",
+  "page": "https://freesound.org/people/Uzbazur/sounds/329684/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "Uzbazur",
+  "seconds": 1.46
+ },
+ "swing": {
+  "scene": "playground",
+  "title": "sfx_swing_hojdacka.wav",
+  "url": "https://cdn.freesound.org/previews/387/387896_2341984-hq.mp3",
+  "page": "https://freesound.org/people/bajko/sounds/387896/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "bajko",
+  "seconds": 0.7
+ },
+ "sea": {
+  "scene": "sea",
+  "title": "Sea Wave.wav",
+  "url": "https://cdn.freesound.org/previews/164/164911_1053041-hq.mp3",
+  "page": "https://freesound.org/people/metaepitome/sounds/164911/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "metaepitome",
+  "seconds": 1.96
+ },
+ "pond": {
+  "scene": "farm",
+  "title": "Splash",
+  "url": "https://cdn.freesound.org/previews/398/398032_7586736-hq.mp3",
+  "page": "https://freesound.org/people/swordofkings128/sounds/398032/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "swordofkings128",
+  "seconds": 0.82
  }
 }
