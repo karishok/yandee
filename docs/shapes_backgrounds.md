@@ -39,7 +39,7 @@
 | 4 | `tree.jpg` | A snowy winter yard: pale blue sky fading to warm cream, gentle falling snowflakes, soft white snowy hills along the bottom fifth, a tiny cozy house with a warm window far away at one edge. |
 | 5 | `train.jpg` | A countryside railway: soft sky, sun glow in the top left corner, one cloud on the right, soft green hills, grass along the bottom sixth with a straight railway track (wooden sleepers and a grey rail) running left to right near the bottom. |
 | 6 | `fish.jpg` | Underwater: light turquoise water getting deeper blue towards the bottom, soft light rays from the top, a sandy sea floor along the bottom tenth with pebbles, green seaweed at the left and right edges, a few small bubbles near the top corners. |
-| 7 | `rocket.jpg` | Cozy outer space: deep indigo-purple night sky, many tiny warm-yellow stars, a small orange ringed planet in the bottom left corner. No big stars — only tiny dots. |
+| 7 | `rocket.jpg` | Cozy outer space: deep indigo-purple night sky, many tiny warm-yellow stars, one small shooting-star streak near the top left corner. No planets, no moon, no round objects, no big stars — only tiny dots. |
 | 8 | `bear.jpg` | A summer meadow: soft blue sky fading to cream, sun glow in the top right corner, soft green hills, a flowery meadow along the bottom sixth with small pink, yellow and purple flowers near the edges. |
 | 9 | `boat.jpg` | The sea: soft sky, sun glow in the top right corner, one cloud on the left, a tiny seagull silhouette, calm blue sea with gentle waves along the bottom fifth. |
 | 10 | `kite.jpg` | A windy day in a field: bright soft blue sky fading to cream, two fluffy clouds (top left and right middle edge), soft green hills and grass along the bottom tenth. |

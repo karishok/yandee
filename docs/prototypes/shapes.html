@@ -268,12 +268,16 @@ function pieceArt(s) {
 function pieceSvg(s, attrs = '') {
   return `<svg viewBox="${s.x - 8} ${s.y - 8} ${s.w + 16} ${s.h + 22}" ${attrs}>${pieceArt(s)}</svg>`;
 }
+// An empty place: a dashed outline over a soft halo of the opposite tone, so it reads on the sky and on a light piece under it.
 function outlineArt(s, dark) {
   const [iw, ih] = upright(s);
-  const paint = dark
-    ? 'fill="rgba(255,248,236,.16)" stroke="rgba(255,243,214,.85)"'
-    : 'fill="rgba(255,248,240,.62)" stroke="#a2896f"';
-  return `<g transform="${placement(s)}"><path class="outline" d="${shapePath(s.kind, iw, ih)}" ${paint} stroke-width="3" stroke-dasharray="9 7" stroke-linejoin="round"/></g>`;
+  const d = shapePath(s.kind, iw, ih);
+  const halo = dark
+    ? 'fill="rgba(255,248,236,.18)" stroke="rgba(43,33,26,.45)"'
+    : 'fill="rgba(255,248,240,.62)" stroke="rgba(255,248,240,.8)"';
+  const dash = dark ? '#fff3d6' : '#8a6f55';
+  return `<g transform="${placement(s)}"><path d="${d}" ${halo} stroke-width="7" stroke-linejoin="round"/>` +
+    `<path class="outline" d="${d}" fill="none" stroke="${dash}" stroke-width="3.5" stroke-dasharray="9 7" stroke-linejoin="round"/></g>`;
 }
 
 // ------------------------------------------------------------ the pictures
@@ -386,7 +390,7 @@ const PICTURES = [
   {
     name: 'Ракета', alive: 'launch', dark: true,
     bg: sky('#2a2f5c', '#4a3d70') + dots([[30, 40, 2.5], [80, 20, 2], [60, 110, 2], [250, 140, 2.5], [280, 30, 2], [24, 190, 2], [270, 230, 2.5], [180, 270, 2], [100, 280, 2]], '#fff3c4') +
-      land('M24 244 A24 24 0 1 0 72 244 A24 24 0 1 0 24 244Z', '#f6a85a', '#d0703a') + '<ellipse cx="48" cy="244" rx="40" ry="8" fill="none" stroke="#f6c447" stroke-width="5" transform="rotate(-18 48 244)"/>',
+      dots([[40, 236, 2], [64, 266, 2.5], [150, 286, 2]], '#fff3c4') + '<path d="M26 74 L66 52" stroke="#fff3c4" stroke-width="3" stroke-linecap="round" opacity=".55"/><path d="M70 44 L72 49 L77 50 L73 53 L74 58 L70 55 L66 58 L67 53 L63 50 L68 49Z" fill="#fff3c4"/>',
     slots: [
       { kind: 'rectangle', x: 105, y: 92, w: 90, h: 165, color: 'silver',
         over: '<path d="M106 196 L74 258 L106 248Z M194 196 L226 258 L194 248Z" fill="#ec4a3a" stroke="#b8301f" stroke-width="3" stroke-linejoin="round"/><rect x="107" y="222" width="86" height="10" fill="#2f7cf0" opacity=".7"/>' },

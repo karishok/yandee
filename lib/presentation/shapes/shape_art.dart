@@ -276,8 +276,11 @@ final Map<String, PictureArt> _art = {
     dark: true,
     background: _sky('#2a2f5c', '#4a3d70') +
         _dots(const [(30, 40, 2.5), (80, 20, 2), (60, 110, 2), (250, 140, 2.5), (280, 30, 2), (24, 190, 2), (270, 230, 2.5), (180, 270, 2), (100, 280, 2)], '#fff3c4') +
-        _land('planet', 'M24 244 A24 24 0 1 0 72 244 A24 24 0 1 0 24 244Z', '#f6a85a', '#d0703a') +
-        '<ellipse cx="48" cy="244" rx="40" ry="8" fill="none" stroke="#f6c447" stroke-width="5" transform="rotate(-18 48 244)"/>',
+        // A shooting star rather than a planet: nothing round that could be
+        // taken for a place of the circle.
+        _dots(const [(40, 236, 2), (64, 266, 2.5), (150, 286, 2)], '#fff3c4') +
+        '<path d="M26 74 L66 52" stroke="#fff3c4" stroke-width="3" stroke-linecap="round" opacity=".55"/>'
+            '<path d="M70 44 L72 49 L77 50 L73 53 L74 58 L70 55 L66 58 L67 53 L63 50 L68 49Z" fill="#fff3c4"/>',
     slots: [
       const SlotArt(ToyColors.silver,
           details: '<path d="M106 196 L74 258 L106 248Z M194 196 L226 258 L194 248Z" fill="#ec4a3a" stroke="#b8301f" stroke-width="3" stroke-linejoin="round"/>'
@@ -435,17 +438,23 @@ String _pieceArt(ShapeSlot slot, String color) {
       '</g></g>';
 }
 
+// An empty place: a dashed outline over a soft halo of the opposite tone, so
+// it reads on any ground — the sky of a night picture as well as a light
+// piece already standing under it (the porthole on the rocket's body).
 String _outlineArt(ShapeSlot slot, {required bool dark, required bool highlighted}) {
   final up = slot.upright;
-  final String paint;
+  final d = shapePathData(slot.kind, up.width, up.height);
+  final String body;
   if (highlighted) {
-    paint = 'fill="rgba(255,248,236,.7)" stroke="$_hint" stroke-width="6"';
+    body = '<path d="$d" fill="#fff8ec" fill-opacity=".7" stroke="$_hint" stroke-width="6" stroke-linejoin="round"/>';
   } else if (dark) {
-    paint = 'fill="#fff8ec" fill-opacity=".16" stroke="#fff3d6" stroke-opacity=".85" stroke-width="3" stroke-dasharray="9 7"';
+    body = '<path d="$d" fill="#fff8ec" fill-opacity=".18" stroke="$shapesInk" stroke-opacity=".45" stroke-width="7" stroke-linejoin="round"/>'
+        '<path d="$d" fill="none" stroke="#fff3d6" stroke-width="3.5" stroke-dasharray="9 7" stroke-linejoin="round"/>';
   } else {
-    paint = 'fill="#fff8f0" fill-opacity=".62" stroke="#a2896f" stroke-width="3" stroke-dasharray="9 7"';
+    body = '<path d="$d" fill="#fff8f0" fill-opacity=".62" stroke="#fff8f0" stroke-opacity=".8" stroke-width="7" stroke-linejoin="round"/>'
+        '<path d="$d" fill="none" stroke="#8a6f55" stroke-width="3.5" stroke-dasharray="9 7" stroke-linejoin="round"/>';
   }
-  return '<g transform="${slotTransform(slot)}"><path d="${shapePathData(slot.kind, up.width, up.height)}" $paint stroke-linejoin="round"/></g>';
+  return '<g transform="${slotTransform(slot)}">$body</g>';
 }
 
 /// The box a piece is drawn in on its own: the slot, a little margin and
