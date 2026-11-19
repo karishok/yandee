@@ -129,8 +129,9 @@ class _ParentalGateScreenState extends State<ParentalGateScreen> {
               ),
               Expanded(
                 // Scales the keypad down when the screen (or the text size) is
-                // too small for it, rather than overflowing.
+                // too small for it, rather than overflowing — and never up.
                 child: FittedBox(
+                  fit: BoxFit.scaleDown,
                   child: SizedBox(
                     width: 320,
                     child: Column(

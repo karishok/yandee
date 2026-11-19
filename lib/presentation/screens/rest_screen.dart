@@ -46,8 +46,14 @@ class _RestScreenState extends State<RestScreen> {
     _gateOpen = true;
     final navigator = Navigator.of(context);
     final timer = PlayTimerProvider.read(context);
-    final passed = await passParentalGate(navigator);
-    _gateOpen = false;
+    final bool passed;
+    try {
+      passed = await passParentalGate(navigator);
+    } finally {
+      // Whatever happens to the gate, the button must work again: this
+      // screen has no other way out.
+      _gateOpen = false;
+    }
     if (!passed) return;
     timer.stop();
     navigator.pop();
