@@ -229,17 +229,12 @@ class _ShapesScreenState extends State<ShapesScreen> with TickerProviderStateMix
     if (_over != null) setState(() => _over = null);
 
     if (!touch.onPiece) {
-      // A tap on an empty place: it lights up and says its shape.
-      if (cancelled || (point - touch.start).distance > _tapSlop) return;
-      final p = _layout.toCard(point);
-      final slot = _game.slotUnder(p.x, p.y);
-      if (slot == null) return;
-      setState(() {
-        _hinting = {slot};
-        _hintRun++;
-      });
-      _hintOff(900);
-      unawaited(_voice.say(ShapePhrases.name(_game.picture.slots[slot].kind)));
+      // Dragging is hard for a toddler's finger: a tap on a place sends the
+      // piece there, as if it had been dragged and let go over it. The
+      // place is found the same forgiving way as a drop.
+      if (cancelled || (point - touch.start).distance > _tapSlop || _game.pieceSlot == null) return;
+      final slot = _slotAt(point);
+      if (slot != null) unawaited(_drop(slot));
       return;
     }
     if (!touch.dragging) {

@@ -134,7 +134,7 @@ body {
     <button class="start" id="play" type="button"><span id="start-pic"></span>Играть</button>
     <p class="gallery-title">Все картинки по порядку — тап, чтобы начать с неё</p>
     <div class="gallery" id="gallery"></div>
-    <p class="note">Прототип игры «Фигурки». Фигурку тащат пальцем на место её формы. Тап по фигурке или по пунктиру называет форму. Голос здесь компьютерный — в приложении будет живой. Фоны временные: в приложении это будут иллюстрации в стиле сцен.</p>
+    <p class="note">Прототип игры «Фигурки». Фигурку можно тащить на место её формы, а можно просто тапнуть по месту — она прилетит сама. Тап по фигурке называет форму. Голос здесь компьютерный — в приложении будет живой. Фоны временные: в приложении это будут иллюстрации в стиле сцен.</p>
   </section>
 
   <section id="game" class="screen" hidden>
@@ -638,33 +638,35 @@ async function endDrag(e) {
   }
   const j = e.type === 'pointerup' ? slotAt(e.clientX, e.clientY) : null;
   if (j === null) { await flyBack(d.ghost); return; }
+  await landOn(j, d.ghost);
+}
+// The piece (already off the mat as [ghost]) goes to slot [j]: it stays if the shapes match, otherwise «Не сюда!» and back.
+async function landOn(j, ghost) {
   G.busy = true;
   const gen = G.gen;
   const s = pic().slots[G.pieceIdx];
   if (pic().slots[j].kind === s.kind) {
-    await accept(j, d.ghost);
+    await accept(j, ghost);
   } else {
-    await tween(d.ghost, slotRect(pic().slots[j]), 260);
+    await tween(ghost, slotRect(pic().slots[j]), 260);
     sfx.boing();
-    d.ghost.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-8%)' }, { transform: 'translateX(8%)' }, { transform: 'translateX(0)' }], { duration: 380 });
+    ghost.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-8%)' }, { transform: 'translateX(8%)' }, { transform: 'translateX(0)' }], { duration: 380 });
     say('Не сюда!');
     await sleep(420);
-    if (gen !== G.gen) { d.ghost.remove(); return; }
+    if (gen !== G.gen) { ghost.remove(); return; }
     pic().slots.forEach((t, k) => { if (!G.filled.has(k) && t.kind === s.kind) flash(k, 1800); });
-    await flyBack(d.ghost);
+    await flyBack(ghost);
   }
   if (gen === G.gen) G.busy = false;
 }
 mat.addEventListener('pointerup', endDrag);
 mat.addEventListener('pointercancel', endDrag);
 
-// A tap on an empty outline says what shape goes there.
+// Dragging is hard for a toddler: a tap on a place sends the piece there, as if it had been dropped over it.
 stage.addEventListener('click', (e) => {
-  if (drag || G.busy) return;
-  const g = e.target.closest('.slotg'); if (!g) return;
-  const j = +g.dataset.i; if (G.filled.has(j)) return;
-  flash(j, 900);
-  say(`${KINDS[pic().slots[j].kind]}!`);
+  if (drag || G.busy || !G.pieceEl) return;
+  const j = slotAt(e.clientX, e.clientY); if (j === null) return;
+  landOn(j, makeGhost());
 });
 
 async function accept(j, ghost) {

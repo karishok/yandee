@@ -114,18 +114,44 @@ void main() {
     expect(h.game.filled, isEmpty);
   });
 
-  testWidgets('tapping the piece or an empty place says the shape', (tester) async {
+  testWidgets('tapping the piece says its shape', (tester) async {
     final h = await _start(tester);
     await tester.tapAt(h.piece);
     await h.run(const Duration(milliseconds: 300));
     expect(h.voice.said.last, '${h.game.pieceKind!.word}!');
-    final other = h.wrongSlot;
-    await tester.tapAt(h.slotCenter(other));
-    await h.run(const Duration(milliseconds: 300));
-    expect(h.voice.said.last, '${h.game.picture.slots[other].kind.word}!');
+    expect(h.game.filled, isEmpty);
   });
 
-  testWidgets('a tap names the place under the finger, not the shape of the piece, and the hint goes out', (tester) async {
+  testWidgets('tapping the right place sends the piece there — no dragging needed', (tester) async {
+    final h = await _start(tester);
+    final slot = h.game.pieceSlot!;
+    await tester.tapAt(h.slotCenter(slot));
+    await h.run(const Duration(milliseconds: 800));
+    expect(h.game.filled, {slot});
+    expect(h.voice.sfx, contains(ShapesSfx.placed));
+  });
+
+  testWidgets('tapping a wrong place sends the piece there, «Не сюда!», and it comes back', (tester) async {
+    final h = await _start(tester);
+    final kind = h.game.pieceKind;
+    await tester.tapAt(h.slotCenter(h.wrongSlot));
+    await h.run(const Duration(milliseconds: 3300));
+    expect(h.voice.said.last, 'Не сюда!');
+    expect(h.voice.sfx, contains(ShapesSfx.wrong));
+    expect(h.game.filled, isEmpty);
+    expect(h.game.pieceKind, kind);
+  });
+
+  testWidgets('tapping the card far from every place does nothing', (tester) async {
+    final h = await _start(tester);
+    final said = h.voice.said.length;
+    await tester.tapAt(h.card.topLeft + const Offset(2, 2));
+    await h.run(const Duration(milliseconds: 800));
+    expect(h.voice.said.length, said);
+    expect(h.game.filled, isEmpty);
+  });
+
+  testWidgets('a tap on the window, which lies on the wall, still puts the wall piece in place', (tester) async {
     final house = shapePictures.firstWhere((p) => p.id == 'house');
     var seed = 0;
     while (ShapesGame(random: Random(seed), pictures: [house, shapePictures.first]).nextPiece().kind != ShapeKind.square) {
@@ -145,12 +171,8 @@ void main() {
     await h.run(const Duration(milliseconds: 600));
     expect(h.game.pieceKind, ShapeKind.square);
     await tester.tapAt(h.slotCenter(2));
-    await h.run(const Duration(milliseconds: 300));
-    expect(h.voice.said.last, 'Круг!');
-    ShapePictureView view() => tester.widget(find.byType(ShapePictureView));
-    expect(view().hinting, {2});
-    await h.run(const Duration(milliseconds: 1000));
-    expect(view().hinting, isEmpty);
+    await h.run(const Duration(milliseconds: 800));
+    expect(h.game.filled, {0});
   });
 
   testWidgets('a wrong drop pulses the right places, then they go dim again', (tester) async {
