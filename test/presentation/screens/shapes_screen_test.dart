@@ -60,7 +60,7 @@ class _Harness {
   }
 }
 
-Future<_Harness> _start(WidgetTester tester, {int seed = 1}) async {
+Future<_Harness> _start(WidgetTester tester, {int seed = 1, List<ShapePicture>? pictures}) async {
   tester.view.physicalSize = const Size(390, 844);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -68,7 +68,7 @@ Future<_Harness> _start(WidgetTester tester, {int seed = 1}) async {
   await tester.pumpWidget(MaterialApp(
     home: ShapesScreen(
       voiceFactory: () => harness.voice,
-      gameFactory: () => harness.game = ShapesGame(random: Random(seed)),
+      gameFactory: () => harness.game = ShapesGame(random: Random(seed), pictures: pictures ?? shapePictures),
       bundledAssets: () async => const {},
     ),
   ));
@@ -221,5 +221,103 @@ void main() {
     await tester.pumpAndSettle(const Duration(milliseconds: 100));
     expect(find.text('открыть'), findsOneWidget);
     expect(voice.disposeCalled, isTrue);
+  });
+
+  testWidgets('the end of the chain is celebrated once, then the chain starts over', (tester) async {
+    final chain = [shapePictures[10], shapePictures[11], shapePictures[2]];
+    final h = await _start(tester, seed: 2, pictures: chain);
+    final seen = <String>[];
+    for (var i = 0; i < 3; i++) {
+      seen.add(h.game.picture.id);
+      await h.buildPicture();
+      await h.run(const Duration(seconds: 8));
+    }
+    expect(seen.toSet().length, 3);
+    expect(h.voice.said.where((t) => t == 'Ура! Ты знаешь все фигурки!'), hasLength(1));
+    expect(h.voice.sfx.where((e) => e == ShapesSfx.allDone), hasLength(1));
+    final finished = seen.last;
+    expect(h.game.picture.id, isNot(finished));
+    for (var i = 0; i < 2; i++) {
+      await h.buildPicture();
+      await h.run(const Duration(seconds: 8));
+    }
+    expect(h.voice.said.where((t) => t == 'Ура! Ты знаешь все фигурки!'), hasLength(1));
+    expect(h.voice.sfx.where((e) => e == ShapesSfx.allDone), hasLength(1));
+  });
+
+  testWidgets('a voice that never finishes does not hold the game: the wrong piece still comes back', (tester) async {
+    final h = await _start(tester);
+    h.voice.holdSpeech();
+    await h.dragPieceTo(h.slotCenter(h.wrongSlot));
+    await h.run(const Duration(milliseconds: 3300));
+    expect(h.voice.said.last, 'Не сюда!');
+    final slot = h.game.pieceSlot!;
+    await h.dragPieceTo(h.slotCenter(slot));
+    await h.run(const Duration(milliseconds: 800));
+    expect(h.game.filled, {slot});
+    h.voice.finishSpeaking();
+    await h.run(const Duration(seconds: 1));
+  });
+
+  testWidgets('a voice that never finishes does not hold the game: the next picture still comes', (tester) async {
+    final h = await _start(tester);
+    final first = h.game.picture.id;
+    while (h.game.filled.length < h.game.picture.slots.length - 1) {
+      await h.dragPieceTo(h.slotCenter(h.game.pieceSlot!));
+      await h.run(const Duration(milliseconds: 800));
+    }
+    h.voice.holdSpeech();
+    await h.dragPieceTo(h.slotCenter(h.game.pieceSlot!));
+    await h.run(const Duration(seconds: 6));
+    expect(h.game.picture.id, isNot(first));
+    expect(find.byKey(const ValueKey('shapes_piece')), findsOneWidget);
+    h.voice.finishSpeaking();
+    await h.run(const Duration(seconds: 1));
+  });
+
+  Future<void> leaveAfter(WidgetTester tester, Future<void> Function(_Harness h) beforeLeaving) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final h = _Harness(tester, FakeShapesVoice());
+    await tester.pumpWidget(MaterialApp(
+      home: Builder(
+        builder: (context) => TextButton(
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => ShapesScreen(
+              voiceFactory: () => h.voice,
+              gameFactory: () => h.game = ShapesGame(random: Random(1)),
+              bundledAssets: () async => const {},
+            ),
+          )),
+          child: const Text('открыть'),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('открыть'));
+    await tester.pumpAndSettle(const Duration(milliseconds: 100));
+    await h.run(const Duration(milliseconds: 600));
+    await beforeLeaving(h);
+    await tester.tap(find.byKey(const ValueKey('shapes_back_button')));
+    await h.run(const Duration(seconds: 6));
+    expect(tester.takeException(), isNull);
+    expect(find.text('открыть'), findsOneWidget);
+    expect(h.voice.disposeCalled, isTrue);
+  }
+
+  testWidgets('leaving right after a drop, while the piece is still in flight, is clean', (tester) async {
+    await leaveAfter(tester, (h) async {
+      await h.dragPieceTo(h.slotCenter(h.wrongSlot));
+    });
+  });
+
+  testWidgets('leaving mid-celebration, before the next picture, is clean', (tester) async {
+    await leaveAfter(tester, (h) async {
+      while (!h.game.pictureComplete) {
+        await h.dragPieceTo(h.slotCenter(h.game.pieceSlot!));
+        await h.run(const Duration(milliseconds: 800));
+      }
+      await h.run(const Duration(milliseconds: 500));
+    });
   });
 }

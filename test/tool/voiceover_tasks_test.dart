@@ -38,7 +38,8 @@ void main() {
   });
 
   test('produces exactly 213 tasks with no duplicate output paths', () {
-    // 115 for the scenes and system phrases, 71 for the "Монстрики" game.
+    // 115 for the system phrases and scene words, 71 for the "Монстрики" game,
+    // 27 for the "Фигурки" game.
     final tasks = buildVoiceoverTasks();
     expect(tasks.length, 213);
     expect(tasks.map((t) => t.outputPath).toSet().length, 213);

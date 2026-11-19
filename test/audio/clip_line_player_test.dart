@@ -20,7 +20,7 @@ void main() {
 
   test('stand-ins from the synth folder fill in when the live voice is missing', () {
     expect(assets({'assets/audio/shapes_tts/new_shape.m4a', 'assets/audio/shapes_tts/shape_star.m4a'}),
-        everyElement(startsWith('assets/audio/shapes_tts/')));
+        ['assets/audio/shapes_tts/new_shape.m4a', 'assets/audio/shapes_tts/shape_star.m4a']);
   });
 
   test('a line reads as its clips one after another', () {
