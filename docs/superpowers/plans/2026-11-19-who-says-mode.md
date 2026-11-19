@@ -1123,7 +1123,6 @@ git commit -m "feat: ear and repeat buttons for finding by sound"
     // At least these two: other scenes get it too once they have enough
     // sounds (new scenes are being added in parallel), with no code change.
     expect(offered, containsAll(['farm', 'zoo']));
-    expect(offered, isNot(contains('forest')), reason: '4 sounds are below the threshold');
   });
 ```
 

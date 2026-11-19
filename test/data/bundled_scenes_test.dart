@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:yandee/domain/models/object_outline.dart';
 import 'package:yandee/domain/models/scene.dart';
+import 'package:yandee/domain/modes/who_says_mode.dart';
 
 /// Checks the scenes shipped in `assets/demo_content` against the files
 /// that sit next to them — the mistakes that are easy to make by hand when
@@ -22,6 +23,16 @@ void main() {
 
   test('there are bundled scenes to check', () {
     expect(sceneDirs, isNotEmpty);
+  });
+
+  test('finding by sound is offered on the farm and in the zoo', () {
+    final offered = {
+      for (final dir in sceneDirs)
+        if (WhoSaysMode.isAvailableIn(readScene(dir).objects)) p.basename(dir.path),
+    };
+    // At least these two: other scenes get it too once they have enough
+    // sounds (new scenes are being added in parallel), with no code change.
+    expect(offered, containsAll(['farm', 'zoo']));
   });
 
   for (final dir in sceneDirs) {
