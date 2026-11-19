@@ -258,5 +258,55 @@
   "license_url": "https://creativecommons.org/licenses/by/3.0/",
   "artist": "pugaeme",
   "seconds": 2.0
+ },
+ "shower": {
+  "scene": "bathroom",
+  "title": "Shower",
+  "url": "https://cdn.freesound.org/previews/235/235624_4028838-hq.mp3",
+  "page": "https://freesound.org/people/vmgraw/sounds/235624/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "vmgraw",
+  "seconds": 2.0
+ },
+ "clock": {
+  "scene": "home",
+  "title": "ticking of the clock 01.wav",
+  "url": "https://cdn.freesound.org/previews/412/412751_4451798-hq.mp3",
+  "page": "https://freesound.org/people/blukotek/sounds/412751/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "blukotek",
+  "seconds": 2.0
+ },
+ "spinning_top": {
+  "scene": "toys",
+  "title": "hummingtop.aiff",
+  "url": "https://cdn.freesound.org/previews/184/184842_1823770-hq.mp3",
+  "page": "https://freesound.org/people/franzzle/sounds/184842/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "franzzle",
+  "seconds": 1.6
+ },
+ "drum": {
+  "scene": "toys",
+  "title": "toy_drum_hard_hit.wav",
+  "url": "https://cdn.freesound.org/previews/332/332390_1976991-hq.mp3",
+  "page": "https://freesound.org/people/felisleopard/sounds/332390/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "felisleopard",
+  "seconds": 0.42
+ },
+ "kettle": {
+  "scene": "kitchen",
+  "title": "Electric tea kettle",
+  "url": "https://cdn.freesound.org/previews/681/681638_2397507-hq.mp3",
+  "page": "https://freesound.org/people/itinerantmonk108/sounds/681638/",
+  "license": "CC0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "artist": "itinerantmonk108",
+  "seconds": 2.0
  }
 }
