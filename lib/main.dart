@@ -28,6 +28,8 @@ class YandeeApp extends StatelessWidget {
     );
     return MaterialApp(
       title: 'Yandee',
+      // Debug-only ribbon; off so simulator runs give clean store screenshots.
+      debugShowCheckedModeBanner: false,
       theme: _buildTheme(),
       home: _StartupScreen(contentRepository: contentRepository),
     );
