@@ -1,0 +1,738 @@
+<title>Фигурки Yandee</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap">
+<style>
+/* Layout: one full-height play screen — a picture card on top, one shape on the mat below. Big targets, no scrolling. */
+:root {
+  color-scheme: light;
+  --paper: #fff8f0;
+  --card: #fff0e1;
+  --card-strong: #ffe6cd;
+  --line: #f1e1cf;
+  --stitch: #e3c39c;
+  --ink: #2b211a;
+  --muted: #76675a;
+  --accent: #ef7b33;
+  --shadow: rgba(84, 52, 16, .14);
+  --white: #ffffff;
+  --hint: #ffb21a;
+  --display: "Nunito", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
+}
+html, body { height: 100%; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--display);
+  overflow: hidden; -webkit-tap-highlight-color: transparent;
+  user-select: none; -webkit-user-select: none; touch-action: manipulation;
+}
+.app {
+  height: 100%; display: flex; flex-direction: column; box-sizing: border-box;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px;
+}
+.screen { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+
+/* ---------- start ---------- */
+.home { align-items: center; gap: 16px; overflow-y: auto; padding-block: 8px; }
+.home h1 { margin: 8px 0 0; font-size: clamp(30px, 8vw, 44px); font-weight: 900; text-align: center; }
+.start {
+  border: 0; border-radius: 32px; padding: 14px 14px 18px; width: min(300px, 100%);
+  background: var(--card); color: var(--ink); font: 900 26px/1.1 var(--display);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  box-shadow: 0 10px 30px var(--shadow); cursor: pointer; flex: none;
+}
+.start:active { transform: translateY(3px); }
+.start span { width: 100%; }
+.start svg { width: 100%; height: auto; display: block; }
+.start:focus-visible, .round:focus-visible, .thumb:focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
+.gallery-title { margin: 6px 0 0; font-size: 15px; font-weight: 800; color: var(--muted); text-align: center; }
+.gallery { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; width: min(560px, 100%); flex: none; }
+.thumb { border: 0; padding: 0; background: none; cursor: pointer; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 2px; font: 800 12px/1.2 var(--display); color: var(--muted); text-align: center; }
+.thumb svg { width: 100%; height: auto; display: block; border-radius: 14px; box-shadow: 0 6px 16px var(--shadow); }
+.note { max-width: 46ch; margin: 0; text-align: center; color: var(--muted); font-size: 14px; font-weight: 700; line-height: 1.4; flex: none; }
+
+/* ---------- top bar ---------- */
+.bar { display: flex; align-items: center; gap: 10px; }
+.round {
+  width: 56px; height: 56px; border-radius: 50%; border: 0; flex: none;
+  background: var(--card); color: var(--ink); display: grid; place-items: center; cursor: pointer;
+  box-shadow: 0 6px 16px var(--shadow);
+}
+.round:active { transform: translateY(2px); }
+.round svg { width: 28px; height: 28px; }
+.kinds { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 4px; }
+.kinds svg { width: 26px; height: 26px; transition: transform .3s; }
+.kinds svg.new { transform: scale(1.35); }
+
+/* ---------- stage + mat ---------- */
+.stage { flex: 1; min-height: 0; display: grid; place-items: center; container-type: size; }
+.stage .pic { width: min(100cqw, 100cqh); height: auto; display: block; overflow: visible; filter: drop-shadow(0 12px 18px var(--shadow)); }
+.mat {
+  flex: none; height: clamp(120px, 26vh, 220px); border-radius: 32px; background: var(--card-strong);
+  box-shadow: inset 0 0 0 7px var(--card-strong), inset 0 0 0 9px var(--stitch), 0 10px 26px var(--shadow);
+  outline: 2px dashed var(--stitch); outline-offset: -14px; display: flex; align-items: center; justify-content: center; touch-action: none;
+}
+.piece { cursor: grab; display: block; overflow: visible; filter: drop-shadow(0 6px 6px rgba(84,52,16,.22)); }
+.piece.pop { animation: pop .45s cubic-bezier(.3,1.6,.5,1); }
+.piece.wiggle { animation: wiggle .5s ease-in-out; }
+.layer { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+.ghost { position: fixed; overflow: visible; filter: drop-shadow(0 14px 10px rgba(84,52,16,.28)); }
+
+@keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes wiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-10deg); } 75% { transform: rotate(10deg); } }
+
+/* Slots and pieces inside the picture. Whole-picture motions turn every piece around one point of the card. */
+.pic .slotg, .pic .fxmove { transform-box: view-box; transform-origin: var(--ox, 150px) var(--oy, 150px); }
+.pic .slotg.hint, .pic .slotg.pulse { transform-box: fill-box; transform-origin: center; }
+.pic .slotg.hint { animation: hint .42s ease-in-out 4 alternate; }
+.pic .slotg.hint .outline, .pic .slotg.over .outline { stroke: var(--hint); stroke-width: 6; stroke-dasharray: none; }
+@keyframes hint { to { transform: scale(1.12); } }
+
+.a-wiggle .slotg:not([data-still]), .a-wiggle .fxmove { animation: tilt .5s ease-in-out 3; }
+.a-hop .slotg:not([data-still]), .a-hop .fxmove { animation: hop .45s ease-in-out 4; }
+.a-chug .slotg:not([data-still]), .a-chug .fxmove { animation: chug .3s ease-in-out 7; }
+.a-drive .slotg:not([data-still]), .a-drive .fxmove { animation: drive 2.8s ease-in-out; }
+.a-launch .slotg:not([data-still]), .a-launch .fxmove { animation: launch 3s ease-in-out; }
+.a-swim .slotg:not([data-still]), .a-swim .fxmove { animation: swim 1.4s ease-in-out 2; }
+.a-rock .slotg:not([data-still]), .a-rock .fxmove { animation: tilt 1.1s ease-in-out 3; }
+.a-sway .slotg:not([data-still]), .a-sway .fxmove { animation: tilt 1.2s ease-in-out 3; }
+.pic .slotg.pulse { animation: pulse .5s ease-in-out 6 alternate; }
+@keyframes tilt { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
+@keyframes hop { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-18px); } }
+@keyframes chug { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes drive { 0% { transform: translateX(0); } 42% { transform: translateX(360px); } 43% { transform: translateX(-360px); } 100% { transform: translateX(0); } }
+@keyframes launch { 0%,100% { transform: translate(0,0); } 6% { transform: translate(2px,0); } 12% { transform: translate(-2px,0); } 18% { transform: translate(0,0); } 48% { transform: translateY(-360px); } 49% { transform: translateY(360px); } }
+@keyframes swim { 0%,100% { transform: translate(0,0); } 25% { transform: translate(14px,-10px); } 50% { transform: translate(24px,0); } 75% { transform: translate(10px,8px); } }
+@keyframes pulse { to { transform: scale(1.12); } }
+
+.pic .fx * { transform-box: fill-box; transform-origin: center; }
+.puff { animation: puff 1.6s ease-out infinite; }
+.bubble { animation: bubble 1.8s ease-out infinite; }
+.twinkle { animation: twinkle .5s ease-in-out infinite alternate; }
+.flame { animation: flame .18s ease-in-out infinite alternate; }
+.rise { animation: rise 2.2s ease-out infinite; }
+.drop { animation: drop .7s cubic-bezier(.5,0,.6,1.4) both; }
+.glow { animation: twinkle .9s ease-in-out infinite alternate; }
+@keyframes puff { from { transform: translate(0,0) scale(.6); opacity: .95; } to { transform: translate(-14px,-70px) scale(1.6); opacity: 0; } }
+@keyframes bubble { from { transform: translate(0,0) scale(.6); opacity: 1; } to { transform: translate(10px,-90px) scale(1.2); opacity: 0; } }
+@keyframes twinkle { from { opacity: .3; transform: scale(.8); } to { opacity: 1; transform: scale(1.1); } }
+@keyframes flame { from { transform: scaleY(.8); } to { transform: scaleY(1.2); } }
+@keyframes rise { from { transform: translate(0,0); opacity: 1; } to { transform: translate(16px,-60px); opacity: 0; } }
+@keyframes drop { from { transform: translateY(-120px); } to { transform: translateY(0); } }
+
+.confetti { position: fixed; top: -20px; width: 14px; height: 18px; border-radius: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .puff, .bubble, .twinkle, .flame, .rise, .glow { animation: none; }
+}
+</style>
+
+<div class="app">
+  <section id="home" class="screen home">
+    <h1>Фигурки</h1>
+    <button class="start" id="play" type="button"><span id="start-pic"></span>Играть</button>
+    <p class="gallery-title">Все картинки по порядку — тап, чтобы начать с неё</p>
+    <div class="gallery" id="gallery"></div>
+    <p class="note">Прототип игры «Фигурки». Фигурку тащат пальцем на место её формы. Тап по фигурке или по пунктиру называет форму. Голос здесь компьютерный — в приложении будет живой. Фоны временные: в приложении это будут иллюстрации в стиле сцен.</p>
+  </section>
+
+  <section id="game" class="screen" hidden>
+    <div class="bar">
+      <button class="round" id="back" type="button" aria-label="Назад">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 L8 12 L15 19"/></svg>
+      </button>
+      <div class="kinds" id="kinds"></div>
+      <span style="width:56px;flex:none"></span>
+    </div>
+    <div class="stage" id="stage"></div>
+    <div class="mat" id="mat"></div>
+  </section>
+</div>
+<div class="layer" id="layer"></div>
+
+<script>
+'use strict';
+const $ = (s) => document.querySelector(s);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const pick = (list) => list[Math.floor(Math.random() * list.length)];
+const shuffle = (list) => { const a = [...list]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const f = (n) => +n.toFixed(1);
+
+// ------------------------------------------------------------ palette and shapes
+const C = {
+  red: '#e2553f', blue: '#3f8fd8', yellow: '#f6c447', green: '#5daa4f', darkgreen: '#3f8a45',
+  orange: '#f08a3a', purple: '#9a6cc9', pink: '#ef8fb0', brown: '#a8703f', lightblue: '#7cc6e8',
+  white: '#f7f1e6', black: '#4a4038', cone: '#e0b06a', skin: '#f8d9b8', silver: '#ebe5da',
+};
+// Blends two #rrggbb colours: t = 0 gives a, t = 1 gives b.
+function mix(a, b, t) {
+  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  return '#' + [16, 8, 0].map((sh) => Math.round(((pa >> sh) & 255) * (1 - t) + ((pb >> sh) & 255) * t).toString(16).padStart(2, '0')).join('');
+}
+// The shades a painted wooden piece is drawn with.
+function shades(fill) {
+  return { fill, light: mix(fill, '#fff8ec', .38), side: mix(fill, '#3b2410', .32), line: mix(fill, '#3b2410', .62) };
+}
+
+// The shapes in the order a child meets them.
+const KINDS = {
+  circle: 'Круг', triangle: 'Треугольник', square: 'Квадрат', rectangle: 'Прямоугольник', oval: 'Овал',
+  star: 'Звезда', heart: 'Сердечко', semicircle: 'Полукруг', rhombus: 'Ромб', crescent: 'Месяц',
+};
+const KIND_IDS = Object.keys(KINDS);
+
+// Where the shine sits on each shape, as a fraction of its box.
+const SHINE = {
+  circle: [.32, .3], oval: [.3, .3], square: [.26, .24], rectangle: [.18, .3], triangle: [.43, .58],
+  star: [.42, .44], heart: [.27, .3], semicircle: [.3, .62], rhombus: [.4, .34], crescent: [.2, .42],
+};
+
+function toward(p, q, r) {
+  const dx = q[0] - p[0], dy = q[1] - p[1], len = Math.hypot(dx, dy);
+  const k = Math.min(r, len / 2.2) / len;
+  return [p[0] + dx * k, p[1] + dy * k];
+}
+// A polygon with softly rounded corners.
+function roundPoly(pts, r) {
+  let d = '';
+  const n = pts.length;
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n];
+    const a = toward(p1, p0, r), b = toward(p1, p2, r);
+    d += `${i === 0 ? 'M' : 'L'}${f(a[0])} ${f(a[1])}Q${f(p1[0])} ${f(p1[1])} ${f(b[0])} ${f(b[1])}`;
+  }
+  return d + 'Z';
+}
+// The outline of [kind] filling a box of w × h, upright.
+function shapePath(kind, w, h) {
+  const m = Math.min(w, h);
+  const X = (v) => f(v * w / 100), Y = (v) => f(v * h / 100);
+  switch (kind) {
+    case 'circle': case 'oval':
+      return `M0 ${f(h / 2)}A${f(w / 2)} ${f(h / 2)} 0 1 1 ${f(w)} ${f(h / 2)}A${f(w / 2)} ${f(h / 2)} 0 1 1 0 ${f(h / 2)}Z`;
+    case 'square': case 'rectangle':
+      return roundPoly([[0, 0], [w, 0], [w, h], [0, h]], m * .16);
+    case 'triangle':
+      return roundPoly([[w / 2, 0], [w, h], [0, h]], m * .14);
+    case 'rhombus':
+      return roundPoly([[w / 2, 0], [w, h / 2], [w / 2, h], [0, h / 2]], m * .12);
+    case 'star': {
+      const pts = [];
+      for (let i = 0; i < 10; i++) {
+        const r = i % 2 ? .5 : 1, a = -Math.PI / 2 + i * Math.PI / 5;
+        pts.push([(Math.cos(a) * r + .951) / 1.902 * w, (Math.sin(a) * r + 1) / 1.809 * h]);
+      }
+      return roundPoly(pts, m * .06);
+    }
+    case 'heart':
+      return `M${X(50)} ${Y(97)}C${X(22)} ${Y(77)} ${X(1)} ${Y(58)} ${X(1)} ${Y(33)}C${X(1)} ${Y(14)} ${X(15)} ${Y(2)} ${X(29)} ${Y(2)}` +
+        `C${X(39)} ${Y(2)} ${X(46)} ${Y(8)} ${X(50)} ${Y(17)}C${X(54)} ${Y(8)} ${X(61)} ${Y(2)} ${X(71)} ${Y(2)}` +
+        `C${X(85)} ${Y(2)} ${X(99)} ${Y(14)} ${X(99)} ${Y(33)}C${X(99)} ${Y(58)} ${X(78)} ${Y(77)} ${X(50)} ${Y(97)}Z`;
+    case 'semicircle':
+      return `M0 ${f(h)}A${f(w / 2)} ${f(h)} 0 0 1 ${f(w)} ${f(h)}Z`;
+    case 'crescent':
+      return `M${X(62)} ${Y(3)}A${X(47)} ${Y(47)} 0 1 0 ${X(62)} ${Y(97)}A${X(52)} ${Y(52)} 0 0 1 ${X(62)} ${Y(3)}Z`;
+  }
+}
+
+// A slot's box on the card is (x, y, w, h); [turn] quarter-turns clockwise rotate the upright shape into it.
+function upright(s) { return s.turn % 2 ? [s.h, s.w] : [s.w, s.h]; }
+function placement(s) {
+  const [iw, ih] = upright(s);
+  return `translate(${f(s.x + s.w / 2)} ${f(s.y + s.h / 2)}) rotate(${(s.turn || 0) * 90}) translate(${f(-iw / 2)} ${f(-ih / 2)})`;
+}
+let gradCount = 0;
+function pieceArt(s) {
+  const [iw, ih] = upright(s);
+  const k = shades(C[s.color]);
+  const id = `w${gradCount++}`;
+  const d = shapePath(s.kind, iw, ih);
+  const depth = f(Math.max(4, Math.min(iw, ih) * .06));
+  const [sx, sy] = SHINE[s.kind];
+  const turn = (s.turn || 0) * 90;
+  const grain = [.28, .52, .76].map((t, i) => {
+    const y = f(ih * t), a = f(iw * .3), b = f(iw * .55);
+    return `M${f(-iw * .05)} ${y}Q${a} ${f(y - 7 + i * 4)} ${b} ${y}T${f(iw * 1.05)} ${f(y + 2)}`;
+  }).join('');
+  return `<defs><linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1" gradientTransform="rotate(${-turn} .5 .5)">` +
+    `<stop offset="0" stop-color="${k.light}"/><stop offset=".55" stop-color="${k.fill}"/><stop offset="1" stop-color="${mix(k.fill, k.side, .45)}"/></linearGradient>` +
+    `<radialGradient id="${id}h"><stop offset="0" stop-color="#fffdf6" stop-opacity=".8"/><stop offset="1" stop-color="#fffdf6" stop-opacity="0"/></radialGradient>` +
+    `<clipPath id="${id}c"><path d="${d}"/></clipPath></defs>` +
+    `<g transform="translate(0 ${depth})"><g transform="${placement(s)}"><path d="${d}" fill="${k.side}" stroke="${k.line}" stroke-width="3.5" stroke-linejoin="round"/></g></g>` +
+    `<g transform="${placement(s)}"><path d="${d}" fill="url(#${id}g)" stroke="${k.line}" stroke-width="3.5" stroke-linejoin="round"/>` +
+    `<g clip-path="url(#${id}c)"><path d="${grain}" fill="none" stroke="${k.side}" stroke-width="1.6" opacity=".2"/>` +
+    `<ellipse cx="${f(sx * iw)}" cy="${f(sy * ih)}" rx="${f(Math.max(9, .24 * iw))}" ry="${f(Math.max(6, .15 * ih))}" fill="url(#${id}h)"/></g></g>`;
+}
+// The piece on its own, for the mat and while it flies; fresh gradient ids every time.
+function pieceSvg(s, attrs = '') {
+  return `<svg viewBox="${s.x - 8} ${s.y - 8} ${s.w + 16} ${s.h + 22}" ${attrs}>${pieceArt(s)}</svg>`;
+}
+function outlineArt(s, dark) {
+  const [iw, ih] = upright(s);
+  const paint = dark
+    ? 'fill="rgba(255,248,236,.16)" stroke="rgba(255,243,214,.85)"'
+    : 'fill="rgba(255,248,240,.62)" stroke="#a2896f"';
+  return `<g transform="${placement(s)}"><path class="outline" d="${shapePath(s.kind, iw, ih)}" ${paint} stroke-width="3" stroke-dasharray="9 7" stroke-linejoin="round"/></g>`;
+}
+
+// ------------------------------------------------------------ the pictures
+let bgCount = 0;
+const grad = (top, bottom) => { const id = `ID-g${bgCount++}`; return [`<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient></defs>`, `url(#${id})`]; };
+const sky = (top, bottom) => { const [defs, fill] = grad(top, bottom); return `${defs}<rect width="300" height="300" fill="${fill}"/>`; };
+const land = (d, top, bottom) => { const [defs, fill] = grad(top, bottom); return `${defs}<path d="${d}" fill="${fill}"/>`; };
+const sun = (x, y, r) => `<defs><radialGradient id="ID-sun"><stop offset="0" stop-color="#fffbe8"/><stop offset=".3" stop-color="#ffe7a6"/><stop offset="1" stop-color="#ffe39a" stop-opacity="0"/></radialGradient></defs><circle cx="${x}" cy="${y}" r="${r}" fill="url(#ID-sun)"/>`;
+const cloud = (x, y, s = 1) => `<g><ellipse cx="${x}" cy="${y + 4 * s}" rx="${30 * s}" ry="${10 * s}" fill="#e8d9c6" opacity=".55"/><g fill="#fffaf2"><ellipse cx="${x}" cy="${y}" rx="${28 * s}" ry="${13 * s}"/><circle cx="${x - 10 * s}" cy="${y - 8 * s}" r="${13 * s}"/><circle cx="${x + 9 * s}" cy="${y - 11 * s}" r="${16 * s}"/></g></g>`;
+const bush = (x, y, s = 1) => `<g stroke="#4e8a3c" stroke-width="2.5"><circle cx="${x}" cy="${y}" r="${18 * s}" fill="#6fae52"/><circle cx="${x + 18 * s}" cy="${y + 5 * s}" r="${13 * s}" fill="#5f9f48"/></g>`;
+const meadow = (y = 258) => land('M0 236 Q70 212 150 232 T300 226 V300 H0Z', '#b9d991', '#9cc67a') + land(`M0 ${y} Q80 ${y - 12} 150 ${y} T300 ${y - 4} V300 H0Z`, '#93c46a', '#6fa84f');
+const dots = (list, c = '#fffaf2') => `<g fill="${c}">${list.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('')}</g>`;
+const eyes = (x1, x2, y, r = 7, c = '#2b211a') => `<circle cx="${x1}" cy="${y}" r="${r}" fill="${c}"/><circle cx="${x2}" cy="${y}" r="${r}" fill="${c}"/>` +
+  `<circle cx="${f(x1 + r * .35)}" cy="${f(y - r * .4)}" r="${f(r * .32)}" fill="#fff"/><circle cx="${f(x2 + r * .35)}" cy="${f(y - r * .4)}" r="${f(r * .32)}" fill="#fff"/>`;
+const smile = (x1, x2, y, depth, c = '#2b211a', w = 4) => `<path d="M${x1} ${y} Q${(x1 + x2) / 2} ${y + depth} ${x2} ${y}" stroke="${c}" stroke-width="${w}" fill="none" stroke-linecap="round"/>`;
+const puffs = (x, y) => `<g fill="#eef3f8">${[0, .5, 1.05].map((d) => `<circle class="puff" cx="${x}" cy="${y}" r="11" style="animation-delay:${d}s"/>`).join('')}</g>`;
+const sparkle = (x, y, d = 0, c = '#fff7b0') => `<path class="twinkle" style="animation-delay:${d}s" d="M${x} ${y - 9} Q${x + 1.5} ${y - 1.5} ${x + 9} ${y} Q${x + 1.5} ${y + 1.5} ${x} ${y + 9} Q${x - 1.5} ${y + 1.5} ${x - 9} ${y} Q${x - 1.5} ${y - 1.5} ${x} ${y - 9}Z" fill="${c}"/>`;
+// A small happy face for a star in box s.
+const starFace = (s) => {
+  const cx = s.x + s.w / 2, cy = s.y + s.h * .58, k = s.w / 76;
+  return eyes(f(cx - 9 * k), f(cx + 9 * k), f(cy - 3 * k), f(3.6 * k), '#7a5200') + smile(f(cx - 6 * k), f(cx + 6 * k), f(cy + 6 * k), f(6 * k), '#7a5200', 3);
+};
+
+const PICTURES = [
+  {
+    name: 'Мороженое', alive: 'wiggle', origin: [150, 280],
+    bg: sky('#fff4e8', '#ffe3cf') + `<g>${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => `<rect x="${i * 30}" y="0" width="30" height="30" fill="${i % 2 ? '#fff8f0' : '#f4a7a0'}"/><circle cx="${i * 30 + 15}" cy="30" r="15" fill="${i % 2 ? '#fff8f0' : '#f4a7a0'}"/>`).join('')}</g>` +
+      land('M0 252 H300 V300 H0Z', '#d9a066', '#b97f48') + '<path d="M0 252 H300" stroke="#9a6234" stroke-width="3"/>' +
+      dots([[40, 90, 5], [262, 110, 4], [34, 200, 4], [266, 210, 5], [56, 140, 3], [246, 160, 3]], '#f6c8c0'),
+    slots: [
+      { kind: 'triangle', x: 105, y: 140, w: 90, h: 136, turn: 2, color: 'cone',
+        over: '<path d="M116 152 L150 224 M138 152 L160 198 M162 152 L140 198 M184 152 L150 224" stroke="#b27f32" stroke-width="3" opacity=".55" stroke-linecap="round" fill="none"/>' },
+      { kind: 'circle', x: 88, y: 50, w: 124, h: 124, color: 'pink',
+        over: eyes(132, 168, 110) + smile(136, 164, 130, 12) +
+          '<circle cx="118" cy="128" r="8" fill="#ff4f8f" opacity=".3"/><circle cx="182" cy="128" r="8" fill="#ff4f8f" opacity=".3"/>' +
+          '<g stroke-linecap="round" stroke-width="5"><path d="M116 76 l9 -4" stroke="#ffc929"/><path d="M150 64 l2 9" stroke="#6fd0f6"/><path d="M180 78 l8 4" stroke="#36b95a"/><path d="M102 98 l6 6" stroke="#9b5de5"/><path d="M198 100 l-5 7" stroke="#fff"/></g>' },
+    ],
+    fx: '<g class="drop fxmove"><path d="M150 44 Q156 22 170 14" stroke="#3fae4f" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="150" cy="52" r="15" fill="#ec4a3a" stroke="#b8301f" stroke-width="3"/><circle cx="145" cy="47" r="4" fill="#fff" opacity=".6"/></g>',
+  },
+  {
+    name: 'Домик', alive: 'hop', origin: [150, 290],
+    bg: sky('#cfe6f5', '#fdf3e3') + sun(252, 48, 56) + cloud(64, 64) + cloud(190, 34, .7) +
+      '<rect x="186" y="48" width="28" height="62" rx="3" fill="#c66a4a" stroke="#7d3c25" stroke-width="3"/>' +
+      meadow(262) + bush(18, 262) + bush(262, 262, .9),
+    slots: [
+      { kind: 'square', x: 75, y: 135, w: 150, h: 150, color: 'yellow',
+        over: '<rect x="168" y="212" width="42" height="73" rx="8" fill="#a86d3e" stroke="#6b3f1d" stroke-width="3"/><circle cx="200" cy="250" r="4.5" fill="#ffc929"/>' },
+      { kind: 'triangle', x: 48, y: 38, w: 204, h: 108, color: 'red' },
+      { kind: 'circle', x: 94, y: 162, w: 64, h: 64, color: 'lightblue',
+        over: '<path d="M126 167 V221 M99 194 H153" stroke="#fff" stroke-width="5" stroke-linecap="round"/>' },
+    ],
+    fx: puffs(200, 42) + '<circle class="glow" cx="126" cy="194" r="28" fill="#fff7b0" opacity=".75"/>',
+  },
+  {
+    name: 'Машинка', alive: 'drive',
+    bg: sky('#cfe6f5', '#fdf3e3') + cloud(70, 55) + cloud(232, 84, .7) +
+      '<g opacity=".55"><rect x="14" y="150" width="34" height="80" fill="#e6c9a8"/><rect x="52" y="176" width="28" height="54" fill="#f0d6b8"/><rect x="228" y="160" width="30" height="70" fill="#e6c9a8"/><rect x="262" y="184" width="30" height="46" fill="#f0d6b8"/></g>' +
+      land('M0 226 H300 V240 H0Z', '#93c46a', '#7fb35c') + land('M0 238 H300 V300 H0Z', '#a69a90', '#8c8178') +
+      '<path d="M10 272 H50 M90 272 H130 M170 272 H210 M250 272 H290" stroke="#fff8f0" stroke-width="6" stroke-linecap="round"/>',
+    slots: [
+      { kind: 'square', x: 82, y: 62, w: 140, h: 140, color: 'red',
+        over: '<rect x="98" y="80" width="46" height="50" rx="10" fill="#b8ecff" stroke="#b8301f" stroke-width="3"/><rect x="156" y="80" width="52" height="50" rx="10" fill="#b8ecff" stroke="#b8301f" stroke-width="3"/>' +
+          eyes(172, 194, 106, 6) + smile(170, 204, 168, 12, '#7a1d12') + '<circle cx="212" cy="148" r="8" fill="#ffe27a" stroke="#d99a00" stroke-width="3"/>' },
+      { kind: 'circle', x: 66, y: 176, w: 74, h: 74, color: 'black', over: '<circle cx="103" cy="213" r="13" fill="#c9d1dc"/>' },
+      { kind: 'circle', x: 166, y: 176, w: 74, h: 74, color: 'black', over: '<circle cx="203" cy="213" r="13" fill="#c9d1dc"/>' },
+    ],
+    fx: '<path class="fxmove" d="M44 110 H66 M34 140 H62 M46 170 H68" stroke="#fff" stroke-width="5" stroke-linecap="round"/>',
+  },
+  {
+    name: 'Ёлочка', alive: 'wiggle', origin: [150, 280],
+    bg: sky('#d8e8f3', '#f8f1e8') + land('M0 236 Q90 214 170 234 T300 228 V300 H0Z', '#f4f7fa', '#e2e9f0') + land('M0 254 Q150 236 300 254 V300 H0Z', '#ffffff', '#eef2f6') +
+      dots([[30, 40, 4], [270, 60, 5], [40, 180, 3], [262, 170, 4], [60, 110, 3], [240, 120, 3], [24, 226, 3], [282, 212, 3]]),
+    slots: [
+      { kind: 'square', x: 122, y: 220, w: 56, h: 56, color: 'brown' },
+      { kind: 'triangle', x: 52, y: 95, w: 196, h: 140, color: 'darkgreen' },
+      { kind: 'triangle', x: 84, y: 22, w: 132, h: 108, color: 'green' },
+    ],
+    fx: [[118, 182, '#ffc929'], [178, 168, '#ec4a3a'], [150, 210, '#6fd0f6'], [206, 214, '#ff7eb6'], [96, 220, '#ffc929'], [150, 74, '#ec4a3a'], [128, 104, '#6fd0f6'], [174, 104, '#ffc929']]
+      .map(([x, y, c], i) => `<circle class="twinkle fxmove" cx="${x}" cy="${y}" r="9" fill="${c}" stroke="#fff" stroke-width="2" style="animation-delay:${(i % 4) * .15}s"/>`).join(''),
+  },
+  {
+    name: 'Паровозик', alive: 'chug',
+    bg: sky('#cfe6f5', '#fdf3e3') + sun(52, 46, 50) + cloud(236, 50, .9) + land('M0 230 Q80 206 160 228 T300 222 V300 H0Z', '#b9d991', '#9cc67a') + land('M0 248 H300 V300 H0Z', '#93c46a', '#6fa84f') +
+      `<g fill="#9a6234">${[0, 1, 2, 3, 4, 5, 6, 7].map((i) => `<rect x="${6 + i * 38}" y="252" width="22" height="12" rx="3"/>`).join('')}</g><rect y="250" width="300" height="6" fill="#8f8a86"/>`,
+    slots: [
+      { kind: 'rectangle', x: 26, y: 138, w: 156, h: 74, color: 'red',
+        over: '<path d="M46 140 V104 H38 V92 H78 V104 H70 V140" fill="#3a3a46" stroke="#16161d" stroke-width="3" stroke-linejoin="round"/><path d="M110 141 V209" stroke="#b8301f" stroke-width="4"/><circle cx="36" cy="160" r="7" fill="#ffe27a" stroke="#d99a00" stroke-width="3"/>' },
+      { kind: 'square', x: 170, y: 92, w: 118, h: 118, color: 'blue',
+        over: '<rect x="164" y="80" width="130" height="16" rx="7" fill="#1b55b5"/><rect x="196" y="110" width="68" height="48" rx="10" fill="#b8ecff" stroke="#1b55b5" stroke-width="3"/>' + eyes(220, 242, 134, 6) },
+      { kind: 'circle', x: 44, y: 182, w: 70, h: 70, color: 'black', over: '<circle cx="79" cy="217" r="12" fill="#c9d1dc"/>' },
+      { kind: 'circle', x: 194, y: 182, w: 70, h: 70, color: 'black', over: '<circle cx="229" cy="217" r="12" fill="#c9d1dc"/>' },
+    ],
+    fx: `<g class="fxmove">${puffs(58, 86)}</g>`,
+  },
+  {
+    name: 'Рыбка', alive: 'swim',
+    bg: sky('#a7dcef', '#5fb0d4') + '<g fill="#fffaf2" opacity=".18"><path d="M40 0 L80 0 L30 300 L-10 300Z"/><path d="M170 0 L200 0 L170 300 L130 300Z"/></g>' +
+      land('M0 268 Q150 250 300 268 V300 H0Z', '#f3dcae', '#e2c08a') +
+      '<path d="M40 272 Q26 242 42 216 Q56 192 40 168" stroke="#5a9e48" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M262 274 Q276 248 260 222" stroke="#467f3a" stroke-width="10" fill="none" stroke-linecap="round"/>' +
+      '<g fill="#d9b98a"><ellipse cx="200" cy="276" rx="12" ry="6"/><ellipse cx="96" cy="282" rx="9" ry="5"/></g>' +
+      '<g fill="none" stroke="#fffaf2" stroke-width="3" opacity=".8"><circle cx="70" cy="60" r="8"/><circle cx="88" cy="36" r="5"/><circle cx="250" cy="70" r="6"/></g>',
+    slots: [
+      { kind: 'triangle', x: 22, y: 90, w: 84, h: 106, turn: 1, color: 'yellow' },
+      { kind: 'oval', x: 70, y: 82, w: 168, h: 118, color: 'orange',
+        over: '<path d="M124 86 Q150 54 182 84" fill="#ffc929" stroke="#d99a00" stroke-width="3"/><path d="M118 122 q10 10 0 20 M138 114 q12 14 0 28 M138 152 q10 8 0 16" stroke="#c95f00" stroke-width="3" fill="none" opacity=".6"/>' + smile(212, 230, 162, 8, '#7a3300') },
+      { kind: 'circle', x: 166, y: 98, w: 54, h: 54, color: 'white', over: '<circle cx="197" cy="127" r="12" fill="#2b211a"/><circle cx="201" cy="122" r="4" fill="#fff"/>' },
+    ],
+    fx: `<g class="fxmove" fill="none" stroke="#fff" stroke-width="3">${[0, .6, 1.2].map((d, i) => `<circle class="bubble" cx="244" cy="140" r="${6 - i}" style="animation-delay:${d}s"/>`).join('')}</g>`,
+  },
+  {
+    name: 'Ракета', alive: 'launch', dark: true,
+    bg: sky('#2a2f5c', '#4a3d70') + dots([[30, 40, 2.5], [80, 20, 2], [60, 110, 2], [250, 140, 2.5], [280, 30, 2], [24, 190, 2], [270, 230, 2.5], [180, 270, 2], [100, 280, 2]], '#fff3c4') +
+      land('M24 244 A24 24 0 1 0 72 244 A24 24 0 1 0 24 244Z', '#f6a85a', '#d0703a') + '<ellipse cx="48" cy="244" rx="40" ry="8" fill="none" stroke="#f6c447" stroke-width="5" transform="rotate(-18 48 244)"/>',
+    slots: [
+      { kind: 'rectangle', x: 105, y: 92, w: 90, h: 165, color: 'silver',
+        over: '<path d="M106 196 L74 258 L106 248Z M194 196 L226 258 L194 248Z" fill="#ec4a3a" stroke="#b8301f" stroke-width="3" stroke-linejoin="round"/><rect x="107" y="222" width="86" height="10" fill="#2f7cf0" opacity=".7"/>' },
+      { kind: 'triangle', x: 105, y: 26, w: 90, h: 74, color: 'red' },
+      { kind: 'circle', x: 123, y: 124, w: 54, h: 54, color: 'lightblue', over: '<circle cx="150" cy="151" r="28" fill="none" stroke="#8e98a4" stroke-width="5"/>' },
+      { kind: 'star', x: 204, y: 34, w: 78, h: 74, color: 'yellow', still: true },
+    ],
+    fx: '<path class="flame fxmove" d="M126 258 Q150 318 174 258 Q150 274 126 258Z" fill="#ffc929" stroke="#ff8a1f" stroke-width="4" stroke-linejoin="round"/>' + sparkle(198, 30) + sparkle(286, 104, .25),
+  },
+  {
+    name: 'Мишка', alive: 'rock', origin: [150, 290],
+    bg: sky('#d6ebf3', '#fbf3e2') + sun(256, 44, 50) + meadow(262) +
+      [[38, 270, '#ef8fb0'], [262, 272, '#f6c447'], [70, 286, '#9a6cc9'], [232, 288, '#ef8fb0']].map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="7" fill="${c}"/><circle cx="${x}" cy="${y}" r="3" fill="#fffaf2"/>`).join('') +
+      '<g class="fxmove"><g stroke="#5e3a1c" stroke-width="3.5"><circle cx="106" cy="62" r="22" fill="#a8703f"/><circle cx="194" cy="62" r="22" fill="#a8703f"/><ellipse cx="120" cy="284" rx="22" ry="12" fill="#a8703f"/><ellipse cx="180" cy="284" rx="22" ry="12" fill="#a8703f"/></g>' +
+      '<circle cx="106" cy="62" r="10" fill="#e8b48a"/><circle cx="194" cy="62" r="10" fill="#e8b48a"/></g>',
+    slots: [
+      { kind: 'oval', x: 88, y: 148, w: 124, h: 138, color: 'brown',
+        over: '<ellipse cx="150" cy="228" rx="40" ry="44" fill="#e8b48a" opacity=".75"/><g fill="#a86d3e" stroke="#6b3f1d" stroke-width="4"><ellipse cx="92" cy="196" rx="15" ry="30" transform="rotate(28 92 196)"/><ellipse cx="208" cy="196" rx="15" ry="30" transform="rotate(-28 208 196)"/></g>' },
+      { kind: 'circle', x: 94, y: 46, w: 112, h: 112, color: 'brown',
+        over: '<ellipse cx="150" cy="124" rx="28" ry="22" fill="#e8b48a"/><ellipse cx="150" cy="113" rx="10" ry="7" fill="#3a2a2a"/><path d="M150 120 V128 M139 130 Q150 139 161 130" stroke="#3a2a2a" stroke-width="3.5" fill="none" stroke-linecap="round"/>' + eyes(126, 174, 92, 7, '#3a2a2a') },
+      { kind: 'heart', x: 120, y: 196, w: 60, h: 54, color: 'red' },
+    ],
+    fx: [[226, 96, 0], [72, 120, .7], [238, 170, 1.4]].map(([x, y, d]) => `<g transform="translate(${x} ${y})"><path class="rise" style="animation-delay:${d}s" d="${shapePath('heart', 22, 20)}" fill="#ff7eb6"/></g>`).join(''),
+  },
+  {
+    name: 'Кораблик', alive: 'rock', origin: [150, 236],
+    bg: sky('#cfe6f5', '#fdf3e3') + sun(250, 52, 52) + cloud(62, 50, .9) + '<path d="M196 92 q10 -10 20 0 q10 -10 20 0" stroke="#76675a" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+      '<g class="fxmove"><rect x="147" y="30" width="8" height="152" rx="3" fill="#8a5a33"/><path d="M155 32 L184 41 L155 50Z" fill="#e2553f"/></g>' +
+      land('M0 238 Q25 228 50 238 T100 238 T150 238 T200 238 T250 238 T300 238 V300 H0Z', '#6dbbe0', '#3f8fbf') + '<path d="M0 266 Q25 258 50 266 T100 266 T150 266 T200 266 T250 266 T300 266" stroke="#a7dcef" stroke-width="5" fill="none"/>',
+    slots: [
+      { kind: 'triangle', x: 62, y: 52, w: 80, h: 120, color: 'yellow' },
+      { kind: 'triangle', x: 160, y: 72, w: 74, h: 100, color: 'orange' },
+      { kind: 'semicircle', x: 48, y: 176, w: 204, h: 94, turn: 2, color: 'red',
+        over: '<g fill="#fff" stroke="#b8301f" stroke-width="3"><circle cx="105" cy="200" r="8"/><circle cx="150" cy="204" r="8"/><circle cx="195" cy="200" r="8"/></g>' },
+    ],
+    fx: '',
+  },
+  {
+    name: 'Воздушный змей', alive: 'sway', origin: [40, 275],
+    bg: sky('#bfe0f4', '#fdf1df') + cloud(58, 70) + cloud(246, 126, .8) + meadow(272) +
+      '<path class="fxmove" d="M150 203 C150 230 110 250 40 275" stroke="#76675a" stroke-width="3" fill="none"/>',
+    slots: [
+      { kind: 'rhombus', x: 80, y: 22, w: 140, h: 182, color: 'purple',
+        over: '<path d="M150 28 V198 M86 113 H214" stroke="#6c35b0" stroke-width="3" opacity=".5"/>' +
+          '<circle cx="134" cy="98" r="9" fill="#fff"/><circle cx="166" cy="98" r="9" fill="#fff"/><circle cx="135" cy="100" r="4.5" fill="#2b211a"/><circle cx="167" cy="100" r="4.5" fill="#2b211a"/>' + smile(136, 164, 126, 12, '#fff') },
+      { kind: 'triangle', x: 113, y: 199, w: 54, h: 54, turn: 1, color: 'yellow' },
+      { kind: 'triangle', x: 60, y: 230, w: 54, h: 54, turn: 3, color: 'green' },
+    ],
+    fx: '',
+  },
+  {
+    name: 'Ночное небо', alive: 'pulse', dark: true,
+    bg: sky('#232a55', '#3e3a6b') + dots([[30, 200, 2], [120, 20, 2], [150, 140, 2], [280, 140, 2.5], [20, 30, 2], [110, 210, 2]], '#fff3c4') +
+      land('M0 250 Q80 216 160 248 T300 240 V300 H0Z', '#34507a', '#26405e') +
+      '<path d="M226 236 L250 216 L274 236Z" fill="#3a3340"/><rect x="230" y="234" width="40" height="30" fill="#3a3340"/><rect x="244" y="241" width="12" height="12" fill="#ffe39a"/>',
+    slots: [
+      { kind: 'crescent', x: 40, y: 32, w: 144, h: 144, color: 'yellow',
+        over: '<path d="M58 94 Q66 101 76 94" stroke="#7a5200" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M64 124 Q72 130 80 122" stroke="#7a5200" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="60" cy="110" r="6" fill="#ff7eb6" opacity=".5"/>' },
+      { kind: 'star', x: 196, y: 40, w: 80, h: 76, color: 'yellow', pulse: true },
+      { kind: 'star', x: 170, y: 150, w: 66, h: 63, color: 'yellow', pulse: true },
+    ],
+    fx: '<text class="rise" x="104" y="64" font-family="Nunito, sans-serif" font-weight="900" font-size="26" fill="#fff">z</text><text class="rise" x="118" y="44" font-family="Nunito, sans-serif" font-weight="900" font-size="18" fill="#fff" style="animation-delay:.8s">z</text>' + sparkle(60, 230, .1) + sparkle(130, 180, .35),
+  },
+  {
+    name: 'Клоун', alive: 'hop', origin: [150, 290],
+    bg: sky('#fff3e0', '#ffe6cd') + `<g fill="#f6d2c4" opacity=".7">${[0, 1, 2, 3, 4].map((i) => `<rect x="${i * 60}" width="30" height="300"/>`).join('')}</g>` +
+      land('M0 262 H300 V300 H0Z', '#d9a066', '#b97f48') +
+      '<g class="fxmove"><g fill="#f08a3a" stroke="#9a4f1c" stroke-width="3"><circle cx="72" cy="150" r="22"/><circle cx="62" cy="180" r="20"/><circle cx="228" cy="150" r="22"/><circle cx="238" cy="180" r="20"/></g>' +
+      '<g fill="#7cc6e8" stroke="#3f7f9e" stroke-width="3"><circle cx="105" cy="272" r="18"/><circle cx="195" cy="272" r="18"/><circle cx="135" cy="280" r="18"/><circle cx="165" cy="280" r="18"/></g></g>',
+    slots: [
+      { kind: 'circle', x: 72, y: 96, w: 156, h: 156, color: 'skin',
+        over: '<g fill="#2b211a"><ellipse cx="124" cy="146" rx="7" ry="10"/><ellipse cx="176" cy="146" rx="7" ry="10"/></g><path d="M112 126 Q124 118 136 126 M164 126 Q176 118 188 126" stroke="#2b211a" stroke-width="4" fill="none" stroke-linecap="round"/>' + smile(118, 182, 222, 28, '#b8301f', 7) },
+      { kind: 'triangle', x: 98, y: 6, w: 104, h: 100, color: 'purple',
+        over: '<g fill="#ffc929"><circle cx="138" cy="72" r="6"/><circle cx="164" cy="86" r="6"/><circle cx="152" cy="46" r="5"/></g><circle cx="150" cy="10" r="11" fill="#fff" stroke="#8e98a4" stroke-width="3"/>' },
+      { kind: 'circle', x: 123, y: 156, w: 54, h: 54, color: 'red' },
+      { kind: 'heart', x: 80, y: 176, w: 54, h: 50, color: 'pink' },
+      { kind: 'heart', x: 166, y: 176, w: 54, h: 50, color: 'pink' },
+    ],
+    fx: '',
+  },
+];
+// Faces on the stars, added once a star is in place.
+for (const p of PICTURES) for (const s of p.slots) if (s.kind === 'star') s.over = (s.over || '') + starFace(s);
+
+// The whole picture: background, then each slot — a dashed outline until its piece is in, then the piece and its details.
+let clipCount = 0;
+function pictureSvg(p, filled, cls = 'pic') {
+  const id = `card${clipCount++}`;
+  const [ox, oy] = p.origin || [150, 150];
+  return `<svg viewBox="0 0 300 300" class="${cls}" style="--ox:${ox}px;--oy:${oy}px" aria-hidden="true">` +
+    `<defs><clipPath id="${id}"><rect width="300" height="300" rx="30"/></clipPath></defs>` +
+    `<g clip-path="url(#${id})"><g class="bg">${p.bg.replaceAll('ID', id)}</g>` +
+    p.slots.map((s, i) => `<g class="slotg" data-i="${i}"${s.still ? ' data-still' : ''}>${slotContent(p, s, filled.has(i))}</g>`).join('') +
+    `<g class="fx"></g></g></svg>`;
+}
+function slotContent(p, s, isFilled) { return isFilled ? pieceArt(s) + (s.over || '') : outlineArt(s, p.dark); }
+
+// ------------------------------------------------------------ sound
+let ac = null;
+function audio() {
+  if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; } }
+  if (ac && ac.state === 'suspended') ac.resume();
+  return ac;
+}
+function tone(freq, at, dur, { type = 'sine', gain = 0.22, to = null } = {}) {
+  const ctx = audio(); if (!ctx) return;
+  const t = ctx.currentTime + at;
+  const o = ctx.createOscillator(); const g = ctx.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t);
+  if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + dur + 0.05);
+}
+const sfx = {
+  plop: () => tone(620, 0, 0.2, { to: 160, gain: 0.3 }),
+  boing: () => { tone(200, 0, 0.18, { type: 'triangle', to: 320 }); tone(320, 0.16, 0.2, { type: 'triangle', to: 200 }); },
+  click: () => tone(900, 0, 0.06, { type: 'square', gain: 0.08 }),
+  fanfare: () => [523, 659, 784, 1047].forEach((fr, i) => tone(fr, i * 0.13, 0.3, { type: 'triangle', gain: 0.2 })),
+};
+
+// The prototype speaks with the device's own voice; the app will use the live recordings.
+function say(text, queue = false) {
+  try {
+    if (!queue) speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ru-RU'; u.rate = 0.95; u.pitch = 1.15;
+    const ru = speechSynthesis.getVoices().find((v) => v.lang && v.lang.toLowerCase().startsWith('ru'));
+    if (ru) u.voice = ru;
+    speechSynthesis.speak(u);
+  } catch (e) { /* no voice on this device */ }
+}
+
+// ------------------------------------------------------------ game state
+const stage = $('#stage'), mat = $('#mat'), layer = $('#layer'), kindsBar = $('#kinds');
+const G = { idx: 0, chainDone: false, met: new Set(), justMet: null, filled: new Set(), order: [], pieceIdx: -1, pieceEl: null, busy: false, gen: 0, afterIntro: false };
+let drag = null;
+const pic = () => PICTURES[G.idx];
+
+const ICON_DIMS = { circle: [22, 22], square: [20, 20], triangle: [24, 21], rectangle: [26, 15], oval: [26, 18], star: [25, 24], heart: [24, 22], semicircle: [26, 13], rhombus: [18, 26], crescent: [24, 24] };
+const ICON_COLORS = ['red', 'yellow', 'blue', 'green', 'orange', 'yellow', 'pink', 'purple', 'lightblue', 'yellow'];
+// One small icon per shape: the ones met so far are coloured in, the one just met is bigger.
+function renderKinds() {
+  kindsBar.innerHTML = KIND_IDS.map((k, i) => {
+    const [w, h] = ICON_DIMS[k], col = shades(C[ICON_COLORS[i]]);
+    const paint = G.met.has(k) ? `fill="${col.fill}" stroke="${col.line}" stroke-width="2"` : 'fill="none" stroke="#dcc2a2" stroke-width="2" stroke-dasharray="3 3"';
+    return `<svg viewBox="-3 -3 34 34" class="${k === G.justMet ? 'new' : ''}"><g transform="translate(${(28 - w) / 2} ${(28 - h) / 2})"><path d="${shapePath(k, w, h)}" ${paint} stroke-linejoin="round"/></g></svg>`;
+  }).join('');
+}
+
+function startPicture(i) {
+  G.idx = i; G.filled = new Set();
+  stage.innerHTML = pictureSvg(pic(), G.filled);
+  G.order = shuffle(pic().slots.map((_, j) => j));
+  nextPiece();
+}
+function slotEl(j) { return stage.querySelector(`.slotg[data-i="${j}"]`); }
+
+function nextPiece() {
+  const j = G.order.find((k) => !G.filled.has(k));
+  G.pieceIdx = j;
+  const s = pic().slots[j];
+  const box = mat.getBoundingClientRect();
+  const k = Math.min(box.width * .62 / (s.w + 16), box.height * .8 / (s.h + 22));
+  mat.innerHTML = pieceSvg(s, `class="piece pop" width="${f((s.w + 16) * k)}" height="${f((s.h + 22) * k)}"`);
+  G.pieceEl = mat.firstElementChild;
+  const name = KINDS[s.kind];
+  if (!G.met.has(s.kind)) {
+    G.met.add(s.kind); G.justMet = s.kind; renderKinds();
+    say(`Новая фигурка! ${name}!`, G.afterIntro);
+  } else {
+    say(`${name}!`, G.afterIntro);
+  }
+  G.afterIntro = false;
+}
+
+// ------------------------------------------------------------ dragging
+function rectOf(el) { const r = el.getBoundingClientRect(); return { left: r.left, top: r.top, width: r.width, height: r.height }; }
+function slotRect(s) {
+  const r = stage.querySelector('.pic').getBoundingClientRect(), k = r.width / 300;
+  return { left: r.left + (s.x - 8) * k, top: r.top + (s.y - 8) * k, width: (s.w + 16) * k, height: (s.h + 22) * k };
+}
+function place(el, r) { Object.assign(el.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' }); }
+async function tween(el, r, ms, easing = 'cubic-bezier(.3,.7,.4,1)') {
+  el.style.transition = `left ${ms}ms ${easing}, top ${ms}ms ${easing}, width ${ms}ms ${easing}, height ${ms}ms ${easing}`;
+  place(el, r);
+  await sleep(ms);
+}
+function makeGhost() {
+  layer.insertAdjacentHTML('beforeend', pieceSvg(pic().slots[G.pieceIdx], 'class="ghost"'));
+  const g = layer.lastElementChild;
+  place(g, rectOf(G.pieceEl));
+  G.pieceEl.style.visibility = 'hidden';
+  return g;
+}
+async function flyBack(ghost) {
+  await tween(ghost, rectOf(G.pieceEl), 320);
+  ghost.remove();
+  G.pieceEl.style.visibility = '';
+}
+// The slot under the finger, with a generous margin; a slot of the right shape wins over a wrong one nearby.
+function slotAt(x, y) {
+  const pad = 24, kind = pic().slots[G.pieceIdx].kind;
+  const hits = pic().slots.map((s, j) => ({ s, j, r: slotRect(s) }))
+    .filter(({ j, r }) => !G.filled.has(j) && x >= r.left - pad && x <= r.left + r.width + pad && y >= r.top - pad && y <= r.top + r.height + pad);
+  if (!hits.length) return null;
+  const match = hits.filter((h) => h.s.kind === kind);
+  const inside = hits.filter(({ r }) => x >= r.left && x <= r.left + r.width && y >= r.top && y <= r.top + r.height);
+  const pool = match.length ? match : (inside.length ? inside : hits);
+  pool.sort((a, b) => a.r.width * a.r.height - b.r.width * b.r.height);
+  return pool[0].j;
+}
+function flash(j, ms) {
+  const el = slotEl(j); if (!el) return;
+  el.classList.remove('hint'); void el.getBoundingClientRect(); el.classList.add('hint');
+  setTimeout(() => el.classList.remove('hint'), ms);
+}
+let overSlot = null;
+function setOver(j) {
+  if (overSlot === j) return;
+  if (overSlot !== null) slotEl(overSlot)?.classList.remove('over');
+  overSlot = j; if (j !== null) slotEl(j)?.classList.add('over');
+}
+
+mat.addEventListener('pointerdown', (e) => {
+  if (G.busy || !G.pieceEl || !G.pieceEl.contains(e.target)) return;
+  e.preventDefault();
+  const r = G.pieceEl.getBoundingClientRect();
+  drag = { id: e.pointerId, sx: e.clientX, sy: e.clientY, dx: e.clientX - r.left, dy: e.clientY - r.top, w: r.width, h: r.height, ghost: null };
+  mat.setPointerCapture(e.pointerId);
+});
+mat.addEventListener('pointermove', (e) => {
+  if (!drag || e.pointerId !== drag.id) return;
+  if (!drag.ghost) {
+    if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 10) return;
+    drag.ghost = makeGhost();
+    sfx.click();
+  }
+  place(drag.ghost, { left: e.clientX - drag.dx, top: e.clientY - drag.dy, width: drag.w, height: drag.h });
+  setOver(slotAt(e.clientX, e.clientY));
+});
+async function endDrag(e) {
+  if (!drag || e.pointerId !== drag.id) return;
+  const d = drag; drag = null; setOver(null);
+  if (!d.ghost) { // a tap: the piece wiggles and says its name
+    G.pieceEl.classList.remove('pop', 'wiggle'); void G.pieceEl.getBoundingClientRect(); G.pieceEl.classList.add('wiggle');
+    say(`${KINDS[pic().slots[G.pieceIdx].kind]}!`);
+    return;
+  }
+  const j = e.type === 'pointerup' ? slotAt(e.clientX, e.clientY) : null;
+  if (j === null) { await flyBack(d.ghost); return; }
+  G.busy = true;
+  const gen = G.gen;
+  const s = pic().slots[G.pieceIdx];
+  if (pic().slots[j].kind === s.kind) {
+    await accept(j, d.ghost);
+  } else {
+    await tween(d.ghost, slotRect(pic().slots[j]), 260);
+    sfx.boing();
+    d.ghost.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-8%)' }, { transform: 'translateX(8%)' }, { transform: 'translateX(0)' }], { duration: 380 });
+    say('Не сюда!');
+    await sleep(420);
+    if (gen !== G.gen) { d.ghost.remove(); return; }
+    pic().slots.forEach((t, k) => { if (!G.filled.has(k) && t.kind === s.kind) flash(k, 1800); });
+    await flyBack(d.ghost);
+  }
+  if (gen === G.gen) G.busy = false;
+}
+mat.addEventListener('pointerup', endDrag);
+mat.addEventListener('pointercancel', endDrag);
+
+// A tap on an empty outline says what shape goes there.
+stage.addEventListener('click', (e) => {
+  if (drag || G.busy) return;
+  const g = e.target.closest('.slotg'); if (!g) return;
+  const j = +g.dataset.i; if (G.filled.has(j)) return;
+  flash(j, 900);
+  say(`${KINDS[pic().slots[j].kind]}!`);
+});
+
+async function accept(j, ghost) {
+  const gen = G.gen;
+  const target = pic().slots[j];
+  await tween(ghost, slotRect(target), 300);
+  sfx.plop();
+  G.filled.add(j);
+  slotEl(j).innerHTML = slotContent(pic(), target, true);
+  ghost.remove();
+  if (G.filled.size < pic().slots.length) { await sleep(320); if (gen === G.gen) nextPiece(); return; }
+  mat.innerHTML = ''; G.pieceEl = null;
+  await sleep(350); if (gen !== G.gen) return;
+  await celebrate(gen);
+}
+
+async function celebrate(gen) {
+  const p = pic(), svg = stage.querySelector('.pic');
+  svg.querySelector('.fx').innerHTML = p.fx || '';
+  svg.classList.add(`a-${p.alive}`);
+  if (p.alive === 'pulse') p.slots.forEach((s, j) => { if (s.pulse) slotEl(j).classList.add('pulse'); });
+  sfx.fanfare();
+  say(`${p.name}! Ура!`);
+  await sleep(3600); if (gen !== G.gen) return;
+  if (!G.chainDone && G.idx === PICTURES.length - 1) {
+    G.chainDone = true;
+    confetti();
+    say('Ура! Ты знаешь все фигурки!');
+    await sleep(3200); if (gen !== G.gen) return;
+  }
+  const next = !G.chainDone ? G.idx + 1 : pick(PICTURES.map((_, i) => i).filter((i) => i !== G.idx));
+  G.justMet = null; renderKinds();
+  startPicture(next);
+}
+
+function confetti() {
+  const colors = Object.values(C);
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement('i');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = pick(colors);
+    layer.append(c);
+    c.animate([{ transform: 'translateY(0) rotate(0)' }, { transform: `translate(${(Math.random() - .5) * 120}px, ${innerHeight + 60}px) rotate(${Math.random() * 720}deg)` }],
+      { duration: 1600 + Math.random() * 1200, delay: Math.random() * 400, easing: 'cubic-bezier(.3,.1,.6,1)', fill: 'forwards' })
+      .finished.then(() => c.remove());
+  }
+}
+
+// ------------------------------------------------------------ screens
+function open(from) {
+  audio();
+  G.gen++; G.busy = false; drag = null; layer.innerHTML = '';
+  G.chainDone = false; G.justMet = null;
+  G.met = new Set(PICTURES.slice(0, from).flatMap((p) => p.slots.map((s) => s.kind)));
+  $('#home').hidden = true; $('#game').hidden = false;
+  renderKinds();
+  say('Собери картинку из фигурок!');
+  G.afterIntro = true;
+  requestAnimationFrame(() => startPicture(from));
+}
+$('#start-pic').innerHTML = pictureSvg(PICTURES[1], new Set([0, 1, 2]), 'thumbsvg');
+$('#gallery').innerHTML = PICTURES.map((p, i) => `<button class="thumb" type="button" data-i="${i}">${pictureSvg(p, new Set(p.slots.map((_, j) => j)), 'thumbsvg')}${i + 1}. ${p.name}</button>`).join('');
+$('#gallery').addEventListener('click', (e) => { const b = e.target.closest('.thumb'); if (b) open(+b.dataset.i); });
+$('#play').addEventListener('click', () => open(0));
+$('#back').addEventListener('click', () => {
+  G.gen++; G.busy = false; drag = null; layer.innerHTML = '';
+  try { speechSynthesis.cancel(); } catch (e) {}
+  $('#game').hidden = true; $('#home').hidden = false;
+});
+</script>
