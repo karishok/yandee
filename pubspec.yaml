@@ -44,6 +44,8 @@ flutter:
     - assets/demo_content/forest/
     - assets/demo_content/toys/
     - assets/demo_content/sea/
+    # Who recorded the animal and vehicle sounds, shown on the About screen.
+    - docs/animal-sounds-credits.json
 
 flutter_launcher_icons:
   android: true
