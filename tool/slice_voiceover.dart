@@ -16,7 +16,7 @@ import 'src/wav_io.dart';
 /// people who'd rather record in a proper DAW than through
 /// `ffmpeg -f avfoundation`.
 ///
-/// Usage: `dart run tool/slice_voiceover.dart <scene-id|system|monsters…> <path/to/bounce.wav>`
+/// Usage: `dart run tool/slice_voiceover.dart <scene-id|system|parents|monsters…> <path/to/bounce.wav>`
 Future<void> main(List<String> args) async {
   if (!File('pubspec.yaml').existsSync()) {
     stderr.writeln('Запусти из корня репозитория.');
@@ -25,7 +25,7 @@ Future<void> main(List<String> args) async {
   }
 
   if (args.length != 2) {
-    stderr.writeln('Использование: dart run tool/slice_voiceover.dart <scene-id|system|monsters…> <path/to/bounce.wav>');
+    stderr.writeln('Использование: dart run tool/slice_voiceover.dart <scene-id|system|parents|monsters…> <path/to/bounce.wav>');
     exitCode = 1;
     return;
   }
@@ -34,7 +34,7 @@ Future<void> main(List<String> args) async {
   final bouncePath = args[1];
 
   if (!isValidSceneFilter(sceneFilter)) {
-    final validValues = [...scenes.map((s) => s.id), 'system', ...monstersFilters];
+    final validValues = [...scenes.map((s) => s.id), 'system', 'parents', ...monstersFilters];
     stderr.writeln('Неизвестный фильтр сцены: "$sceneFilter".');
     stderr.writeln('Допустимые значения: ${validValues.join(', ')}.');
     exitCode = 1;

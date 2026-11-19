@@ -16,6 +16,11 @@ void main() {
     expect(byPath['assets/audio/system/round_complete.wav'], 'Ура, ты всё нашёл!');
   });
 
+  test('includes the parents menu phrase, recorded into the system folder', () {
+    final byPath = {for (final t in buildVoiceoverTasks()) t.outputPath: t.text};
+    expect(byPath['assets/audio/system/rest_time.wav'], 'Пора отдыхать!');
+  });
+
   test('includes one task per scene object, at the path scene.json expects', () {
     final tasks = buildVoiceoverTasks();
     final byPath = {for (final t in tasks) t.outputPath: t.text};
@@ -37,10 +42,10 @@ void main() {
     expect(buildMonstersVoiceoverTasks(), hasLength(71));
   });
 
-  test('produces exactly 186 tasks with no duplicate output paths', () {
-    // 115 for the scenes and system phrases, 71 for the "Монстрики" game.
+  test('produces exactly 187 tasks with no duplicate output paths', () {
+    // 116 for the scenes, system and parents phrases, 71 for the "Монстрики" game.
     final tasks = buildVoiceoverTasks();
-    expect(tasks.length, 186);
-    expect(tasks.map((t) => t.outputPath).toSet().length, 186);
+    expect(tasks.length, 187);
+    expect(tasks.map((t) => t.outputPath).toSet().length, 187);
   });
 }

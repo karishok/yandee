@@ -7,6 +7,11 @@ import 'package:path_provider/path_provider.dart';
 import 'data/content_repository.dart';
 import 'data/demo_content_seeder.dart';
 import 'presentation/screens/scene_list_screen.dart';
+import 'presentation/widgets/play_timer_scope.dart';
+
+/// The app's navigator, so the play timer — which sits above it — can put
+/// the rest screen on top of whatever is open.
+final _navigatorKey = GlobalKey<NavigatorState>();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +33,11 @@ class YandeeApp extends StatelessWidget {
     );
     return MaterialApp(
       title: 'Yandee',
+      // Debug-only ribbon; off so simulator runs give clean store screenshots.
+      debugShowCheckedModeBanner: false,
       theme: _buildTheme(),
+      navigatorKey: _navigatorKey,
+      builder: (context, child) => PlayTimerScope(navigatorKey: _navigatorKey, child: child!),
       home: _StartupScreen(contentRepository: contentRepository),
     );
   }

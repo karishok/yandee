@@ -1,12 +1,16 @@
 # Animal, vehicle and object sounds — credits
 
-The animal voices, vehicle and household sounds in `assets/demo_content/<scene>/<id>_sound.wav`
+The animal voices, vehicle, household and place sounds in `assets/demo_content/<scene>/<id>_sound.wav`
 (each object's `sound` in scene.json) are real recordings: the cow from
 Wikimedia Commons, the rest from Freesound (their HQ MP3 previews).
 `tool/fetch_animal_sounds.py` cuts each one down to its main part, at most
 2 seconds, and matches the loudness. Licenses marked CC BY / CC BY-SA require
 crediting the author (e.g. on an About screen); CC BY-SA also asks that the
 edited clip stays under the same license. CC0 needs no credit.
+
+The app shows this list under «Для родителей → О приложении». It reads
+`docs/animal-sounds-credits.json` directly (bundled as an asset), so a sound
+added there shows up on that screen by itself.
 
 ## Animals
 
@@ -44,15 +48,28 @@ edited clip stays under the same license. CC0 needs no credit.
 | `street/bicycle_sound.wav` | street | nikiforov5000 | CC0 | [Bicycle_Bell.wav](https://freesound.org/people/nikiforov5000/sounds/330956/) |
 | `sea/boat_sound.wav` | sea | pugaeme | CC BY 3.0 | [Rowing Oar.wav](https://freesound.org/people/pugaeme/sounds/389237/) |
 
-## Household things and toys
+## Household things, toys and places
 
 | File | Scene | Author | License | Source |
 |---|---|---|---|---|
 | `bathroom/shower_sound.wav` | bathroom | vmgraw | CC0 | [Shower](https://freesound.org/people/vmgraw/sounds/235624/) |
+| `bathroom/duck_toy_sound.wav` | bathroom | The-Sacha-Rush | CC0 | [Duck Toy Sounds](https://freesound.org/people/The-Sacha-Rush/sounds/454575/) |
 | `home/clock_sound.wav` | home | blukotek | CC0 | [ticking of the clock 01.wav](https://freesound.org/people/blukotek/sounds/412751/) |
+| `home/door_sound.wav` | home | fresco | CC BY 4.0 | [open and close wooden door by fresco.wav](https://freesound.org/people/fresco/sounds/35617/) |
+| `home/book_sound.wav` | home | davidbain | CC0 | [Page Turn](https://freesound.org/people/davidbain/sounds/136778/) |
+| `home/lamp_sound.wav` | home | FillSoko | CC0 | [Light Switch ON / OFF](https://freesound.org/people/FillSoko/sounds/257958/) |
 | `toys/spinning_top_sound.wav` | toys | franzzle | CC0 | [hummingtop.aiff](https://freesound.org/people/franzzle/sounds/184842/) |
 | `toys/drum_sound.wav` | toys | felisleopard | CC0 | [toy_drum_hard_hit.wav](https://freesound.org/people/felisleopard/sounds/332390/) |
+| `toys/toy_car_sound.wav` | toys | afterguard | CC BY 3.0 | [friction toy race car stops.wav](https://freesound.org/people/afterguard/sounds/39911/) |
 | `kitchen/kettle_sound.wav` | kitchen | itinerantmonk108 | CC0 | [Electric tea kettle](https://freesound.org/people/itinerantmonk108/sounds/681638/) |
+| `kitchen/cup_sound.wav` | kitchen | cupido-1 | CC0 | [stir tea in cup.wav](https://freesound.org/people/cupido-1/sounds/433539/) |
+| `kitchen/pot_sound.wav` | kitchen | vicoughetto | CC BY 4.0 | [Lid_IronPan.mp3](https://freesound.org/people/vicoughetto/sounds/457468/) |
+| `playground/swing_sound.wav` | playground | bajko | CC0 | [sfx_swing_hojdacka.wav](https://freesound.org/people/bajko/sounds/387896/) |
+| `sea/sea_sound.wav` | sea | metaepitome | CC0 | [Sea Wave.wav](https://freesound.org/people/metaepitome/sounds/164911/) |
+| `farm/pond_sound.wav` | farm | swordofkings128 | CC0 | [Splash](https://freesound.org/people/swordofkings128/sounds/398032/) |
+
+The sea clip is shared by every piece of the sea (`sea_1` … `sea_5`).
+vicoughetto asks to be credited as "Vico Ughetto".
 
 InspectorJ asks to be credited as: "Rooster Calling, Close, A.wav" by InspectorJ
 (www.jshaw.co.uk) of Freesound.org.
@@ -60,5 +77,5 @@ InspectorJ asks to be credited as: "Rooster Calling, Close, A.wav" by InspectorJ
 The uploaders of the horse, goat and elephant say nothing about how the
 recording was made; their CC0 license is as declared on Freesound.
 
-No usable recording found: hare, giraffe. The scooter is name-only by choice
-(a kick scooter makes little sound of its own).
+No usable recording found: hare, giraffe, teddy bear (no recording of a toy
+growler). The scooter, the carousel and the ball are name-only by choice.

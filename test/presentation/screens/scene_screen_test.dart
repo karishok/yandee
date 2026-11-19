@@ -228,6 +228,59 @@ Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
   }
 }
 
+/// Opens [SceneScreen] over a launcher page with an "Open" button and waits
+/// for the scene to load — the stack a child's back swipe would pop.
+///
+/// The whole push runs inside runAsync(): SceneScreen's initState (real
+/// loadScene()) and SceneIllustration's FileImage listener registration need
+/// the same zone as the setup I/O.
+Future<void> _openSceneOverLauncher(WidgetTester tester) async {
+  late Directory cacheRoot;
+  await tester.runAsync(() async {
+    cacheRoot = await _seedCache();
+    final repository = ContentRepository(
+      httpClient: http.Client(),
+      baseUrl: Uri.parse('https://example.invalid/v1/'),
+      cacheRootProvider: () async => cacheRoot,
+    );
+    final audio = FakeAudioSink();
+
+    await tester.pumpWidget(MaterialApp(
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: Center(
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => SceneScreen(
+                  contentRepository: repository,
+                  sceneId: 'demo',
+                  audioSinkFactory: () => audio,
+                ),
+              )),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    ));
+
+    await tester.tap(find.text('Open'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    for (var i = 0; i < 40 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await tester.pump();
+    }
+  });
+  addTearDown(() => cacheRoot.delete(recursive: true));
+  // Let the push transition finish: a route that is still animating in
+  // ignores back gestures, which would make the tests below pass for the
+  // wrong reason.
+  await tester.pump();
+  await tester.pump(const Duration(seconds: 1));
+}
+
 void main() {
   testWidgets('opens in explore mode; switching to find shows the banner and completing it shows congrats', (tester) async {
     late Directory cacheRoot;
@@ -372,6 +425,38 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Open'), findsOneWidget);
+  });
+
+  // A toddler swipes all over the picture; leaving the scene has to take the
+  // back button, not a stray swipe from the screen edge.
+  testWidgets(
+    'a back swipe from the left edge does not leave the scene',
+    (tester) async {
+      await _openSceneOverLauncher(tester);
+      expect(find.byKey(const ValueKey('scene_back_button')), findsOneWidget);
+
+      // A timed drag, not dragFrom(): the back gesture only tracks movement
+      // after it wins the arena, so a single jump would never move the page.
+      await tester.timedDragFrom(const Offset(4, 300), const Offset(500, 0), const Duration(milliseconds: 300));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.byKey(const ValueKey('scene_back_button')), findsOneWidget);
+      expect(find.text('Open'), findsNothing);
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+  );
+
+  testWidgets('the system back action does not leave the scene', (tester) async {
+    await _openSceneOverLauncher(tester);
+    expect(find.byKey(const ValueKey('scene_back_button')), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.byKey(const ValueKey('scene_back_button')), findsOneWidget);
+    expect(find.text('Open'), findsNothing);
   });
 
   testWidgets('a scene missing from the cache shows an error state instead of spinning forever', (tester) async {

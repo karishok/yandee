@@ -46,6 +46,14 @@ class _SceneScreenState extends State<SceneScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // A toddler swipes all over the picture, and a swipe from the screen
+    // edge used to throw them back to the scene list. canPop: false turns
+    // off the back swipe (and the system back action); the on-screen back
+    // buttons still work because they call Navigator.pop() directly.
+    return PopScope(canPop: false, child: _buildContent(context));
+  }
+
+  Widget _buildContent(BuildContext context) {
     if (_loadFailed) {
       return Scaffold(
         body: Center(
