@@ -8,6 +8,10 @@ Wikimedia Commons, the rest from Freesound (their HQ MP3 previews).
 crediting the author (e.g. on an About screen); CC BY-SA also asks that the
 edited clip stays under the same license. CC0 needs no credit.
 
+The app shows this list under «Для родителей → О приложении». It reads
+`docs/animal-sounds-credits.json` directly (bundled as an asset), so a sound
+added there shows up on that screen by itself.
+
 ## Animals
 
 | File | Scene | Author | License | Source |
