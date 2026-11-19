@@ -18,12 +18,14 @@ lib/
   domain/
     models/   — Scene, SceneObject, ObjectRect, SceneManifestEntry (зеркалят JSON-схему контента)
     modes/    — SceneMode/SceneModeEffects и реализации ExploreMode, FindMode
+    shapes/   — правила игры «Фигурки» (ShapesGame, картинки, фразы)
   data/       — ContentRepository (кэш + синхронизация с хостингом), DemoContentSeeder
   audio/      — AudioSink/AudioPlayerService
   presentation/
     controllers/ — SceneController
     screens/     — SceneListScreen, SceneScreen, SettingsScreen, GuidedAccessScreen
     widgets/     — SceneIllustration и др.
+    shapes/      — рисунки и карточка игры «Фигурки»
   platform/   — openGuidedAccessSettings() и другой код, завязанный на конкретную ОС
 assets/
   audio/system/    — системные фразы (интро, подсказки, туш)
@@ -35,6 +37,7 @@ tool/
   denoise_audio.dart — чистит фоновый шум/шуршание в уже записанных .wav
     (`dart run tool/denoise_audio.dart [--dry-run]`); использует ту же
     спектральную шумоподавляющую логику, что и запись в реальном времени
+  write_shapes_phrases_doc.dart — docs/shapes_phrases.md из списка фраз «Фигурок»
 ```
 
 ## Запуск

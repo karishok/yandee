@@ -7,19 +7,26 @@ import '../../data/cached_scene.dart';
 import '../../data/content_repository.dart';
 import '../../domain/monsters/monster_color.dart';
 import '../../domain/monsters/monster_food.dart';
+import '../../domain/shapes/shape_picture.dart';
 import '../monsters/monster_art.dart';
+import '../shapes/shape_picture_view.dart';
 import 'monsters_screen.dart';
 import 'scene_screen.dart';
 import 'settings_screen.dart';
+import 'shapes_screen.dart';
 
 class SceneListScreen extends StatefulWidget {
-  const SceneListScreen({super.key, required this.contentRepository, this.monstersScreenBuilder});
+  const SceneListScreen({super.key, required this.contentRepository, this.monstersScreenBuilder, this.shapesScreenBuilder});
 
   final ContentRepository contentRepository;
 
   /// Builds the screen the "Монстрики" card opens. Defaults to the real
   /// game; tests pass one that needs no audio plugin.
   final WidgetBuilder? monstersScreenBuilder;
+
+  /// Builds the screen the "Фигурки" card opens. Defaults to the real game;
+  /// tests pass one that needs no audio plugin.
+  final WidgetBuilder? shapesScreenBuilder;
 
   @override
   State<SceneListScreen> createState() => _SceneListScreenState();
@@ -77,9 +84,9 @@ class _SceneListScreenState extends State<SceneListScreen> {
         padding: const EdgeInsets.all(16),
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        // The colour game is not a scene, but it is entered the same way:
-        // a card like the others, first in the grid.
-        children: [_buildMonstersCard(), ...scenes.map(_buildCard)],
+        // The two games are not scenes, but they are entered the same way:
+        // cards like the others, first in the grid.
+        children: [_buildMonstersCard(), _buildShapesCard(), ...scenes.map(_buildCard)],
       ),
     );
   }
@@ -99,6 +106,37 @@ class _SceneListScreenState extends State<SceneListScreen> {
             // shape: the four starting monsters over the tray of treats.
             const Expanded(child: AspectRatio(aspectRatio: 2 / 3, child: _MonstersThumbnail())),
             const Padding(padding: EdgeInsets.all(8), child: Text('Монстрики')),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShapesCard() {
+    return GestureDetector(
+      key: const ValueKey('shapes_game_card'),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: widget.shapesScreenBuilder ?? (_) => const ShapesScreen()),
+      ),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            // The finished house on a warm card, in the same upright shape
+            // as a scene thumbnail.
+            Expanded(
+              child: AspectRatio(
+                aspectRatio: 2 / 3,
+                child: ColoredBox(
+                  color: const Color(0xFFFFF0E1),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: ShapePictureView(picture: shapePictures[1], filled: const {0, 1, 2}),
+                  ),
+                ),
+              ),
+            ),
+            const Padding(padding: EdgeInsets.all(8), child: Text('Фигурки')),
           ],
         ),
       ),
