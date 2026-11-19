@@ -21,6 +21,11 @@ bool isUnrecorded(File file) {
 /// The filter value that selects every phrase of the "Монстрики" game.
 const monstersFilter = 'monsters';
 
+/// The filter value that selects the parents menu's phrases.
+const parentsFilter = 'parents';
+
+bool _isParentsTask(VoiceoverTask task) => parentsPhrases.any((p) => p.outputPath == task.outputPath);
+
 /// The "Монстрики" phrases in parts of 5–10, so they can be recorded in
 /// short sittings instead of all in one go: `monsters-1` … `monsters-10`.
 final List<MonstersPart> _monstersParts = buildMonstersParts();
@@ -104,23 +109,28 @@ bool _matchesShapesFilter(VoiceoverTask task, String filter) {
 }
 
 /// True if [task] belongs to the requested recording session. `null`
-/// matches everything; `'system'` matches only the 4 system phrases;
+/// matches everything; `'system'` matches only the system phrases (not the
+/// parents menu's); `'parents'` matches only the parents menu's phrase;
 /// `'monsters'` and its parts `'monsters-1'`… match the "Монстрики" game's
 /// phrases; any scene id matches only that scene's objects.
 bool taskMatchesFilter(VoiceoverTask task, String? sceneFilter) {
   if (sceneFilter == null) return true;
-  if (sceneFilter == 'system') return task.outputPath.startsWith('assets/audio/system/');
+  if (sceneFilter == 'system') {
+    return task.outputPath.startsWith('assets/audio/system/') && !_isParentsTask(task);
+  }
+  if (sceneFilter == parentsFilter) return _isParentsTask(task);
   if (isMonstersFilter(sceneFilter)) return _matchesMonstersFilter(task, sceneFilter);
   if (isShapesFilter(sceneFilter)) return _matchesShapesFilter(task, sceneFilter);
   return task.outputPath.startsWith('assets/demo_content/$sceneFilter/');
 }
 
 /// True if [filter] is a value `taskMatchesFilter` can actually match
-/// against: `null` (everything), `'system'`, one of [monstersFilters], or
-/// a real scene id. Guards against a typo'd/mis-cased scene filter silently
-/// matching nothing and being reported as "already fully recorded".
+/// against: `null` (everything), `'system'`, `'parents'`, one of
+/// [monstersFilters], or a real scene id. Guards against a typo'd/mis-cased
+/// scene filter silently matching nothing and being reported as "already
+/// fully recorded".
 bool isValidSceneFilter(String? filter) {
-  if (filter == null || filter == 'system' || isGamePhrasesFilter(filter)) return true;
+  if (filter == null || filter == 'system' || filter == parentsFilter || isGamePhrasesFilter(filter)) return true;
   return scenes.any((s) => s.id == filter);
 }
 

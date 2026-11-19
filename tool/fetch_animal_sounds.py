@@ -58,6 +58,17 @@ CHOICES = {
     "spinning_top": ("toys", "franzzle/184842"),
     "drum":     ("toys",     "felisleopard/332390"),
     "kettle":   ("kitchen",  "itinerantmonk108/681638"),
+    "duck_toy": ("bathroom", "The-Sacha-Rush/454575"),
+    "door":     ("home",     "fresco/35617"),
+    "book":     ("home",     "davidbain/136778"),
+    "lamp":     ("home",     "FillSoko/257958"),
+    "toy_car":  ("toys",     "afterguard/39911"),
+    "cup":      ("kitchen",  "cupido-1/433539"),
+    "pot":      ("kitchen",  "vicoughetto/457468"),
+    "swing":    ("playground", "bajko/387896"),
+    # places: one sea clip serves every piece of the sea (sea_1 … sea_5)
+    "sea":      ("sea",      "metaepitome/164911"),
+    "pond":     ("farm",     "swordofkings128/398032"),
 }
 
 

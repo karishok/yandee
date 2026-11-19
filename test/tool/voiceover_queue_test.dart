@@ -61,6 +61,16 @@ void main() {
       expect(taskMatchesFilter(kitchenTask, 'system'), isFalse);
     });
 
+    test('"parents" filter matches only the parents menu phrase, and "system" no longer does', () {
+      const restTask = VoiceoverTask(text: 'Пора отдыхать!', outputPath: 'assets/audio/system/rest_time.wav');
+      expect(taskMatchesFilter(restTask, 'parents'), isTrue);
+      expect(taskMatchesFilter(systemTask, 'parents'), isFalse);
+      expect(taskMatchesFilter(kitchenTask, 'parents'), isFalse);
+      expect(taskMatchesFilter(restTask, 'system'), isFalse);
+      expect(taskMatchesFilter(restTask, null), isTrue);
+      expect(isValidSceneFilter('parents'), isTrue);
+    });
+
     test('"monsters" filter matches only the colour game\'s phrases', () {
       const monstersTask = VoiceoverTask(text: 'Ням!', outputPath: 'assets/audio/monsters/yum.wav');
       expect(taskMatchesFilter(monstersTask, 'monsters'), isTrue);

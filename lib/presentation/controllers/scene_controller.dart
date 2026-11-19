@@ -10,8 +10,9 @@ import '../../domain/modes/find_mode.dart';
 import '../../domain/modes/flashlight_mode.dart';
 import '../../domain/modes/scene_mode.dart';
 import '../../domain/modes/scene_mode_effects.dart';
+import '../../domain/modes/who_says_mode.dart';
 
-enum SceneModeType { explore, find, flashlight }
+enum SceneModeType { explore, find, flashlight, whoSays }
 
 /// Owns the active [SceneMode] for one open scene, and is where mode
 /// switching, audio dispatch, and the Find-round congratulations timing
@@ -23,6 +24,7 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
     required AudioSink audioSink,
     this.congratsDuration = const Duration(seconds: 2),
     this.findModeShuffle = shuffleFindOrder,
+    this.whoSaysShuffle = shuffleFindOrder,
   }) : _audio = audioSink {
     _mode = ExploreMode(effects: this)..activate();
   }
@@ -34,6 +36,9 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   // keep Find rounds deterministic and assertable — see FindMode's own doc
   // for why this same override lives at both levels.
   final List<SceneObject> Function(List<SceneObject>) findModeShuffle;
+  // Passed straight through to WhoSaysMode, for the same reason as
+  // [findModeShuffle].
+  final List<SceneObject> Function(List<SceneObject>) whoSaysShuffle;
   final AudioSink _audio;
 
   late SceneMode _mode;
@@ -57,6 +62,11 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   // first one (per busy stretch) actually plays; see playSystemPhrase.
   bool _correctPending = false;
   bool _wrongHintPlaying = false;
+
+  // The target whose sound is to follow the "try again" hint now playing
+  // (finding by sound). Cleared — so the sound is not made — by any other
+  // system phrase, a mode switch, or once the sound has been made.
+  SceneObject? _soundAfterHint;
 
   // Object names (Explore taps, flashlight finds) are deliberately not a
   // FIFO queue. The name being said is always said to its end — a later
@@ -108,6 +118,16 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   /// The running flashlight game, or null in any other mode.
   FlashlightMode? get flashlight => _mode is FlashlightMode ? _mode as FlashlightMode : null;
 
+  /// Whether this scene offers finding by sound: it does when it has
+  /// enough distinct sounds (see [WhoSaysMode.minSounds]).
+  bool get hasWhoSays => WhoSaysMode.isAvailableIn(cachedScene.scene.objects);
+
+  /// The running find-by-sound game, or null in any other mode.
+  WhoSaysMode? get whoSays => _mode is WhoSaysMode ? _mode as WhoSaysMode : null;
+
+  /// Plays the sound to find once more (the repeat button).
+  void repeatWhoSaysSound() => whoSays?.repeatSound();
+
   /// The objects a finger can land on right now, in the picture's tap
   /// order: all of them, except in the flashlight game, where only the
   /// things to find count — so a tree or a path whose tap zone lies over
@@ -121,14 +141,16 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   SceneObject? get currentFindTarget => _mode is FindMode ? (_mode as FindMode).currentTarget : null;
 
   void setMode(SceneModeType type) {
-    if (type == _modeType) return;
+    if (type == _modeType || (type == SceneModeType.whoSays && !hasWhoSays)) return;
     _congratsTimer?.cancel();
     _showCongrats = false;
+    _soundAfterHint = null;
     _modeType = type;
     _mode = switch (type) {
       SceneModeType.explore => ExploreMode(effects: this),
       SceneModeType.find => FindMode(objects: cachedScene.scene.objects, effects: this, shuffle: findModeShuffle),
       SceneModeType.flashlight => FlashlightMode(objects: cachedScene.scene.objects, effects: this),
+      SceneModeType.whoSays => WhoSaysMode(objects: cachedScene.scene.objects, effects: this, shuffle: whoSaysShuffle),
     };
     _mode.activate();
     notifyListeners();
@@ -202,6 +224,33 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   }
 
   @override
+  void promptSound(SceneObject target, {bool announceIntro = true}) {
+    final soundPath = cachedScene.soundPathFor(target);
+    if (soundPath == null) return;
+    _voiceQueue = _voiceQueue.then(
+      (_) => announceIntro
+          ? _audio.playSystemPhraseThenFile(SystemPhrase.findIntro, soundPath)
+          : _audio.playFile(soundPath),
+    );
+  }
+
+  @override
+  void hintThenRepeatSound(SceneObject target) {
+    // Set before the hint starts: a hint already playing (a miss a moment
+    // ago) makes this one a no-op, and it is that hint's end that plays
+    // the sound — once, for the whole run of misses.
+    _soundAfterHint = target;
+    unawaited(playSystemPhrase(SystemPhrase.wrongHint));
+  }
+
+  void _playSoundAfterHint() {
+    final target = _soundAfterHint;
+    _soundAfterHint = null;
+    if (target == null || _disposed) return;
+    promptSound(target, announceIntro: false);
+  }
+
+  @override
   Future<void> announceObject(SceneObject object) => _sayName(object);
 
   @override
@@ -216,7 +265,10 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
       // behind it — otherwise a 5-tap streak would leave the hint droning
       // on for many seconds after the child has moved on.
       final playback = _audio.playInterruptibleSystemPhrase(phrase);
-      playback.whenComplete(() => _wrongHintPlaying = false);
+      playback.whenComplete(() {
+        _wrongHintPlaying = false;
+        _playSoundAfterHint();
+      });
       return playback;
     }
 
@@ -227,6 +279,7 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
     // the child connects to their own correct tap.
     _audio.stopInterruptible();
     _wrongHintPlaying = false;
+    _soundAfterHint = null;
 
     if (phrase == SystemPhrase.correct) {
       if (_correctPending) {

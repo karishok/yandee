@@ -8,9 +8,13 @@ import 'package:http/testing.dart';
 import 'package:path/path.dart' as p;
 import 'package:yandee/data/content_repository.dart';
 import 'package:yandee/presentation/screens/scene_list_screen.dart';
-import 'package:yandee/presentation/screens/settings_screen.dart';
+import 'package:yandee/domain/play_timer.dart';
+import 'package:yandee/presentation/screens/parental_gate_screen.dart';
+import 'package:yandee/presentation/screens/parents_screen.dart';
+import 'package:yandee/presentation/widgets/play_timer_scope.dart';
 
 import '../../support/fixture_assets.dart';
+import '../../support/parental_gate_helper.dart';
 
 // The brief's `_seedScene` writes raw placeholder bytes ([1, 2, 3]) for
 // thumb.png. SceneListScreen's card renders that file through a real
@@ -108,7 +112,7 @@ void main() {
     expect(requestCount, 0);
   });
 
-  testWidgets('the settings button opens the settings screen', (tester) async {
+  testWidgets('the settings button asks for the parental gate before the parents menu', (tester) async {
     late Directory cacheRoot;
 
     await tester.runAsync(() async {
@@ -120,7 +124,10 @@ void main() {
         cacheRootProvider: () async => cacheRoot,
       );
 
-      await tester.pumpWidget(MaterialApp(home: SceneListScreen(contentRepository: repository)));
+      await tester.pumpWidget(PlayTimerProvider(
+        timer: PlayTimer(),
+        child: MaterialApp(home: SceneListScreen(contentRepository: repository)),
+      ));
       await _pumpAndSettleReal(tester);
     });
     addTearDown(() => cacheRoot.delete(recursive: true));
@@ -129,8 +136,57 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('settings_button')));
     await tester.pumpAndSettle();
+    expect(find.byType(ParentalGateScreen), findsOneWidget);
+    expect(find.byType(ParentsScreen), findsNothing);
 
-    expect(find.byType(SettingsScreen), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('parental_gate_close')));
+    await tester.pumpAndSettle();
+    expect(find.byType(ParentsScreen), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('settings_button')));
+    await tester.pumpAndSettle();
+    await solveParentalGate(tester);
+    expect(find.byType(ParentsScreen), findsOneWidget);
+  });
+
+  testWidgets('a second tap on the settings button does not stack a second gate', (tester) async {
+    late Directory cacheRoot;
+
+    await tester.runAsync(() async {
+      cacheRoot = await Directory.systemTemp.createTemp('yandee_list_test_double_');
+      await _seedScene(cacheRoot, 'city', 'Город');
+      final repository = ContentRepository(
+        httpClient: MockClient((_) async => throw const SocketException('offline')),
+        baseUrl: Uri.parse('https://example.invalid/v1/'),
+        cacheRootProvider: () async => cacheRoot,
+      );
+
+      await tester.pumpWidget(PlayTimerProvider(
+        timer: PlayTimer(),
+        child: MaterialApp(home: SceneListScreen(contentRepository: repository)),
+      ));
+      await _pumpAndSettleReal(tester);
+    });
+    addTearDown(() => cacheRoot.delete(recursive: true));
+
+    await tester.pump();
+
+    // Two taps before the first frame of the gate's route has been drawn.
+    final onPressed = tester.widget<IconButton>(find.byKey(const ValueKey('settings_button'))).onPressed!;
+    onPressed();
+    onPressed();
+    await tester.pumpAndSettle();
+    expect(find.byType(ParentalGateScreen), findsOneWidget);
+
+    await solveParentalGate(tester);
+    expect(find.byType(ParentalGateScreen), findsNothing);
+    expect(find.byType(ParentsScreen), findsOneWidget);
+
+    // Leaving the parents menu lands on the list, not on a leftover gate.
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(ParentalGateScreen), findsNothing);
+    expect(find.byKey(const ValueKey('settings_button')), findsOneWidget);
   });
 
   testWidgets('shows a retry screen when the cache is empty and offline', (tester) async {

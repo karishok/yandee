@@ -21,6 +21,18 @@ abstract class SceneModeEffects {
   /// top of adding a full phrase's worth of delay to every tap in a row.
   void promptFind(SceneObject target, {bool announceIntro = true});
 
+  /// Plays [target]'s own sound (see `SceneObject.sound`) as the thing to
+  /// find by ear — the "Где" lead-in word right before it when
+  /// [announceIntro] is true (the first target of a round), the sound
+  /// alone otherwise. Does nothing for an object without a sound.
+  void promptSound(SceneObject target, {bool announceIntro = true});
+
+  /// A wrong guess while finding [target] by ear: the "try again" hint,
+  /// then [target]'s sound again once the hint has finished. Several in a
+  /// row give one hint and one sound at its end; any other system phrase
+  /// (a correct answer) or a mode switch before then cancels the sound.
+  void hintThenRepeatSound(SceneObject target);
+
   /// Like [playObjectAudio], for a caller that has something to do after
   /// the name: completes once the name has been said to its end (or right
   /// away, if a later name took its place before its turn came).

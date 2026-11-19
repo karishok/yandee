@@ -21,6 +21,14 @@ const _systemPhrases = [
   VoiceoverTask(text: 'Ура, ты всё нашёл!', outputPath: 'assets/audio/system/round_complete.wav'),
 ];
 
+/// The parents menu's play-timer phrase. It lives in the system folder (the
+/// app already bundles that one) but is recorded on its own —
+/// `slice_voiceover.dart parents` — so adding it never means re-recording
+/// the Find mode's phrases.
+const parentsPhrases = [
+  VoiceoverTask(text: 'Пора отдыхать!', outputPath: 'assets/audio/system/rest_time.wav'),
+];
+
 /// Where the phrases of the "Монстрики" colour game are recorded to — the
 /// folder `MonsterVoicePlayer` looks in before falling back to the
 /// computer voice.
@@ -47,11 +55,11 @@ List<VoiceoverTask> buildShapesVoiceoverTasks() => [
           VoiceoverTask(text: clip.text, outputPath: '$shapesVoiceoverDir${clip.id}.wav'),
     ];
 
-/// The full list of voiceover tasks: the system phrases, then every scene
-/// object's name, in scene/object declaration order, then the phrases of
-/// the "Монстрики" and "Фигурки" games.
+/// The full list of voiceover tasks: the system phrases, the parents menu
+/// phrases, then every scene object's name, in scene/object declaration
+/// order, then the phrases of the "Монстрики" and "Фигурки" games.
 List<VoiceoverTask> buildVoiceoverTasks() {
-  final tasks = <VoiceoverTask>[..._systemPhrases];
+  final tasks = <VoiceoverTask>[..._systemPhrases, ...parentsPhrases];
   for (final scene in scenes) {
     for (final object in scene.objects) {
       tasks.add(VoiceoverTask(

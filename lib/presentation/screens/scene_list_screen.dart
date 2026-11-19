@@ -11,8 +11,9 @@ import '../../domain/shapes/shape_picture.dart';
 import '../monsters/monster_art.dart';
 import '../shapes/shape_picture_view.dart';
 import 'monsters_screen.dart';
+import 'parental_gate_screen.dart';
+import 'parents_screen.dart';
 import 'scene_screen.dart';
-import 'settings_screen.dart';
 import 'shapes_screen.dart';
 
 class SceneListScreen extends StatefulWidget {
@@ -35,6 +36,10 @@ class SceneListScreen extends StatefulWidget {
 class _SceneListScreenState extends State<SceneListScreen> {
   List<CachedSceneSummary>? _scenes;
   bool _loading = true;
+
+  /// True while the gate (or the parents menu behind it) is open, so a second
+  /// tap on the gear can't stack a second gate.
+  bool _gateOpen = false;
 
   @override
   void initState() {
@@ -149,10 +154,18 @@ class _SceneListScreenState extends State<SceneListScreen> {
       child: IconButton(
         key: const ValueKey('settings_button'),
         icon: const Icon(Icons.settings),
-        tooltip: 'Настройки',
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const SettingsScreen()),
-        ),
+        tooltip: 'Для родителей',
+        onPressed: () async {
+          if (_gateOpen) return;
+          _gateOpen = true;
+          final navigator = Navigator.of(context);
+          try {
+            if (!await passParentalGate(navigator)) return;
+            await navigator.push(MaterialPageRoute(builder: (_) => const ParentsScreen()));
+          } finally {
+            _gateOpen = false;
+          }
+        },
       ),
     );
   }

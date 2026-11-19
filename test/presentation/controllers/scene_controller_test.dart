@@ -586,4 +586,174 @@ void main() {
       expect(controller.showCongrats, isTrue);
     });
   });
+
+  group('sound effects', () {
+    const cow = SceneObject(id: 'cow', label: 'Корова', audio: 'cow.wav', rect: rect, sound: 'cow_sound.wav');
+    final farm = CachedScene(
+      scene: Scene(
+        id: 'farm',
+        version: 1,
+        title: 'Ферма',
+        minAgeMonths: 12,
+        background: 'background.png',
+        objects: [cow, ball],
+      ),
+      directoryPath: '/cache/farm',
+    );
+    final cowSound = farm.soundPathFor(cow)!;
+
+    test('promptSound with the intro says «Где», then the sound', () async {
+      final audio = FakeAudioSink();
+      final controller = SceneController(cachedScene: farm, audioSink: audio);
+      controller.promptSound(cow);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedSequences, [(SystemPhrase.findIntro, cowSound)]);
+      expect(audio.playedFiles, isEmpty);
+    });
+
+    test('promptSound without the intro plays just the sound', () async {
+      final audio = FakeAudioSink();
+      final controller = SceneController(cachedScene: farm, audioSink: audio);
+      controller.promptSound(cow, announceIntro: false);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedFiles, [cowSound]);
+      expect(audio.playedSequences, isEmpty);
+    });
+
+    test('hintThenRepeatSound: the hint, then the sound once the hint has finished', () async {
+      final audio = FakeAudioSink()..holdInterruptiblePhrase(SystemPhrase.wrongHint);
+      final controller = SceneController(cachedScene: farm, audioSink: audio);
+      controller.hintThenRepeatSound(cow);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedInterruptibleSystemPhrases, [SystemPhrase.wrongHint]);
+      expect(audio.playedFiles, isEmpty, reason: 'the sound waits for the hint');
+
+      audio.releaseInterruptiblePhrase(SystemPhrase.wrongHint);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedFiles, [cowSound]);
+    });
+
+    test('several misses in a row: one hint, and the sound once at its end', () async {
+      final audio = FakeAudioSink()..holdInterruptiblePhrase(SystemPhrase.wrongHint);
+      final controller = SceneController(cachedScene: farm, audioSink: audio);
+      controller.hintThenRepeatSound(cow);
+      controller.hintThenRepeatSound(cow);
+      controller.hintThenRepeatSound(cow);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedInterruptibleSystemPhrases, [SystemPhrase.wrongHint]);
+
+      audio.releaseInterruptiblePhrase(SystemPhrase.wrongHint);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedFiles, [cowSound]);
+    });
+
+    test('a correct answer while the hint is playing cancels the sound after it', () async {
+      final audio = FakeAudioSink()..holdInterruptiblePhrase(SystemPhrase.wrongHint);
+      final controller = SceneController(cachedScene: farm, audioSink: audio);
+      controller.hintThenRepeatSound(cow);
+      unawaited(controller.playSystemPhrase(SystemPhrase.correct));
+      audio.releaseInterruptiblePhrase(SystemPhrase.wrongHint);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedSystemPhrases, [SystemPhrase.correct]);
+      expect(audio.playedFiles, isEmpty);
+    });
+
+    test('switching mode while the hint is playing cancels the sound after it', () async {
+      final audio = FakeAudioSink()..holdInterruptiblePhrase(SystemPhrase.wrongHint);
+      final controller = SceneController(cachedScene: farm, audioSink: audio);
+      controller.hintThenRepeatSound(cow);
+      controller.setMode(SceneModeType.find);
+      audio.releaseInterruptiblePhrase(SystemPhrase.wrongHint);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedFiles, isEmpty);
+    });
+  });
+
+  group('find by sound', () {
+    SceneObject animal(String id, String label) =>
+        SceneObject(id: id, label: label, audio: '$id.wav', rect: rect, sound: '${id}_sound.wav');
+    final cow = animal('cow', 'Корова');
+    final pig = animal('pig', 'Свинья');
+    final hen = animal('hen', 'Курица');
+    final horse = animal('horse', 'Лошадь');
+    final sheep = animal('sheep', 'Овца');
+    final farm = CachedScene(
+      scene: Scene(
+        id: 'farm',
+        version: 1,
+        title: 'Ферма',
+        minAgeMonths: 12,
+        background: 'background.png',
+        objects: [cow, ball, pig, hen, horse, sheep],
+      ),
+      directoryPath: '/cache/farm',
+    );
+    SceneController farmController(FakeAudioSink audio) => SceneController(
+          cachedScene: farm,
+          audioSink: audio,
+          whoSaysShuffle: (list) => list,
+        );
+
+    test('is offered where the scene has 5 distinct sounds', () {
+      expect(farmController(FakeAudioSink()).hasWhoSays, isTrue);
+      expect(SceneController(cachedScene: cachedScene, audioSink: FakeAudioSink()).hasWhoSays, isFalse);
+    });
+
+    test('cannot be switched on in a scene that does not offer it', () {
+      final controller = SceneController(cachedScene: cachedScene, audioSink: FakeAudioSink());
+      controller.setMode(SceneModeType.whoSays);
+      expect(controller.modeType, SceneModeType.explore);
+      expect(controller.whoSays, isNull);
+    });
+
+    test('switching it on says «Где» and the first sound; the repeat button plays it again', () async {
+      final audio = FakeAudioSink();
+      final controller = farmController(audio);
+      controller.setMode(SceneModeType.whoSays);
+      expect(controller.whoSays, isNotNull);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedSequences, [(SystemPhrase.findIntro, farm.soundPathFor(cow)!)]);
+
+      controller.repeatWhoSaysSound();
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedFiles, [farm.soundPathFor(cow)!]);
+    });
+
+    test('a wrong tap: the hint, then the sound again', () async {
+      final audio = FakeAudioSink();
+      final controller = farmController(audio)..setMode(SceneModeType.whoSays);
+      controller.onObjectTapped(ball);
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedInterruptibleSystemPhrases, [SystemPhrase.wrongHint]);
+      expect(audio.playedFiles, [farm.soundPathFor(cow)!]);
+    });
+
+    test('a right tap: the praise, then the next sound, without the name', () async {
+      final audio = FakeAudioSink();
+      final controller = farmController(audio)..setMode(SceneModeType.whoSays);
+      controller.onObjectTapped(cow);
+      for (var i = 0; i < 5; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(audio.playedSystemPhrases, [SystemPhrase.correct]);
+      expect(audio.playedFiles, [farm.soundPathFor(pig)!]);
+      expect(controller.whoSays!.currentTarget, pig);
+    });
+
+    test('five right taps end in the congratulations', () async {
+      final audio = FakeAudioSink();
+      final controller = farmController(audio)..setMode(SceneModeType.whoSays);
+      for (final object in [cow, pig, hen, horse, sheep]) {
+        controller.onObjectTapped(object);
+        for (var i = 0; i < 5; i++) {
+          await Future<void>.delayed(Duration.zero);
+        }
+      }
+      expect(audio.playedSystemPhrases.last, SystemPhrase.roundComplete);
+      expect(controller.showCongrats, isTrue);
+      // The return to Explore after the congratulations is the same timer
+      // as for a Find round, covered by the Find tests.
+    });
+  });
 }
