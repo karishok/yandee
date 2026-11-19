@@ -74,4 +74,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(results, [false]);
   });
+
+  testWidgets('the keypad fits a small screen and still works there', (tester) async {
+    tester.view.physicalSize = const Size(320, 480);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final results = await _pumpHost(tester, seed: 5);
+    expect(tester.takeException(), isNull);
+    for (var digit = 0; digit < 10; digit++) {
+      expect(find.byKey(ValueKey('parental_gate_digit_$digit')), findsOneWidget);
+    }
+
+    await solveParentalGate(tester);
+    expect(tester.takeException(), isNull);
+    expect(results, [true]);
+  });
 }

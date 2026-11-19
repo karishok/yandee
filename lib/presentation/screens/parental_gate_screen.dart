@@ -4,11 +4,23 @@ import 'package:flutter/material.dart';
 
 /// The digits as the gate writes them: a toddler can't read them, a parent
 /// reads them at a glance.
-const digitWords = ['ноль', 'один', 'два', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять'];
+const digitWords = [
+  'ноль',
+  'один',
+  'два',
+  'три',
+  'четыре',
+  'пять',
+  'шесть',
+  'семь',
+  'восемь',
+  'девять'
+];
 
 /// Shows the parental gate and says whether it was passed. Closing it (the
 /// ✕, the system back button) counts as not passed.
-Future<bool> passParentalGate(NavigatorState navigator, {Random? random}) async {
+Future<bool> passParentalGate(NavigatorState navigator,
+    {Random? random}) async {
   final passed = await navigator.push<bool>(MaterialPageRoute(
     fullscreenDialog: true,
     builder: (_) => ParentalGateScreen(random: random),
@@ -36,7 +48,8 @@ class _ParentalGateScreenState extends State<ParentalGateScreen> {
   final List<int> _entered = [];
   bool _wrong = false;
 
-  List<int> _newCode() => [for (var i = 0; i < _length; i++) _random.nextInt(10)];
+  List<int> _newCode() =>
+      [for (var i = 0; i < _length; i++) _random.nextInt(10)];
 
   void _press(int digit) {
     if (_entered.length >= _length) return;
@@ -80,7 +93,8 @@ class _ParentalGateScreenState extends State<ParentalGateScreen> {
                 _code.map((d) => digitWords[d]).join(', '),
                 key: const ValueKey('parental_gate_task'),
                 textAlign: TextAlign.center,
-                style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                style: textTheme.headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               Row(
@@ -93,7 +107,9 @@ class _ParentalGateScreenState extends State<ParentalGateScreen> {
                       margin: const EdgeInsets.symmetric(horizontal: 6),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: i < _entered.length ? colorScheme.primary : colorScheme.outlineVariant,
+                        color: i < _entered.length
+                            ? colorScheme.primary
+                            : colorScheme.outlineVariant,
                       ),
                     ),
                 ],
@@ -105,15 +121,18 @@ class _ParentalGateScreenState extends State<ParentalGateScreen> {
                         child: Text(
                           'Неверно, попробуйте ещё раз',
                           key: const ValueKey('parental_gate_wrong'),
-                          style: textTheme.bodyMedium?.copyWith(color: colorScheme.error),
+                          style: textTheme.bodyMedium
+                              ?.copyWith(color: colorScheme.error),
                         ),
                       )
                     : null,
               ),
               Expanded(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 320),
+                // Scales the keypad down when the screen (or the text size) is
+                // too small for it, rather than overflowing.
+                child: FittedBox(
+                  child: SizedBox(
+                    width: 320,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -134,9 +153,12 @@ class _ParentalGateScreenState extends State<ParentalGateScreen> {
                                         : SizedBox(
                                             height: 64,
                                             child: OutlinedButton(
-                                              key: ValueKey('parental_gate_digit_$digit'),
+                                              key: ValueKey(
+                                                  'parental_gate_digit_$digit'),
                                               onPressed: () => _press(digit),
-                                              child: Text('$digit', style: textTheme.headlineSmall),
+                                              child: Text('$digit',
+                                                  style:
+                                                      textTheme.headlineSmall),
                                             ),
                                           ),
                                   ),
