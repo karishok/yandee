@@ -64,7 +64,7 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   // latest is kept and said next; the ones in between are skipped, so a
   // child sweeping across the picture doesn't leave a backlog droning on.
   bool _nameBeingSaid = false;
-  ({String path, Completer<void> done})? _nextName;
+  _Name? _nextName;
 
   // Set once the scene is closed: a name still waiting its turn then must
   // not start up over whatever screen comes next.
@@ -143,31 +143,33 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   }
 
   @override
-  void playObjectAudio(SceneObject object) => unawaited(_sayName(cachedScene.audioPathFor(object)));
+  void playObjectAudio(SceneObject object) => unawaited(_sayName(object));
 
   /// Asks for a name to be said (see [_nameBeingSaid] for when it is). The
   /// future completes once it has been said to its end — or right away if
   /// a later name takes its place before its turn comes.
-  Future<void> _sayName(String path) {
+  ///
+  /// An object with a sound of its own (an animal's voice) makes it right
+  /// after its name — unless another name was asked for while the name was
+  /// being said: the child has moved on, so that name comes next instead.
+  Future<void> _sayName(SceneObject object) {
     final done = Completer<void>();
+    final name = (path: cachedScene.audioPathFor(object), soundPath: cachedScene.soundPathFor(object), done: done);
     if (_nameBeingSaid) {
       _nextName?.done.complete(); // overtaken: it will not be said
-      _nextName = (path: path, done: done);
+      _nextName = name;
     } else {
       _nameBeingSaid = true;
-      unawaited(_sayNames((path: path, done: done)));
+      unawaited(_sayNames(name));
     }
     return done.future;
   }
 
-  Future<void> _sayNames(({String path, Completer<void> done}) first) async {
+  Future<void> _sayNames(_Name first) async {
     for (var name = first; ;) {
-      try {
-        if (!_disposed) await _audio.playFileToEnd(name.path);
-      } catch (_) {
-        // Audio failures must not affect touch interaction. The concrete
-        // sink logs its own errors; this protects alternate implementations.
-      }
+      await _playToEnd(name.path);
+      final soundPath = name.soundPath;
+      if (soundPath != null && _nextName == null) await _playToEnd(soundPath);
       name.done.complete();
 
       final next = _nextName;
@@ -177,6 +179,15 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
         return;
       }
       name = next;
+    }
+  }
+
+  Future<void> _playToEnd(String path) async {
+    try {
+      if (!_disposed) await _audio.playFileToEnd(path);
+    } catch (_) {
+      // Audio failures must not affect touch interaction. The concrete
+      // sink logs its own errors; this protects alternate implementations.
     }
   }
 
@@ -191,7 +202,7 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   }
 
   @override
-  Future<void> announceObject(SceneObject object) => _sayName(cachedScene.audioPathFor(object));
+  Future<void> announceObject(SceneObject object) => _sayName(object);
 
   @override
   Future<void> playSystemPhrase(SystemPhrase phrase) {
@@ -253,3 +264,7 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
     super.dispose();
   }
 }
+
+/// A name asked to be said: the recorded name, the object's own sound to
+/// follow it (if it has one), and what completes once it is over.
+typedef _Name = ({String path, String? soundPath, Completer<void> done});

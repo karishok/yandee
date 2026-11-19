@@ -95,6 +95,72 @@ void main() {
     expect(lastCatDone, isTrue);
   });
 
+  group('an object with a sound of its own', () {
+    const cow = SceneObject(id: 'cow', label: 'Корова', audio: 'cow.wav', sound: 'cow_sound.wav', rect: rect);
+    final farm = CachedScene(
+      scene: Scene(
+        id: 'farm',
+        version: 1,
+        title: 'Ферма',
+        minAgeMonths: 12,
+        background: 'background.png',
+        objects: [cow, ball],
+      ),
+      directoryPath: '/cache/farm',
+    );
+    final namePath = farm.audioPathFor(cow);
+    final soundPath = farm.soundPathFor(cow)!;
+
+    test('makes its sound right after its name', () async {
+      final audio = FakeAudioSink();
+      final controller = SceneController(cachedScene: farm, audioSink: audio);
+      audio.holdFile(namePath);
+
+      controller.onObjectTapped(cow);
+      expect(audio.playedFiles, [namePath], reason: 'the sound waits for the name to end');
+
+      audio.releaseFile(namePath);
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedFiles, [namePath, soundPath]);
+    });
+
+    test('skips its sound when another name was asked for during its name', () async {
+      final audio = FakeAudioSink();
+      final controller = SceneController(cachedScene: farm, audioSink: audio);
+      audio.holdFile(namePath);
+
+      controller.onObjectTapped(cow);
+      controller.onObjectTapped(ball);
+      audio.releaseFile(namePath);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(audio.playedFiles, [namePath, farm.audioPathFor(ball)]);
+    });
+
+    test('is only announced once its sound is over too', () async {
+      final audio = FakeAudioSink();
+      final controller = SceneController(cachedScene: farm, audioSink: audio);
+      audio.holdFile(soundPath);
+
+      var done = false;
+      unawaited(controller.announceObject(cow).then((_) => done = true));
+      await Future<void>.delayed(Duration.zero);
+      expect(audio.playedFiles, [namePath, soundPath]);
+      expect(done, isFalse);
+
+      audio.releaseFile(soundPath);
+      await Future<void>.delayed(Duration.zero);
+      expect(done, isTrue);
+    });
+
+    test('find mode asks for it by name only', () {
+      final audio = FakeAudioSink();
+      final controller = SceneController(cachedScene: farm, audioSink: audio, findModeShuffle: (list) => list);
+      controller.setMode(SceneModeType.find);
+      expect(audio.playedFiles, isNot(contains(soundPath)));
+    });
+  });
+
   test('a name still waiting its turn is not said after the scene is closed', () async {
     final audio = FakeAudioSink();
     final controller = SceneController(cachedScene: cachedScene, audioSink: audio);

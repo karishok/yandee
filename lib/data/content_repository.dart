@@ -154,9 +154,13 @@ class ContentRepository {
       // what loadCachedIndex() expects regardless of the remote path.
       await File(p.join(tmpDir.path, 'thumb.png')).writeAsBytes(await _downloadBytes(entry.thumbnail));
 
-      for (final object in scene.objects) {
-        await File(p.join(tmpDir.path, object.audio))
-            .writeAsBytes(await _downloadBytes('${entry.id}/${object.audio}'));
+      final objectFiles = {
+        for (final object in scene.objects) object.audio,
+        for (final object in scene.objects)
+          if (object.sound != null) object.sound!,
+      };
+      for (final fileName in objectFiles) {
+        await File(p.join(tmpDir.path, fileName)).writeAsBytes(await _downloadBytes('${entry.id}/$fileName'));
       }
 
       final finalDir = Directory(p.join(root.path, entry.id));

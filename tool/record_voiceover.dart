@@ -5,6 +5,7 @@ import 'dart:io';
 import 'src/click_detector.dart';
 import 'src/declick.dart';
 import 'src/denoise.dart';
+import 'src/loudness.dart';
 import 'src/scene_vocabulary.dart';
 import 'src/voiceover_queue.dart';
 import 'src/voiceover_tasks.dart';
@@ -26,7 +27,7 @@ Future<void> main(List<String> args) async {
   final sceneFilter = remaining.isNotEmpty ? remaining.first : null;
 
   if (!isValidSceneFilter(sceneFilter)) {
-    final validValues = [...scenes.map((s) => s.id), 'system'];
+    final validValues = [...scenes.map((s) => s.id), 'system', ...monstersFilters];
     stderr.writeln('Неизвестный фильтр сцены: "$sceneFilter".');
     stderr.writeln('Допустимые значения: ${validValues.join(', ')}.');
     exitCode = 1;
@@ -170,7 +171,12 @@ Future<void> _recordOne(VoiceoverTask task, String device) async {
       // decisions are about the words/timing, not this), and denoising
       // happens only once a take is actually kept.
       final recorded = readMonoWav16(tempFile);
-      final cleaned = cleanRecording(recorded.samples, recorded.sampleRate);
+      var cleaned = cleanRecording(recorded.samples, recorded.sampleRate);
+      // Same levelling the Logic slicer gives the game's phrases, which are
+      // heard back to back.
+      if (task.outputPath.startsWith(monstersVoiceoverDir)) {
+        cleaned = normalizeLoudness(cleaned, recorded.sampleRate);
+      }
       writeMonoWav16(outputFile, WavAudio(sampleRate: recorded.sampleRate, samples: cleaned));
       await tempFile.delete();
       stdout.writeln('Записано (шум почищен): ${task.outputPath}');

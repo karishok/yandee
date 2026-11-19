@@ -198,6 +198,45 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget); // SceneScreen's own loading state
   });
 
+  testWidgets('shows the "Монстрики" game as the first card of the grid, and it opens the game', (tester) async {
+    late Directory cacheRoot;
+
+    await tester.runAsync(() async {
+      cacheRoot = await Directory.systemTemp.createTemp('yandee_list_test_');
+      await _seedScene(cacheRoot, 'city', 'Город');
+      final repository = ContentRepository(
+        httpClient: MockClient((_) async => throw const SocketException('offline')),
+        baseUrl: Uri.parse('https://example.invalid/v1/'),
+        cacheRootProvider: () async => cacheRoot,
+      );
+
+      await tester.pumpWidget(MaterialApp(
+        home: SceneListScreen(
+          contentRepository: repository,
+          monstersScreenBuilder: (_) => const Scaffold(body: Text('игра открыта')),
+        ),
+      ));
+      await _pumpAndSettleReal(tester);
+    });
+    addTearDown(() => cacheRoot.delete(recursive: true));
+    await tester.pump();
+
+    final card = find.byKey(const ValueKey('monsters_card'));
+    expect(card, findsOneWidget);
+    expect(find.descendant(of: card, matching: find.text('Монстрики')), findsOneWidget);
+    // A card like any scene's: same size, same row, in front of the first scene.
+    final firstScene = find.byKey(const ValueKey('scene_card_city'));
+    expect(tester.getSize(card), tester.getSize(firstScene));
+    expect(tester.getTopLeft(card).dy, tester.getTopLeft(firstScene).dy);
+    expect(tester.getTopLeft(card).dx, lessThan(tester.getTopLeft(firstScene).dx));
+
+    await tester.tap(card);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('игра открыта'), findsOneWidget);
+  });
+
   testWidgets('shows a placeholder instead of the default red error box for a corrupt thumbnail', (tester) async {
     late Directory cacheRoot;
 
