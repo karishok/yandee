@@ -59,7 +59,7 @@ CHOICES = {
     "drum":     ("toys",     "felisleopard/332390"),
     "kettle":   ("kitchen",  "itinerantmonk108/681638"),
     "duck_toy": ("bathroom", "The-Sacha-Rush/454575"),
-    "door":     ("home",     "JarredGibb/219499"),
+    "door":     ("home",     "fresco/35617"),
     "book":     ("home",     "davidbain/136778"),
     "lamp":     ("home",     "FillSoko/257958"),
     "toy_car":  ("toys",     "afterguard/39911"),

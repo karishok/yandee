@@ -51,7 +51,7 @@ edited clip stays under the same license. CC0 needs no credit.
 | `bathroom/shower_sound.wav` | bathroom | vmgraw | CC0 | [Shower](https://freesound.org/people/vmgraw/sounds/235624/) |
 | `bathroom/duck_toy_sound.wav` | bathroom | The-Sacha-Rush | CC0 | [Duck Toy Sounds](https://freesound.org/people/The-Sacha-Rush/sounds/454575/) |
 | `home/clock_sound.wav` | home | blukotek | CC0 | [ticking of the clock 01.wav](https://freesound.org/people/blukotek/sounds/412751/) |
-| `home/door_sound.wav` | home | JarredGibb | CC0 | [Door - Creak.wav](https://freesound.org/people/JarredGibb/sounds/219499/) |
+| `home/door_sound.wav` | home | fresco | CC BY 4.0 | [open and close wooden door by fresco.wav](https://freesound.org/people/fresco/sounds/35617/) |
 | `home/book_sound.wav` | home | davidbain | CC0 | [Page Turn](https://freesound.org/people/davidbain/sounds/136778/) |
 | `home/lamp_sound.wav` | home | FillSoko | CC0 | [Light Switch ON / OFF](https://freesound.org/people/FillSoko/sounds/257958/) |
 | `toys/spinning_top_sound.wav` | toys | franzzle | CC0 | [hummingtop.aiff](https://freesound.org/people/franzzle/sounds/184842/) |
