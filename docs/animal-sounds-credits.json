@@ -321,13 +321,13 @@
  },
  "door": {
   "scene": "home",
-  "title": "Door - Creak.wav",
-  "url": "https://cdn.freesound.org/previews/219/219499_4056007-hq.mp3",
-  "page": "https://freesound.org/people/JarredGibb/sounds/219499/",
-  "license": "CC0",
-  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
-  "artist": "JarredGibb",
-  "seconds": 0.9
+  "title": "open and close wooden door by fresco.wav",
+  "url": "https://cdn.freesound.org/previews/35/35617_26333-hq.mp3",
+  "page": "https://freesound.org/people/fresco/sounds/35617/",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "artist": "fresco",
+  "seconds": 1.7
  },
  "book": {
   "scene": "home",
@@ -378,16 +378,6 @@
   "license_url": "https://creativecommons.org/licenses/by/4.0/",
   "artist": "vicoughetto",
   "seconds": 0.9
- },
- "ball": {
-  "scene": "playground",
-  "title": "Plastic Bouncing Ball.wav",
-  "url": "https://cdn.freesound.org/previews/329/329684_2812020-hq.mp3",
-  "page": "https://freesound.org/people/Uzbazur/sounds/329684/",
-  "license": "CC0",
-  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
-  "artist": "Uzbazur",
-  "seconds": 1.46
  },
  "swing": {
   "scene": "playground",
