@@ -12,7 +12,9 @@ const restPhraseAsset = 'audio/system/rest_time.wav';
 Future<void> playRestPhrase() async {
   final player = AudioPlayer();
   try {
-    final done = player.onPlayerComplete.first;
+    // `ignore()`: if `play` throws, `done` is never awaited, and disposing
+    // the player would otherwise end it with an uncaught "No element".
+    final done = player.onPlayerComplete.first..ignore();
     await player.play(AssetSource(restPhraseAsset));
     await done.timeout(const Duration(seconds: 6));
   } catch (error, stackTrace) {
