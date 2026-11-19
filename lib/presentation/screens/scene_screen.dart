@@ -83,7 +83,14 @@ class _SceneView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<SceneController>();
-    final showBanner = controller.modeType == SceneModeType.find && !controller.showCongrats;
+    final modeType = controller.modeType;
+    // The flashlight is a way to explore and finding by sound a way to
+    // find, so each one's button lives with its own half of the switch.
+    final inFindFamily = modeType == SceneModeType.find || modeType == SceneModeType.whoSays;
+    final showFlashlightButton = controller.hasFlashlight && !inFindFamily;
+    final showWhoSaysButton = controller.hasWhoSays && inFindFamily;
+    final showBanner = modeType == SceneModeType.find && !controller.showCongrats;
+    final showRepeatButton = modeType == SceneModeType.whoSays && !controller.showCongrats;
     final flashlight = controller.flashlight;
     return Scaffold(
       // Night all around the picture too, while the flashlight game is on.
@@ -129,7 +136,11 @@ class _SceneView extends StatelessWidget {
                       _ModeSwitch(modeType: controller.modeType, onChanged: controller.setMode),
                     ],
                   ),
-                  if (showBanner || controller.hasRealisticPicture || controller.hasFlashlight) ...[
+                  if (showBanner ||
+                      showRepeatButton ||
+                      controller.hasRealisticPicture ||
+                      showFlashlightButton ||
+                      showWhoSaysButton) ...[
                     const SizedBox(height: 10),
                     // The second row: the picture toggle on the left (only
                     // for scenes that have a realistic picture), the find
@@ -149,11 +160,20 @@ class _SceneView extends StatelessWidget {
                           ),
                           const SizedBox(width: 12),
                         ],
-                        if (controller.hasFlashlight) ...[
+                        if (showFlashlightButton) ...[
                           _FlashlightButton(
                             isOn: flashlight != null,
                             onPressed: () => controller.setMode(
                               flashlight != null ? SceneModeType.explore : SceneModeType.flashlight,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                        ],
+                        if (showWhoSaysButton) ...[
+                          _WhoSaysButton(
+                            isOn: modeType == SceneModeType.whoSays,
+                            onPressed: () => controller.setMode(
+                              modeType == SceneModeType.whoSays ? SceneModeType.find : SceneModeType.whoSays,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -163,9 +183,11 @@ class _SceneView extends StatelessWidget {
                             alignment: Alignment.centerRight,
                             child: showBanner
                                 ? _FindBanner(target: controller.currentFindTarget)
-                                : flashlight != null
-                                    ? _FlashlightStars(found: flashlight.foundCount, total: flashlight.totalCount)
-                                    : const SizedBox.shrink(),
+                                : showRepeatButton
+                                    ? _RepeatSoundButton(onPressed: controller.repeatWhoSaysSound)
+                                    : flashlight != null
+                                        ? _FlashlightStars(found: flashlight.foundCount, total: flashlight.totalCount)
+                                        : const SizedBox.shrink(),
                           ),
                         ),
                       ],
@@ -212,6 +234,72 @@ class _FlashlightButton extends StatelessWidget {
               color: isOn ? const Color(0xFF1B2140) : Colors.amber,
               size: 28,
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Switches Find mode between finding by name and finding by sound.
+/// Wordless, like the flashlight button: an ear on a round button.
+class _WhoSaysButton extends StatelessWidget {
+  const _WhoSaysButton({required this.isOn, required this.onPressed});
+
+  final bool isOn;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      label: isOn ? 'Искать по названию' : 'Кто это? Искать по голосу',
+      child: Material(
+        key: const ValueKey('who_says_button'),
+        color: isOn ? colorScheme.primary : Colors.white,
+        shape: const CircleBorder(),
+        elevation: 3,
+        shadowColor: Colors.black.withValues(alpha: 0.3),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onPressed,
+          child: SizedBox(
+            width: 52,
+            height: 52,
+            child: Icon(Icons.hearing, color: isOn ? Colors.white : colorScheme.primary, size: 28),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Plays the sound to find once more. Stands where Find mode shows the
+/// name — which, here, would give the answer away.
+class _RepeatSoundButton extends StatelessWidget {
+  const _RepeatSoundButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Послушать ещё раз',
+      child: Material(
+        key: const ValueKey('who_says_repeat'),
+        color: Colors.white,
+        shape: const CircleBorder(),
+        elevation: 3,
+        shadowColor: Colors.black.withValues(alpha: 0.3),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onPressed,
+          child: SizedBox(
+            width: 52,
+            height: 52,
+            child: Icon(Icons.volume_up_rounded, color: Theme.of(context).colorScheme.primary, size: 28),
           ),
         ),
       ),
@@ -369,7 +457,12 @@ class _ModeSwitch extends StatelessWidget {
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: ToggleButtons(
-        isSelected: [modeType == SceneModeType.explore, modeType == SceneModeType.find],
+        // The flashlight belongs with Explore and finding by sound with
+        // Find; tapping either half starts that half's plain mode.
+        isSelected: [
+          modeType == SceneModeType.explore || modeType == SceneModeType.flashlight,
+          modeType == SceneModeType.find || modeType == SceneModeType.whoSays,
+        ],
         onPressed: (index) => onChanged(index == 0 ? SceneModeType.explore : SceneModeType.find),
         borderWidth: 0,
         borderRadius: BorderRadius.circular(20),
