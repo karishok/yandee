@@ -1,39 +1,8 @@
 import 'monster_color.dart';
 import 'monster_food.dart';
+import '../voice/voice_line.dart';
 
-/// One recorded piece of speech: a whole short sentence, stored as its own
-/// audio file.
-class VoiceClip {
-  const VoiceClip(this.id, this.text);
-
-  /// File name without the extension, e.g. `food_red_strawberry`.
-  final String id;
-
-  /// What to say when recording it.
-  final String text;
-
-  @override
-  bool operator ==(Object other) => other is VoiceClip && other.id == id;
-
-  @override
-  int get hashCode => id.hashCode;
-
-  @override
-  String toString() => 'VoiceClip($id: $text)';
-}
-
-/// Something a monster or the narrator says: one or more [clips] played
-/// back to back.
-class MonsterLine {
-  const MonsterLine(this.clips);
-
-  final List<VoiceClip> clips;
-
-  String get text => clips.map((clip) => clip.text).join(' ');
-
-  @override
-  String toString() => 'MonsterLine($text)';
-}
+export '../voice/voice_line.dart';
 
 /// Every phrase of the "Монстрики" game.
 ///
@@ -68,30 +37,30 @@ abstract final class MonsterPhrases {
   static VoiceClip forColor(MonsterColor color) => VoiceClip('for_${color.name}', '— ${color.dative}!');
 
   /// A treat was picked up: «Красная клубника».
-  static MonsterLine foodName(MonsterFood food) => MonsterLine([MonsterPhrases.food(food)]);
+  static VoiceLine foodName(MonsterFood food) => VoiceLine([MonsterPhrases.food(food)]);
 
   /// A monster ate it: «Ням! Красная клубника».
-  static MonsterLine ate(MonsterFood food) => MonsterLine([yum, MonsterPhrases.food(food)]);
+  static VoiceLine ate(MonsterFood food) => VoiceLine([yum, MonsterPhrases.food(food)]);
 
   /// A monster spat it out: «Фу! Синяя черника — синему!».
-  static MonsterLine refused(MonsterFood food) =>
-      MonsterLine([yuck, MonsterPhrases.food(food), forColor(food.color)]);
+  static VoiceLine refused(MonsterFood food) =>
+      VoiceLine([yuck, MonsterPhrases.food(food), forColor(food.color)]);
 
   /// A monster ate a treat whose name is still being said from when it
   /// was picked up: just «Ням!», so the name isn't said twice in a row.
-  static const ateJustNamed = MonsterLine([yum]);
+  static const ateJustNamed = VoiceLine([yum]);
 
   /// A monster was poked with no treat in hand: «Я красный!».
-  static MonsterLine introduce(MonsterColor color) => MonsterLine([iAm(color)]);
+  static VoiceLine introduce(MonsterColor color) => VoiceLine([iAm(color)]);
 
   /// A newcomer hopped in: «Привет! Я новенький! Я оранжевый!», or just
   /// «Привет! Я красный!» for a colour the child already knows.
-  static MonsterLine greet(MonsterColor color, {required bool firstMeeting}) =>
-      MonsterLine([firstMeeting ? helloNew : hello, iAm(color)]);
+  static VoiceLine greet(MonsterColor color, {required bool firstMeeting}) =>
+      VoiceLine([firstMeeting ? helloNew : hello, iAm(color)]);
 
-  static const introLine = MonsterLine([intro]);
-  static const byeLine = MonsterLine([bye]);
-  static const winLine = MonsterLine([win]);
+  static const introLine = VoiceLine([intro]);
+  static const byeLine = VoiceLine([bye]);
+  static const winLine = VoiceLine([win]);
 
   /// Every clip that needs a recording, in the order they are listed for
   /// the person recording them.

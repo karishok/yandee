@@ -38,7 +38,7 @@ abstract class MonsterVoice {
   /// said to its end first, and of the lines asked for meanwhile only the
   /// latest is said next (the same rule scene taps follow). Completes when
   /// the line has been said to its end, or has been skipped or stopped.
-  Future<void> say(MonsterLine line);
+  Future<void> say(VoiceLine line);
 
   /// Plays a sound effect on top of whatever else is sounding.
   void playSfx(MonsterSfx sfx);
