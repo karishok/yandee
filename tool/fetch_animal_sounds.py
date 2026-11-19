@@ -52,6 +52,12 @@ CHOICES = {
     "truck":    ("street", "jberkuta14/134897"),
     "bicycle":  ("street", "nikiforov5000/330956"),
     "boat":     ("sea",    "pugaeme/389237"),
+    # household things and toys
+    "shower":   ("bathroom", "vmgraw/235624"),
+    "clock":    ("home",     "blukotek/412751"),
+    "spinning_top": ("toys", "franzzle/184842"),
+    "drum":     ("toys",     "felisleopard/332390"),
+    "kettle":   ("kitchen",  "itinerantmonk108/681638"),
 }
 
 

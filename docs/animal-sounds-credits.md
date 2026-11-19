@@ -1,6 +1,6 @@
-# Animal and vehicle sounds — credits
+# Animal, vehicle and object sounds — credits
 
-The animal voices and vehicle sounds in `assets/demo_content/<scene>/<id>_sound.wav`
+The animal voices, vehicle and household sounds in `assets/demo_content/<scene>/<id>_sound.wav`
 (each object's `sound` in scene.json) are real recordings: the cow from
 Wikimedia Commons, the rest from Freesound (their HQ MP3 previews).
 `tool/fetch_animal_sounds.py` cuts each one down to its main part, at most
@@ -43,6 +43,16 @@ edited clip stays under the same license. CC0 needs no credit.
 | `street/truck_sound.wav` | street | jberkuta14 | CC0 | [Dump Truck](https://freesound.org/people/jberkuta14/sounds/134897/) |
 | `street/bicycle_sound.wav` | street | nikiforov5000 | CC0 | [Bicycle_Bell.wav](https://freesound.org/people/nikiforov5000/sounds/330956/) |
 | `sea/boat_sound.wav` | sea | pugaeme | CC BY 3.0 | [Rowing Oar.wav](https://freesound.org/people/pugaeme/sounds/389237/) |
+
+## Household things and toys
+
+| File | Scene | Author | License | Source |
+|---|---|---|---|---|
+| `bathroom/shower_sound.wav` | bathroom | vmgraw | CC0 | [Shower](https://freesound.org/people/vmgraw/sounds/235624/) |
+| `home/clock_sound.wav` | home | blukotek | CC0 | [ticking of the clock 01.wav](https://freesound.org/people/blukotek/sounds/412751/) |
+| `toys/spinning_top_sound.wav` | toys | franzzle | CC0 | [hummingtop.aiff](https://freesound.org/people/franzzle/sounds/184842/) |
+| `toys/drum_sound.wav` | toys | felisleopard | CC0 | [toy_drum_hard_hit.wav](https://freesound.org/people/felisleopard/sounds/332390/) |
+| `kitchen/kettle_sound.wav` | kitchen | itinerantmonk108 | CC0 | [Electric tea kettle](https://freesound.org/people/itinerantmonk108/sounds/681638/) |
 
 InspectorJ asks to be credited as: "Rooster Calling, Close, A.wav" by InspectorJ
 (www.jshaw.co.uk) of Freesound.org.
