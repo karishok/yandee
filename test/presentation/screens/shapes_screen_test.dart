@@ -163,6 +163,33 @@ void main() {
     expect(view().hinting, isEmpty);
   });
 
+  testWidgets('the piece shakes at the wrong place, but not when picked up again', (tester) async {
+    final h = await _start(tester);
+    double sway() =>
+        tester.widget<FractionalTranslation>(find.byKey(const ValueKey('shapes_shake'))).translation.dx;
+    final gesture = await tester.startGesture(h.piece);
+    await gesture.moveBy(const Offset(0, -30));
+    await tester.pump();
+    await gesture.moveTo(h.slotCenter(h.wrongSlot));
+    await tester.pump();
+    await gesture.up();
+    var swayed = false;
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      if (find.byKey(const ValueKey('shapes_shake')).evaluate().isNotEmpty && sway().abs() > 0.01) swayed = true;
+    }
+    expect(swayed, isTrue);
+    await h.run(const Duration(milliseconds: 3500));
+    final again = await tester.startGesture(h.piece);
+    await again.moveBy(const Offset(0, -30));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(sway(), 0);
+    }
+    await again.up();
+    await h.run(const Duration(milliseconds: 600));
+  });
+
   testWidgets('a finished picture says its name with «Ура!», then the next picture comes', (tester) async {
     final h = await _start(tester);
     await h.buildPicture();

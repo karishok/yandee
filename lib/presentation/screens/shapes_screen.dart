@@ -94,13 +94,15 @@ class _Touch {
   bool dragging = false;
 }
 
-class _ShapesScreenState extends State<ShapesScreen> with SingleTickerProviderStateMixin {
+class _ShapesScreenState extends State<ShapesScreen> with TickerProviderStateMixin {
   static const _dragSlop = 10.0;
   static const _tapSlop = 24.0;
   static const _dropMargin = 24.0;
 
   late final ShapesVoice _voice = widget.voiceFactory?.call() ?? ShapesVoicePlayer();
   late final AnimationController _flight = AnimationController(vsync: this);
+  late final AnimationController _shake =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 380));
   late ShapesGame _game;
   final ValueNotifier<Rect?> _floating = ValueNotifier(null);
   final Set<Timer> _timers = {};
@@ -117,7 +119,6 @@ class _ShapesScreenState extends State<ShapesScreen> with SingleTickerProviderSt
   ShapeKind? _justMet;
   int _pieceRun = 0;
   int _wiggleRun = 0;
-  int _shakeRun = 0;
   int _confettiRun = 0;
   Rect Function(double t)? _flightPath;
 
@@ -148,6 +149,7 @@ class _ShapesScreenState extends State<ShapesScreen> with SingleTickerProviderSt
       timer.cancel();
     }
     _flight.dispose();
+    _shake.dispose();
     _floating.dispose();
     _voice.dispose();
     super.dispose();
@@ -294,7 +296,7 @@ class _ShapesScreenState extends State<ShapesScreen> with SingleTickerProviderSt
     final result = _game.drop(slot);
 
     if (!result.accepted) {
-      setState(() => _shakeRun++);
+      _shake.forward(from: 0);
       _voice.playSfx(ShapesSfx.wrong);
       final speech = _voice.say(ShapePhrases.notHereLine);
       await _heardOut(speech, milliseconds: 2500);
@@ -423,12 +425,12 @@ class _ShapesScreenState extends State<ShapesScreen> with SingleTickerProviderSt
                           : Positioned.fromRect(
                               rect: floating,
                               child: IgnorePointer(
-                                child: TweenAnimationBuilder<double>(
-                                  key: ValueKey('shake_$_shakeRun'),
-                                  tween: Tween(begin: _shakeRun == 0 ? 1 : 0, end: 1),
-                                  duration: const Duration(milliseconds: 380),
-                                  builder: (context, t, child) => FractionalTranslation(
-                                    translation: Offset(math.sin(t * 4 * math.pi) * .08 * (1 - t), 0),
+                                child: AnimatedBuilder(
+                                  animation: _shake,
+                                  builder: (context, child) => FractionalTranslation(
+                                    key: const ValueKey('shapes_shake'),
+                                    translation:
+                                        Offset(math.sin(_shake.value * 4 * math.pi) * .08 * (1 - _shake.value), 0),
                                     child: child,
                                   ),
                                   child: SvgPicture.string(pieceSvg(picture, pieceSlot)),
