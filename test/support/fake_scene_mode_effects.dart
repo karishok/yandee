@@ -7,8 +7,12 @@ class FakeSceneModeEffects implements SceneModeEffects {
   final List<SceneObject> objectAudioCalls = [];
   final List<SceneObject> promptFindCalls = [];
   final List<bool> promptFindAnnounceIntroCalls = [];
+  final List<SceneObject> promptSoundCalls = [];
+  final List<bool> promptSoundAnnounceIntroCalls = [];
+  final List<SceneObject> hintThenRepeatSoundCalls = [];
   final List<SystemPhrase> systemPhraseCalls = [];
   final List<SceneObject> announceObjectCalls = [];
+  final List<bool> announceObjectWithSoundCalls = [];
   int roundCompletedCalls = 0;
 
   /// While set, [announceObject] records its call but doesn't finish until
@@ -25,8 +29,18 @@ class FakeSceneModeEffects implements SceneModeEffects {
   }
 
   @override
-  Future<void> announceObject(SceneObject object) async {
+  void promptSound(SceneObject target, {bool announceIntro = true}) {
+    promptSoundCalls.add(target);
+    promptSoundAnnounceIntroCalls.add(announceIntro);
+  }
+
+  @override
+  void hintThenRepeatSound(SceneObject target) => hintThenRepeatSoundCalls.add(target);
+
+  @override
+  Future<void> announceObject(SceneObject object, {bool withSound = true}) async {
     announceObjectCalls.add(object);
+    announceObjectWithSoundCalls.add(withSound);
     await announcementGate?.future;
   }
 

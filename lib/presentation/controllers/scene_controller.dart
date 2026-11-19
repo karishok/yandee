@@ -58,6 +58,11 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   bool _correctPending = false;
   bool _wrongHintPlaying = false;
 
+  // The target whose sound is to follow the "try again" hint now playing
+  // (finding by sound). Cleared — so the sound is not made — by any other
+  // system phrase, a mode switch, or once the sound has been made.
+  SceneObject? _soundAfterHint;
+
   // Object names (Explore taps, flashlight finds) are deliberately not a
   // FIFO queue. The name being said is always said to its end — a later
   // tap never cuts it off. Of the names asked for meanwhile only the
@@ -124,6 +129,7 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
     if (type == _modeType) return;
     _congratsTimer?.cancel();
     _showCongrats = false;
+    _soundAfterHint = null;
     _modeType = type;
     _mode = switch (type) {
       SceneModeType.explore => ExploreMode(effects: this),
@@ -152,9 +158,13 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   /// An object with a sound of its own (an animal's voice) makes it right
   /// after its name — unless another name was asked for while the name was
   /// being said: the child has moved on, so that name comes next instead.
-  Future<void> _sayName(SceneObject object) {
+  Future<void> _sayName(SceneObject object, {bool withSound = true}) {
     final done = Completer<void>();
-    final name = (path: cachedScene.audioPathFor(object), soundPath: cachedScene.soundPathFor(object), done: done);
+    final name = (
+      path: cachedScene.audioPathFor(object),
+      soundPath: withSound ? cachedScene.soundPathFor(object) : null,
+      done: done,
+    );
     if (_nameBeingSaid) {
       _nextName?.done.complete(); // overtaken: it will not be said
       _nextName = name;
@@ -202,7 +212,35 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   }
 
   @override
-  Future<void> announceObject(SceneObject object) => _sayName(object);
+  void promptSound(SceneObject target, {bool announceIntro = true}) {
+    final soundPath = cachedScene.soundPathFor(target);
+    if (soundPath == null) return;
+    _voiceQueue = _voiceQueue.then(
+      (_) => announceIntro
+          ? _audio.playSystemPhraseThenFile(SystemPhrase.findIntro, soundPath)
+          : _audio.playFile(soundPath),
+    );
+  }
+
+  @override
+  void hintThenRepeatSound(SceneObject target) {
+    // Set before the hint starts: a hint already playing (a miss a moment
+    // ago) makes this one a no-op, and it is that hint's end that plays
+    // the sound — once, for the whole run of misses.
+    _soundAfterHint = target;
+    unawaited(playSystemPhrase(SystemPhrase.wrongHint));
+  }
+
+  void _playSoundAfterHint() {
+    final target = _soundAfterHint;
+    _soundAfterHint = null;
+    if (target == null || _disposed) return;
+    promptSound(target, announceIntro: false);
+  }
+
+  @override
+  Future<void> announceObject(SceneObject object, {bool withSound = true}) =>
+      _sayName(object, withSound: withSound);
 
   @override
   Future<void> playSystemPhrase(SystemPhrase phrase) {
@@ -216,7 +254,10 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
       // behind it — otherwise a 5-tap streak would leave the hint droning
       // on for many seconds after the child has moved on.
       final playback = _audio.playInterruptibleSystemPhrase(phrase);
-      playback.whenComplete(() => _wrongHintPlaying = false);
+      playback.whenComplete(() {
+        _wrongHintPlaying = false;
+        _playSoundAfterHint();
+      });
       return playback;
     }
 
@@ -227,6 +268,7 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
     // the child connects to their own correct tap.
     _audio.stopInterruptible();
     _wrongHintPlaying = false;
+    _soundAfterHint = null;
 
     if (phrase == SystemPhrase.correct) {
       if (_correctPending) {
