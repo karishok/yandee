@@ -7,7 +7,7 @@ import 'scene_mode_effects.dart';
 
 /// «Кто это?» — Find mode by ear. The child hears the sound a thing makes
 /// (a cow's moo, a tractor's rattle) and taps whoever or whatever makes it;
-/// the right answer is named, so the sound and the word come together.
+/// a right answer is praised and the next sound follows straight away.
 ///
 /// Only objects with a sound of their own take part, one per label (like
 /// in Find mode, several cows are one thing to find and tapping any of
@@ -77,11 +77,11 @@ class WhoSaysMode implements SceneMode {
       return;
     }
     _waitingForCorrectFeedback = true;
-    unawaited(_advanceAfterCorrectAnswer(target));
+    unawaited(_advanceAfterCorrectAnswer());
   }
 
   /// Plays the current sound once more (the repeat button). Does nothing
-  /// while a right answer is being named or once the round is over.
+  /// while a right answer is being praised or once the round is over.
   void repeatSound() {
     if (_waitingForCorrectFeedback) return;
     final target = currentTarget;
@@ -89,10 +89,9 @@ class WhoSaysMode implements SceneMode {
     effects.promptSound(target, announceIntro: false);
   }
 
-  Future<void> _advanceAfterCorrectAnswer(SceneObject found) async {
+  Future<void> _advanceAfterCorrectAnswer() async {
+    // Praise only, no name: a name between the sounds slows the game down.
     await effects.playSystemPhrase(SystemPhrase.correct);
-    // The name alone: its sound right after would run into the next one.
-    await effects.announceObject(found, withSound: false);
     _foundCount++;
 
     if (isComplete) {

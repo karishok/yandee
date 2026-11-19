@@ -78,13 +78,12 @@ void main() {
     expect(effects.systemPhraseCalls, isEmpty);
   });
 
-  test('a correct tap: the chime, the name without its sound, then the next sound', () async {
+  test('a correct tap: the praise, then straight to the next sound, no name', () async {
     final effects = FakeSceneModeEffects();
     final mode = start(effects);
     await answer(mode, cow);
     expect(effects.systemPhraseCalls, [SystemPhrase.correct]);
-    expect(effects.announceObjectCalls, [cow]);
-    expect(effects.announceObjectWithSoundCalls, [false]);
+    expect(effects.announceObjectCalls, isEmpty);
     expect(mode.currentTarget, pig);
     expect(effects.promptSoundCalls, [cow, pig]);
     expect(effects.promptSoundAnnounceIntroCalls, [true, false]);
@@ -98,8 +97,8 @@ void main() {
     expect(effects.hintThenRepeatSoundCalls, isEmpty);
   });
 
-  test('while the right answer is being named, taps and repeats are ignored', () async {
-    final effects = FakeSceneModeEffects()..announcementGate = Completer<void>();
+  test('while the praise for a right answer plays, taps and repeats are ignored', () async {
+    final effects = FakeSceneModeEffects()..systemPhraseGate = Completer<void>();
     final mode = start(effects);
     await answer(mode, cow);
     await answer(mode, tree);
@@ -107,7 +106,7 @@ void main() {
     expect(effects.hintThenRepeatSoundCalls, isEmpty);
     expect(effects.promptSoundCalls, [cow]);
 
-    effects.announcementGate!.complete();
+    effects.systemPhraseGate!.complete();
     await Future<void>.delayed(Duration.zero);
     expect(effects.promptSoundCalls, [cow, pig]);
   });

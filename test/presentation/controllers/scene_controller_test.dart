@@ -620,13 +620,6 @@ void main() {
       expect(audio.playedSequences, isEmpty);
     });
 
-    test('announceObject without its sound says only the name', () async {
-      final audio = FakeAudioSink();
-      final controller = SceneController(cachedScene: farm, audioSink: audio);
-      await controller.announceObject(cow, withSound: false);
-      expect(audio.playedFiles, [farm.audioPathFor(cow)]);
-    });
-
     test('hintThenRepeatSound: the hint, then the sound once the hint has finished', () async {
       final audio = FakeAudioSink()..holdInterruptiblePhrase(SystemPhrase.wrongHint);
       final controller = SceneController(cachedScene: farm, audioSink: audio);
@@ -736,7 +729,7 @@ void main() {
       expect(audio.playedFiles, [farm.soundPathFor(cow)!]);
     });
 
-    test('a right tap names the object without its sound, then plays the next one', () async {
+    test('a right tap: the praise, then the next sound, without the name', () async {
       final audio = FakeAudioSink();
       final controller = farmController(audio)..setMode(SceneModeType.whoSays);
       controller.onObjectTapped(cow);
@@ -744,7 +737,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
       }
       expect(audio.playedSystemPhrases, [SystemPhrase.correct]);
-      expect(audio.playedFiles, [farm.audioPathFor(cow), farm.soundPathFor(pig)!]);
+      expect(audio.playedFiles, [farm.soundPathFor(pig)!]);
       expect(controller.whoSays!.currentTarget, pig);
     });
 

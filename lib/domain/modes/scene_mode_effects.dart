@@ -35,9 +35,8 @@ abstract class SceneModeEffects {
 
   /// Like [playObjectAudio], for a caller that has something to do after
   /// the name: completes once the name has been said to its end (or right
-  /// away, if a later name took its place before its turn came). With
-  /// [withSound] false the object's own sound is not made after the name.
-  Future<void> announceObject(SceneObject object, {bool withSound = true});
+  /// away, if a later name took its place before its turn came).
+  Future<void> announceObject(SceneObject object);
 
   /// Play a bundled system phrase (hint, correct, fanfare, ...).
   Future<void> playSystemPhrase(SystemPhrase phrase);

@@ -174,13 +174,9 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   /// An object with a sound of its own (an animal's voice) makes it right
   /// after its name — unless another name was asked for while the name was
   /// being said: the child has moved on, so that name comes next instead.
-  Future<void> _sayName(SceneObject object, {bool withSound = true}) {
+  Future<void> _sayName(SceneObject object) {
     final done = Completer<void>();
-    final name = (
-      path: cachedScene.audioPathFor(object),
-      soundPath: withSound ? cachedScene.soundPathFor(object) : null,
-      done: done,
-    );
+    final name = (path: cachedScene.audioPathFor(object), soundPath: cachedScene.soundPathFor(object), done: done);
     if (_nameBeingSaid) {
       _nextName?.done.complete(); // overtaken: it will not be said
       _nextName = name;
@@ -255,8 +251,7 @@ class SceneController extends ChangeNotifier implements SceneModeEffects {
   }
 
   @override
-  Future<void> announceObject(SceneObject object, {bool withSound = true}) =>
-      _sayName(object, withSound: withSound);
+  Future<void> announceObject(SceneObject object) => _sayName(object);
 
   @override
   Future<void> playSystemPhrase(SystemPhrase phrase) {
