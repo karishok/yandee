@@ -138,7 +138,7 @@ const List<ShapePicture> shapePictures = [
     ShapeSlot(ShapeKind.circle, CardBox(72, 96, 156, 156)),
     ShapeSlot(ShapeKind.triangle, CardBox(98, 6, 104, 100)),
     ShapeSlot(ShapeKind.circle, CardBox(123, 156, 54, 54)),
-    ShapeSlot(ShapeKind.heart, CardBox(80, 176, 54, 50)),
-    ShapeSlot(ShapeKind.heart, CardBox(166, 176, 54, 50)),
+    ShapeSlot(ShapeKind.heart, CardBox(72, 184, 54, 50)),
+    ShapeSlot(ShapeKind.heart, CardBox(174, 184, 54, 50)),
   ]),
 ];

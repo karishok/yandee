@@ -351,9 +351,9 @@ final Map<String, PictureArt> _art = {
             '<rect x="244" y="241" width="12" height="12" fill="#ffe39a"/>',
     slots: [
       const SlotArt(ToyColors.yellow,
-          details: '<path d="M58 94 Q66 101 76 94" stroke="#7a5200" stroke-width="4" fill="none" stroke-linecap="round"/>'
-              '<path d="M64 124 Q72 130 80 122" stroke="#7a5200" stroke-width="4" fill="none" stroke-linecap="round"/>'
-              '<circle cx="60" cy="110" r="6" fill="#ff7eb6" opacity=".5"/>'),
+          details: '<path d="M70 94 Q78 101 88 94" stroke="#7a5200" stroke-width="4" fill="none" stroke-linecap="round"/>'
+              '<path d="M76 124 Q84 130 92 122" stroke="#7a5200" stroke-width="4" fill="none" stroke-linecap="round"/>'
+              '<circle cx="72" cy="110" r="6" fill="#ff7eb6" opacity=".5"/>'),
       SlotArt(ToyColors.yellow, details: _starFace(const CardBox(196, 40, 80, 76))),
       SlotArt(ToyColors.yellow, details: _starFace(const CardBox(170, 150, 66, 63))),
     ],

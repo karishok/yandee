@@ -69,7 +69,7 @@ String shapePathData(ShapeKind kind, double width, double height) {
       return 'M0 ${_n(h)}A${_n(w / 2)} ${_n(h)} 0 0 1 ${_n(w)} ${_n(h)}Z';
     case ShapeKind.crescent:
       return 'M${x(62)} ${y(3)}A${x(47)} ${y(47)} 0 1 0 ${x(62)} ${y(97)}'
-          'A${x(52)} ${y(52)} 0 0 1 ${x(62)} ${y(3)}Z';
+          'A${x(72)} ${y(72)} 0 0 1 ${x(62)} ${y(3)}Z';
   }
 }
 
