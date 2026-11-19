@@ -32,6 +32,9 @@ class RestScreen extends StatefulWidget {
 class _RestScreenState extends State<RestScreen> {
   static const _night = Color(0xFF26315E);
 
+  /// True while the gate is open, so a second tap can't stack a second one.
+  bool _gateOpen = false;
+
   @override
   void initState() {
     super.initState();
@@ -39,9 +42,13 @@ class _RestScreenState extends State<RestScreen> {
   }
 
   Future<void> _letParentIn() async {
+    if (_gateOpen) return;
+    _gateOpen = true;
     final navigator = Navigator.of(context);
     final timer = PlayTimerProvider.read(context);
-    if (!await passParentalGate(navigator)) return;
+    final passed = await passParentalGate(navigator);
+    _gateOpen = false;
+    if (!passed) return;
     timer.stop();
     navigator.pop();
   }

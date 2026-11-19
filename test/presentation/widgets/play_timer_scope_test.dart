@@ -71,6 +71,26 @@ void main() {
     expect(h.timer.isRunning, isFalse);
   });
 
+  testWidgets('a second tap on the parents button does not stack a second gate', (tester) async {
+    final h = _Harness();
+    await tester.pumpWidget(h.build());
+    h.timer.start(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+
+    // Two taps before the first frame of the gate's route has been drawn.
+    final onPressed = tester.widget<TextButton>(find.byKey(const ValueKey('rest_parents_button'))).onPressed!;
+    onPressed();
+    onPressed();
+    await tester.pumpAndSettle();
+    expect(find.byType(ParentalGateScreen), findsOneWidget);
+
+    await solveParentalGate(tester);
+    expect(find.byType(ParentalGateScreen), findsNothing);
+    expect(find.byType(RestScreen), findsNothing);
+    expect(find.text('сцена'), findsOneWidget);
+  });
+
   testWidgets('closing the gate leads back to the rest screen', (tester) async {
     final h = _Harness();
     await tester.pumpWidget(h.build());

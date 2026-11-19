@@ -30,6 +30,10 @@ class _SceneListScreenState extends State<SceneListScreen> {
   List<CachedSceneSummary>? _scenes;
   bool _loading = true;
 
+  /// True while the gate (or the parents menu behind it) is open, so a second
+  /// tap on the gear can't stack a second gate.
+  bool _gateOpen = false;
+
   @override
   void initState() {
     super.initState();
@@ -114,9 +118,15 @@ class _SceneListScreenState extends State<SceneListScreen> {
         icon: const Icon(Icons.settings),
         tooltip: 'Для родителей',
         onPressed: () async {
+          if (_gateOpen) return;
+          _gateOpen = true;
           final navigator = Navigator.of(context);
-          if (!await passParentalGate(navigator)) return;
-          await navigator.push(MaterialPageRoute(builder: (_) => const ParentsScreen()));
+          try {
+            if (!await passParentalGate(navigator)) return;
+            await navigator.push(MaterialPageRoute(builder: (_) => const ParentsScreen()));
+          } finally {
+            _gateOpen = false;
+          }
         },
       ),
     );

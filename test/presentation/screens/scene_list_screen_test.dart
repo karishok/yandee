@@ -149,6 +149,46 @@ void main() {
     expect(find.byType(ParentsScreen), findsOneWidget);
   });
 
+  testWidgets('a second tap on the settings button does not stack a second gate', (tester) async {
+    late Directory cacheRoot;
+
+    await tester.runAsync(() async {
+      cacheRoot = await Directory.systemTemp.createTemp('yandee_list_test_double_');
+      await _seedScene(cacheRoot, 'city', 'Город');
+      final repository = ContentRepository(
+        httpClient: MockClient((_) async => throw const SocketException('offline')),
+        baseUrl: Uri.parse('https://example.invalid/v1/'),
+        cacheRootProvider: () async => cacheRoot,
+      );
+
+      await tester.pumpWidget(PlayTimerProvider(
+        timer: PlayTimer(),
+        child: MaterialApp(home: SceneListScreen(contentRepository: repository)),
+      ));
+      await _pumpAndSettleReal(tester);
+    });
+    addTearDown(() => cacheRoot.delete(recursive: true));
+
+    await tester.pump();
+
+    // Two taps before the first frame of the gate's route has been drawn.
+    final onPressed = tester.widget<IconButton>(find.byKey(const ValueKey('settings_button'))).onPressed!;
+    onPressed();
+    onPressed();
+    await tester.pumpAndSettle();
+    expect(find.byType(ParentalGateScreen), findsOneWidget);
+
+    await solveParentalGate(tester);
+    expect(find.byType(ParentalGateScreen), findsNothing);
+    expect(find.byType(ParentsScreen), findsOneWidget);
+
+    // Leaving the parents menu lands on the list, not on a leftover gate.
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byType(ParentalGateScreen), findsNothing);
+    expect(find.byKey(const ValueKey('settings_button')), findsOneWidget);
+  });
+
   testWidgets('shows a retry screen when the cache is empty and offline', (tester) async {
     late Directory cacheRoot;
 
