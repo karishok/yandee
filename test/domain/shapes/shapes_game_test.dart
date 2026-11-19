@@ -161,6 +161,24 @@ void main() {
     });
   });
 
+  group('slotUnder', () {
+    test('finds the smallest free slot under the point, whatever the piece is', () {
+      final game = _game();
+      expect(game.slotUnder(100, 160), 1); // no piece yet: the window
+      expect(game.slotUnder(200, 250), 0);
+      expect(game.slotUnder(295, 295), isNull);
+      final square = _gameWithPiece(ShapeKind.square);
+      expect(square.slotUnder(100, 160), 1); // the window, not the square wall
+      expect(square.slotUnder(160, 160), 0); // no margin: 20 past the window
+    });
+
+    test('filled slots are not found', () {
+      final game = _gameWithPiece(ShapeKind.circle);
+      game.drop(1);
+      expect(game.slotUnder(100, 160), 0);
+    });
+  });
+
   test('the real chain starts with the ice cream', () {
     final game = ShapesGame(random: Random(3));
     expect(game.picture.id, 'ice_cream');

@@ -151,4 +151,18 @@ class ShapesGame {
     pool.sort((a, b) => slots[a].box.area.compareTo(slots[b].box.area));
     return pool.first;
   }
+
+  /// The smallest free slot whose box holds the point, whatever the piece
+  /// on the mat is (or if there is none): what a finger touching the card
+  /// means.
+  int? slotUnder(double x, double y) {
+    final slots = picture.slots;
+    final under = [
+      for (var i = 0; i < slots.length; i++)
+        if (!_filled.contains(i) && slots[i].box.contains(x, y)) i,
+    ];
+    if (under.isEmpty) return null;
+    under.sort((a, b) => slots[a].box.area.compareTo(slots[b].box.area));
+    return under.first;
+  }
 }

@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yandee/audio/shapes_voice.dart';
+import 'package:yandee/domain/shapes/shape_kind.dart';
+import 'package:yandee/presentation/shapes/shape_picture_view.dart';
 import 'package:yandee/domain/shapes/shape_picture.dart';
 import 'package:yandee/domain/shapes/shapes_game.dart';
 import 'package:yandee/presentation/screens/shapes_screen.dart';
@@ -121,6 +123,44 @@ void main() {
     await tester.tapAt(h.slotCenter(other));
     await h.run(const Duration(milliseconds: 300));
     expect(h.voice.said.last, '${h.game.picture.slots[other].kind.word}!');
+  });
+
+  testWidgets('a tap names the place under the finger, not the shape of the piece, and the hint goes out', (tester) async {
+    final house = shapePictures.firstWhere((p) => p.id == 'house');
+    var seed = 0;
+    while (ShapesGame(random: Random(seed), pictures: [house, shapePictures.first]).nextPiece().kind != ShapeKind.square) {
+      seed++;
+    }
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final h = _Harness(tester, FakeShapesVoice());
+    await tester.pumpWidget(MaterialApp(
+      home: ShapesScreen(
+        voiceFactory: () => h.voice,
+        gameFactory: () => h.game = ShapesGame(random: Random(seed), pictures: [house, shapePictures.first]),
+        bundledAssets: () async => const {},
+      ),
+    ));
+    await h.run(const Duration(milliseconds: 600));
+    expect(h.game.pieceKind, ShapeKind.square);
+    await tester.tapAt(h.slotCenter(2));
+    await h.run(const Duration(milliseconds: 300));
+    expect(h.voice.said.last, 'Круг!');
+    ShapePictureView view() => tester.widget(find.byType(ShapePictureView));
+    expect(view().hinting, {2});
+    await h.run(const Duration(milliseconds: 1000));
+    expect(view().hinting, isEmpty);
+  });
+
+  testWidgets('a wrong drop pulses the right places, then they go dim again', (tester) async {
+    final h = await _start(tester);
+    ShapePictureView view() => tester.widget(find.byType(ShapePictureView));
+    await h.dragPieceTo(h.slotCenter(h.wrongSlot));
+    await h.run(const Duration(milliseconds: 1000));
+    expect(view().hinting, isNotEmpty);
+    await h.run(const Duration(milliseconds: 2500));
+    expect(view().hinting, isEmpty);
   });
 
   testWidgets('a finished picture says its name with «Ура!», then the next picture comes', (tester) async {

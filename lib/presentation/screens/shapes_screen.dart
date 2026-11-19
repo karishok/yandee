@@ -117,6 +117,7 @@ class _ShapesScreenState extends State<ShapesScreen> with SingleTickerProviderSt
   ShapeKind? _justMet;
   int _pieceRun = 0;
   int _wiggleRun = 0;
+  int _shakeRun = 0;
   int _confettiRun = 0;
   Rect Function(double t)? _flightPath;
 
@@ -229,12 +230,13 @@ class _ShapesScreenState extends State<ShapesScreen> with SingleTickerProviderSt
       // A tap on an empty place: it lights up and says its shape.
       if (cancelled || (point - touch.start).distance > _tapSlop) return;
       final p = _layout.toCard(point);
-      final slot = _game.slotAt(p.x, p.y);
+      final slot = _game.slotUnder(p.x, p.y);
       if (slot == null) return;
       setState(() {
         _hinting = {slot};
         _hintRun++;
       });
+      _hintOff(900);
       unawaited(_voice.say(ShapePhrases.name(_game.picture.slots[slot].kind)));
       return;
     }
@@ -253,6 +255,15 @@ class _ShapesScreenState extends State<ShapesScreen> with SingleTickerProviderSt
   }
 
   // ----------------------------------------------------------- sequences
+
+  /// Puts the hint out after [milliseconds], unless a newer hint came.
+  void _hintOff(int milliseconds) {
+    final run = _hintRun, session = _session;
+    _pause(milliseconds).then((_) {
+      if (_stale(session) || run != _hintRun || _hinting.isEmpty) return;
+      setState(() => _hinting = const {});
+    });
+  }
 
   Future<void> _fly(Rect to, int milliseconds) async {
     final from = _floating.value ?? _pieceRect!;
@@ -283,6 +294,7 @@ class _ShapesScreenState extends State<ShapesScreen> with SingleTickerProviderSt
     final result = _game.drop(slot);
 
     if (!result.accepted) {
+      setState(() => _shakeRun++);
       _voice.playSfx(ShapesSfx.wrong);
       final speech = _voice.say(ShapePhrases.notHereLine);
       await _heardOut(speech, milliseconds: 2500);
@@ -295,6 +307,7 @@ class _ShapesScreenState extends State<ShapesScreen> with SingleTickerProviderSt
         };
         _hintRun++;
       });
+      _hintOff(1800);
       await _fly(_pieceRect!, 320);
       if (_stale(session)) return;
       _floating.value = null;
@@ -409,7 +422,18 @@ class _ShapesScreenState extends State<ShapesScreen> with SingleTickerProviderSt
                           ? const Positioned(left: 0, top: 0, child: SizedBox.shrink())
                           : Positioned.fromRect(
                               rect: floating,
-                              child: IgnorePointer(child: SvgPicture.string(pieceSvg(picture, pieceSlot))),
+                              child: IgnorePointer(
+                                child: TweenAnimationBuilder<double>(
+                                  key: ValueKey('shake_$_shakeRun'),
+                                  tween: Tween(begin: _shakeRun == 0 ? 1 : 0, end: 1),
+                                  duration: const Duration(milliseconds: 380),
+                                  builder: (context, t, child) => FractionalTranslation(
+                                    translation: Offset(math.sin(t * 4 * math.pi) * .08 * (1 - t), 0),
+                                    child: child,
+                                  ),
+                                  child: SvgPicture.string(pieceSvg(picture, pieceSlot)),
+                                ),
+                              ),
                             ),
                     ),
                   if (_confettiRun > 0)
