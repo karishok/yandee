@@ -60,7 +60,6 @@ edited clip stays under the same license. CC0 needs no credit.
 | `kitchen/kettle_sound.wav` | kitchen | itinerantmonk108 | CC0 | [Electric tea kettle](https://freesound.org/people/itinerantmonk108/sounds/681638/) |
 | `kitchen/cup_sound.wav` | kitchen | cupido-1 | CC0 | [stir tea in cup.wav](https://freesound.org/people/cupido-1/sounds/433539/) |
 | `kitchen/pot_sound.wav` | kitchen | vicoughetto | CC BY 4.0 | [Lid_IronPan.mp3](https://freesound.org/people/vicoughetto/sounds/457468/) |
-| `playground/ball_sound.wav` | playground | Uzbazur | CC0 | [Plastic Bouncing Ball.wav](https://freesound.org/people/Uzbazur/sounds/329684/) |
 | `playground/swing_sound.wav` | playground | bajko | CC0 | [sfx_swing_hojdacka.wav](https://freesound.org/people/bajko/sounds/387896/) |
 | `sea/sea_sound.wav` | sea | metaepitome | CC0 | [Sea Wave.wav](https://freesound.org/people/metaepitome/sounds/164911/) |
 | `farm/pond_sound.wav` | farm | swordofkings128 | CC0 | [Splash](https://freesound.org/people/swordofkings128/sounds/398032/) |
@@ -75,4 +74,4 @@ The uploaders of the horse, goat and elephant say nothing about how the
 recording was made; their CC0 license is as declared on Freesound.
 
 No usable recording found: hare, giraffe, teddy bear (no recording of a toy
-growler). The scooter and the carousel are name-only by choice.
+growler). The scooter, the carousel and the ball are name-only by choice.

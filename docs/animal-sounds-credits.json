@@ -379,16 +379,6 @@
   "artist": "vicoughetto",
   "seconds": 0.9
  },
- "ball": {
-  "scene": "playground",
-  "title": "Plastic Bouncing Ball.wav",
-  "url": "https://cdn.freesound.org/previews/329/329684_2812020-hq.mp3",
-  "page": "https://freesound.org/people/Uzbazur/sounds/329684/",
-  "license": "CC0",
-  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
-  "artist": "Uzbazur",
-  "seconds": 1.46
- },
  "swing": {
   "scene": "playground",
   "title": "sfx_swing_hojdacka.wav",

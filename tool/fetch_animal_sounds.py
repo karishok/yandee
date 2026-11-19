@@ -65,7 +65,6 @@ CHOICES = {
     "toy_car":  ("toys",     "afterguard/39911"),
     "cup":      ("kitchen",  "cupido-1/433539"),
     "pot":      ("kitchen",  "vicoughetto/457468"),
-    "ball":     ("playground", "Uzbazur/329684"),
     "swing":    ("playground", "bajko/387896"),
     # places: one sea clip serves every piece of the sea (sea_1 … sea_5)
     "sea":      ("sea",      "metaepitome/164911"),
