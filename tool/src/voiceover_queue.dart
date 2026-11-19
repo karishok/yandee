@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'monsters_parts.dart';
 import 'scene_vocabulary.dart';
+import 'shapes_parts.dart';
 import 'voiceover_tasks.dart';
 
 /// Placeholder WAVs written by `generate_placeholder_assets.dart` are
@@ -69,6 +70,39 @@ bool _matchesMonstersFilter(VoiceoverTask task, String filter) {
   return part.clips.any((clip) => task.outputPath == '$monstersVoiceoverDir${clip.id}.wav');
 }
 
+/// The filter value that selects every phrase of the "Фигурки" game.
+const shapesFilter = 'shapes';
+
+final List<ShapesPart> _shapesParts = buildShapesParts();
+
+/// Every filter value that selects "Фигурки" phrases: the whole set, then
+/// each part (`shapes-1` … `shapes-3`).
+final List<String> shapesFilters = [shapesFilter, for (final part in _shapesParts) part.filter];
+
+/// True if [filter] is about the "Фигурки" game at all.
+bool isShapesFilter(String? filter) => filter != null && shapesFilters.contains(filter);
+
+/// True if [filter] selects the phrases of one of the games rather than a
+/// scene's words — they are levelled and split like sentences.
+bool isGamePhrasesFilter(String? filter) => isMonstersFilter(filter) || isShapesFilter(filter);
+
+/// The silence that separates two phrases in a recording of the game part
+/// [filter] selects (see [monstersPhraseGapMsFor]).
+double gamePhraseGapMsFor(String filter) {
+  if (isMonstersFilter(filter)) return monstersPhraseGapMsFor(filter);
+  final clips = filter == shapesFilter
+      ? _shapesParts.expand((part) => part.clips)
+      : _shapesParts.firstWhere((part) => part.filter == filter).clips;
+  return clips.any((clip) => _hasInnerPause(clip.text)) ? monstersPhraseGapMs : monstersShortPhraseGapMs;
+}
+
+bool _matchesShapesFilter(VoiceoverTask task, String filter) {
+  if (!task.outputPath.startsWith(shapesVoiceoverDir)) return false;
+  if (filter == shapesFilter) return true;
+  final part = _shapesParts.firstWhere((part) => part.filter == filter);
+  return part.clips.any((clip) => task.outputPath == '$shapesVoiceoverDir${clip.id}.wav');
+}
+
 /// True if [task] belongs to the requested recording session. `null`
 /// matches everything; `'system'` matches only the 4 system phrases;
 /// `'monsters'` and its parts `'monsters-1'`… match the "Монстрики" game's
@@ -77,6 +111,7 @@ bool taskMatchesFilter(VoiceoverTask task, String? sceneFilter) {
   if (sceneFilter == null) return true;
   if (sceneFilter == 'system') return task.outputPath.startsWith('assets/audio/system/');
   if (isMonstersFilter(sceneFilter)) return _matchesMonstersFilter(task, sceneFilter);
+  if (isShapesFilter(sceneFilter)) return _matchesShapesFilter(task, sceneFilter);
   return task.outputPath.startsWith('assets/demo_content/$sceneFilter/');
 }
 
@@ -85,7 +120,7 @@ bool taskMatchesFilter(VoiceoverTask task, String? sceneFilter) {
 /// a real scene id. Guards against a typo'd/mis-cased scene filter silently
 /// matching nothing and being reported as "already fully recorded".
 bool isValidSceneFilter(String? filter) {
-  if (filter == null || filter == 'system' || isMonstersFilter(filter)) return true;
+  if (filter == null || filter == 'system' || isGamePhrasesFilter(filter)) return true;
   return scenes.any((s) => s.id == filter);
 }
 

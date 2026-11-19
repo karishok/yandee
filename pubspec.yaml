@@ -33,6 +33,7 @@ flutter:
     # computer voice used until a phrase has been recorded.
     - assets/audio/monsters/
     - assets/audio/monsters_tts/
+    - assets/audio/shapes/
     - assets/demo_content/home/
     - assets/demo_content/kitchen/
     - assets/demo_content/farm/

@@ -1,5 +1,6 @@
 import 'monsters_parts.dart';
 import 'scene_vocabulary.dart';
+import 'shapes_parts.dart';
 
 /// One word or phrase to synthesize, and where the resulting WAV belongs —
 /// the exact same relative path `scene.json` (for objects) or
@@ -35,9 +36,20 @@ List<VoiceoverTask> buildMonstersVoiceoverTasks() => [
           VoiceoverTask(text: clip.text, outputPath: '$monstersVoiceoverDir${clip.id}.wav'),
     ];
 
+/// Where the phrases of the "Фигурки" game are recorded to — the folder
+/// `ShapesVoicePlayer` plays from.
+const shapesVoiceoverDir = 'assets/audio/shapes/';
+
+/// One task per phrase of the "Фигурки" game, in recording order.
+List<VoiceoverTask> buildShapesVoiceoverTasks() => [
+      for (final part in buildShapesParts())
+        for (final clip in part.clips)
+          VoiceoverTask(text: clip.text, outputPath: '$shapesVoiceoverDir${clip.id}.wav'),
+    ];
+
 /// The full list of voiceover tasks: the system phrases, then every scene
 /// object's name, in scene/object declaration order, then the phrases of
-/// the "Монстрики" game.
+/// the "Монстрики" and "Фигурки" games.
 List<VoiceoverTask> buildVoiceoverTasks() {
   final tasks = <VoiceoverTask>[..._systemPhrases];
   for (final scene in scenes) {
@@ -48,6 +60,8 @@ List<VoiceoverTask> buildVoiceoverTasks() {
       ));
     }
   }
-  tasks.addAll(buildMonstersVoiceoverTasks());
+  tasks
+    ..addAll(buildMonstersVoiceoverTasks())
+    ..addAll(buildShapesVoiceoverTasks());
   return tasks;
 }

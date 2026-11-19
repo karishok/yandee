@@ -222,8 +222,8 @@ tree, train, fish, rocket, bear, boat, kite, night_sky, clown`.
 как `monsters-<N>`: те же правила пауз, шумоподавление и выравнивание
 громкости; результат — `assets/audio/shapes/<id>.wav`. Документ для
 записи `docs/shapes_phrases.md` генерируется из кода (как
-`docs/monsters_phrases.md`). Временный голос — `assets/audio/shapes_tts/`
-из `say -v Milena`, тем же способом, что `generate_monster_tts.dart`.
+`docs/monsters_phrases.md`). Все 27 фраз записаны сразу (три дубля из Logic), поэтому временного
+компьютерного голоса у «Фигурок» нет.
 Реплика звучит живым голосом, только если записаны все её части.
 
 ### 6.3. Правило очереди
