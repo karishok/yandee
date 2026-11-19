@@ -9,8 +9,9 @@ import '../../domain/monsters/monster_color.dart';
 import '../../domain/monsters/monster_food.dart';
 import '../monsters/monster_art.dart';
 import 'monsters_screen.dart';
+import 'parental_gate_screen.dart';
+import 'parents_screen.dart';
 import 'scene_screen.dart';
-import 'settings_screen.dart';
 
 class SceneListScreen extends StatefulWidget {
   const SceneListScreen({super.key, required this.contentRepository, this.monstersScreenBuilder});
@@ -111,10 +112,12 @@ class _SceneListScreenState extends State<SceneListScreen> {
       child: IconButton(
         key: const ValueKey('settings_button'),
         icon: const Icon(Icons.settings),
-        tooltip: 'Настройки',
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const SettingsScreen()),
-        ),
+        tooltip: 'Для родителей',
+        onPressed: () async {
+          final navigator = Navigator.of(context);
+          if (!await passParentalGate(navigator)) return;
+          await navigator.push(MaterialPageRoute(builder: (_) => const ParentsScreen()));
+        },
       ),
     );
   }
