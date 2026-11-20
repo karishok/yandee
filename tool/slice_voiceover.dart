@@ -10,13 +10,14 @@ import 'src/wav_io.dart';
 
 /// Slices a single Logic Pro bounce — one scene's (or `system`'s) words, or
 /// one part of the "Монстрики" game's phrases (`monsters-1` … `monsters-10`,
-/// see docs/monsters_phrases.md), said in order with a pause between each — into
+/// see docs/monsters_phrases.md) or one part of the "Фигурки" phrases (`shapes-1` …
+/// `shapes-3`, see docs/shapes_phrases.md), said in order with a pause between each — into
 /// per-word `assets/*.wav`
 /// files, replacing the mic-capture path in `record_voiceover.dart` for
 /// people who'd rather record in a proper DAW than through
 /// `ffmpeg -f avfoundation`.
 ///
-/// Usage: `dart run tool/slice_voiceover.dart <scene-id|system|parents|monsters…> <path/to/bounce.wav>`
+/// Usage: `dart run tool/slice_voiceover.dart <scene-id|system|parents|monsters…|shapes…> <path/to/bounce.wav>`
 Future<void> main(List<String> args) async {
   if (!File('pubspec.yaml').existsSync()) {
     stderr.writeln('Запусти из корня репозитория.');
@@ -25,7 +26,7 @@ Future<void> main(List<String> args) async {
   }
 
   if (args.length != 2) {
-    stderr.writeln('Использование: dart run tool/slice_voiceover.dart <scene-id|system|parents|monsters…> <path/to/bounce.wav>');
+    stderr.writeln('Использование: dart run tool/slice_voiceover.dart <scene-id|system|parents|monsters…|shapes…> <path/to/bounce.wav>');
     exitCode = 1;
     return;
   }
@@ -34,7 +35,7 @@ Future<void> main(List<String> args) async {
   final bouncePath = args[1];
 
   if (!isValidSceneFilter(sceneFilter)) {
-    final validValues = [...scenes.map((s) => s.id), 'system', 'parents', ...monstersFilters];
+    final validValues = [...scenes.map((s) => s.id), 'system', 'parents', ...monstersFilters, ...shapesFilters];
     stderr.writeln('Неизвестный фильтр сцены: "$sceneFilter".');
     stderr.writeln('Допустимые значения: ${validValues.join(', ')}.');
     exitCode = 1;
@@ -84,8 +85,8 @@ Future<void> main(List<String> args) async {
   // sentences with pauses of their own («Спасибо! Пока-пока!»); in a part
   // that has such phrases a gap only counts as "between phrases" once it
   // is close to a second.
-  final segments = isMonstersFilter(sceneFilter)
-      ? splitOnSilence(audio.samples, audio.sampleRate, minSilenceMs: monstersPhraseGapMsFor(sceneFilter))
+  final segments = isGamePhrasesFilter(sceneFilter)
+      ? splitOnSilence(audio.samples, audio.sampleRate, minSilenceMs: gamePhraseGapMsFor(sceneFilter))
       : splitOnSilence(audio.samples, audio.sampleRate);
 
   if (segments.length != tasks.length) {
@@ -142,7 +143,7 @@ Future<void> main(List<String> args) async {
     // The game's phrases are joined back to back («Ням!» + «Красная
     // клубника»), so a part bounced quieter than another is heard at once;
     // every phrase is brought to the same level.
-    if (isMonstersFilter(sceneFilter)) cleaned = normalizeLoudness(cleaned, audio.sampleRate);
+    if (isGamePhrasesFilter(sceneFilter)) cleaned = normalizeLoudness(cleaned, audio.sampleRate);
 
     final outputFile = File(task.outputPath);
     await outputFile.parent.create(recursive: true);

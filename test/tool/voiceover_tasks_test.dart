@@ -42,10 +42,11 @@ void main() {
     expect(buildMonstersVoiceoverTasks(), hasLength(71));
   });
 
-  test('produces exactly 187 tasks with no duplicate output paths', () {
-    // 116 for the scenes, system and parents phrases, 71 for the "Монстрики" game.
+  test('produces exactly 214 tasks with no duplicate output paths', () {
+    // 116 for the scenes, system and parents phrases, 71 for the "Монстрики"
+    // game, 27 for the "Фигурки" game.
     final tasks = buildVoiceoverTasks();
-    expect(tasks.length, 187);
-    expect(tasks.map((t) => t.outputPath).toSet().length, 187);
+    expect(tasks.length, 214);
+    expect(tasks.map((t) => t.outputPath).toSet().length, 214);
   });
 }

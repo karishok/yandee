@@ -23,7 +23,7 @@ class FakeMonsterVoice implements MonsterVoice {
   }
 
   @override
-  Future<void> say(MonsterLine line) async {
+  Future<void> say(VoiceLine line) async {
     said.add(line.text);
     final held = _held;
     if (held != null) await held.future;

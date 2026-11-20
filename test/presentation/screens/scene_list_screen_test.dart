@@ -242,6 +242,9 @@ void main() {
     // diagnosed for image decode, here via the push transition instead). A
     // single bounded pump is enough to let the finite push transition
     // complete.
+    // Two game cards come first, so the first scene sits in the second row.
+    await tester.ensureVisible(find.byKey(const ValueKey('scene_card_city')));
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('scene_card_city')));
     // A bare pump() first lets Navigator actually insert the pushed route
     // (tap()'s Navigator.push happens synchronously, but without a frame in
@@ -280,17 +283,53 @@ void main() {
     final card = find.byKey(const ValueKey('monsters_card'));
     expect(card, findsOneWidget);
     expect(find.descendant(of: card, matching: find.text('Монстрики')), findsOneWidget);
-    // A card like any scene's: same size, same row, in front of the first scene.
+    // A card like any scene's: same size, first in the grid, in front of
+    // the other game card (same row) and of the first scene.
     final firstScene = find.byKey(const ValueKey('scene_card_city'));
+    final shapes = find.byKey(const ValueKey('shapes_game_card'));
     expect(tester.getSize(card), tester.getSize(firstScene));
-    expect(tester.getTopLeft(card).dy, tester.getTopLeft(firstScene).dy);
-    expect(tester.getTopLeft(card).dx, lessThan(tester.getTopLeft(firstScene).dx));
+    expect(tester.getTopLeft(card).dy, tester.getTopLeft(shapes).dy);
+    expect(tester.getTopLeft(card).dx, lessThan(tester.getTopLeft(shapes).dx));
+    expect(tester.getTopLeft(card).dy, lessThan(tester.getTopLeft(firstScene).dy));
 
     await tester.tap(card);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('игра открыта'), findsOneWidget);
+  });
+
+  testWidgets('shows the "Фигурки" game right after "Монстрики", and it opens the game', (tester) async {
+    late Directory cacheRoot;
+
+    await tester.runAsync(() async {
+      cacheRoot = await Directory.systemTemp.createTemp('yandee_list_test_');
+      await _seedScene(cacheRoot, 'city', 'Город');
+      final repository = ContentRepository(
+        httpClient: MockClient((_) async => throw const SocketException('offline')),
+        baseUrl: Uri.parse('https://example.invalid/v1/'),
+        cacheRootProvider: () async => cacheRoot,
+      );
+
+      await tester.pumpWidget(MaterialApp(
+        home: SceneListScreen(
+          contentRepository: repository,
+          shapesScreenBuilder: (_) => const Scaffold(body: Text('фигурки открыты')),
+        ),
+      ));
+      await _pumpAndSettleReal(tester);
+    });
+    addTearDown(() => cacheRoot.delete(recursive: true));
+    await tester.pump();
+
+    final cards = find.descendant(of: find.byType(GridView), matching: find.byType(GestureDetector));
+    expect((tester.widget(cards.at(1)) as GestureDetector).key, const ValueKey('shapes_game_card'));
+    expect(find.text('Фигурки'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('shapes_game_card')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('фигурки открыты'), findsOneWidget);
   });
 
   testWidgets('shows a placeholder instead of the default red error box for a corrupt thumbnail', (tester) async {

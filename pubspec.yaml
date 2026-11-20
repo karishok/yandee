@@ -36,6 +36,8 @@ flutter:
     - assets/audio/monsters_tts/
     # "Монстрики" pictures, made by tool/prepare_monster_art.py.
     - assets/monsters/
+    - assets/audio/shapes/
+    - assets/shapes/backgrounds/
     - assets/demo_content/home/
     - assets/demo_content/kitchen/
     - assets/demo_content/farm/
