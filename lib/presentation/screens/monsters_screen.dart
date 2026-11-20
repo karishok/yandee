@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../audio/monster_voice.dart';
 import '../../audio/monster_voice_player.dart';
@@ -13,10 +13,13 @@ import '../../domain/monsters/monsters_game.dart';
 import '../monsters/monster_art.dart';
 import '../monsters/monster_figure.dart';
 
-const _sky = Color(0xFFD9EFFF);
-const _skyDeep = Color(0xFFB5DCFB);
-const _ink = Color(0xFF23324A);
-const _paper = Colors.white;
+// Warm paper colours, like the scenes and the site.
+const _paper = Color(0xFFFFF8F0);
+const _card = Color(0xFFFFF0E1);
+const _ink = Color(0xFF2B211A);
+const _stitch = Color(0xFFDCC2A2);
+const _outline = Color(0xFF6B4A2E);
+const _shadow = Color(0x24543410);
 
 /// The "Монстрики" colour game: four monsters, a tray of four treats, and
 /// each monster eats only treats of its own colour.
@@ -117,6 +120,10 @@ class _Layout {
     final side = math.max(0.0, math.min(math.min(tray.width * .22, 92.0), tray.height - 12));
     return Rect.fromCenter(center: slotColumn(slot).center, width: side, height: side);
   }
+
+  /// Where the tray picture is drawn: the lower 70% of the tray, as in the
+  /// prototype, so the treats stand on its bottom board.
+  Rect get trayPicture => Rect.fromLTWH(tray.left, tray.top + tray.height * .24, tray.width, tray.height * .7);
 
   int? seatAt(Offset point) {
     for (var seat = 0; seat < MonstersGame.seatCount; seat++) {
@@ -584,104 +591,108 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: _sky,
-        body: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final layout = _layout = _Layout(constraints.biggest);
-              final monsters = _game.monsters;
-              final tray = _game.tray;
-              return Listener(
-                behavior: HitTestBehavior.opaque,
-                onPointerDown: _onPointerDown,
-                onPointerMove: _onPointerMove,
-                onPointerUp: _onPointerUp,
-                onPointerCancel: _onPointerCancel,
-                // Everything in the stack is placed by hand, so it has to
-                // be told to fill the screen rather than shrink to nothing.
-                child: Stack(
-                  fit: StackFit.expand,
-                  clipBehavior: Clip.none,
-                  children: [
-                    Positioned.fromRect(rect: layout.bar, child: _buildBar()),
-                    for (var seat = 0; seat < MonstersGame.seatCount; seat++)
-                      Positioned.fromRect(
-                        key: ValueKey('monster_seat_$seat'),
-                        rect: layout.figure(seat),
-                        child: Semantics(
-                          label: '${_capitalized(monsters[seat].masculine)} монстрик',
-                          child: MonsterFigure(
-                            key: _figures[seat],
-                            color: monsters[seat],
-                            mouth: _mouthOf(seat),
-                            lookDirection: _lookDirection(seat),
-                            growth: _growth[seat],
-                          ),
-                        ),
-                      ),
-                    Positioned.fromRect(
-                      rect: layout.tray,
-                      child: const DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: _skyDeep,
-                          borderRadius: BorderRadius.all(Radius.circular(28)),
-                        ),
-                        // The darker rim along the bottom edge of the tray.
-                        child: Padding(
-                          padding: EdgeInsets.only(bottom: 6),
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: _paper,
-                              borderRadius: BorderRadius.all(Radius.circular(28)),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    for (var slot = 0; slot < MonstersGame.traySize; slot++)
-                      Positioned.fromRect(
-                        key: ValueKey('monster_tray_slot_$slot'),
-                        rect: layout.slot(slot),
-                        child: tray[slot] == null
-                            ? const SizedBox.shrink()
-                            : _TrayFood(
-                                food: tray[slot]!,
-                                version: _slotVersions[slot],
-                                selected: _selectedSlot == slot,
-                                hidden: _hiddenSlots.contains(slot),
-                              ),
-                      ),
-                    ValueListenableBuilder<_Floating?>(
-                      valueListenable: _floating,
-                      builder: (context, floating, _) {
-                        if (floating == null) return const Positioned(left: 0, top: 0, child: SizedBox.shrink());
-                        return Positioned.fromRect(
-                          rect: Rect.fromCenter(
-                            center: floating.center,
-                            width: _floatingSide,
-                            height: _floatingSide,
-                          ),
-                          child: IgnorePointer(
-                            child: Transform.rotate(
-                              angle: floating.turns * 2 * math.pi,
-                              child: Transform.scale(
-                                scale: floating.scale,
-                                child: SvgPicture.string(foodSvg(floating.food)),
+        backgroundColor: _paper,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // The kitchen fills the whole screen, under the system bars too;
+            // pinned to the bottom so the tray stands on the table.
+            const Image(
+              key: ValueKey('monsters_background'),
+              image: AssetImage(monstersBackgroundAsset),
+              fit: BoxFit.cover,
+              alignment: Alignment.bottomCenter,
+              excludeFromSemantics: true,
+            ),
+            SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final layout = _layout = _Layout(constraints.biggest);
+                  final monsters = _game.monsters;
+                  final tray = _game.tray;
+                  return Listener(
+                    behavior: HitTestBehavior.opaque,
+                    onPointerDown: _onPointerDown,
+                    onPointerMove: _onPointerMove,
+                    onPointerUp: _onPointerUp,
+                    onPointerCancel: _onPointerCancel,
+                    // Everything in the stack is placed by hand, so it has to
+                    // be told to fill the screen rather than shrink to nothing.
+                    child: Stack(
+                      fit: StackFit.expand,
+                      clipBehavior: Clip.none,
+                      children: [
+                        Positioned.fromRect(rect: layout.bar, child: _buildBar()),
+                        for (var seat = 0; seat < MonstersGame.seatCount; seat++)
+                          Positioned.fromRect(
+                            key: ValueKey('monster_seat_$seat'),
+                            rect: layout.figure(seat),
+                            child: Semantics(
+                              label: '${_capitalized(monsters[seat].masculine)} монстрик',
+                              child: MonsterFigure(
+                                key: _figures[seat],
+                                color: monsters[seat],
+                                mouth: _mouthOf(seat),
+                                lookDirection: _lookDirection(seat),
+                                growth: _growth[seat],
                               ),
                             ),
                           ),
-                        );
-                      },
+                        Positioned.fromRect(
+                          rect: layout.trayPicture,
+                          child: const Image(
+                            key: ValueKey('monsters_tray_picture'),
+                            image: AssetImage(monstersTrayAsset),
+                            fit: BoxFit.fill,
+                            excludeFromSemantics: true,
+                          ),
+                        ),
+                        for (var slot = 0; slot < MonstersGame.traySize; slot++)
+                          Positioned.fromRect(
+                            key: ValueKey('monster_tray_slot_$slot'),
+                            rect: layout.slot(slot),
+                            child: tray[slot] == null
+                                ? const SizedBox.shrink()
+                                : _TrayFood(
+                                    food: tray[slot]!,
+                                    version: _slotVersions[slot],
+                                    selected: _selectedSlot == slot,
+                                    hidden: _hiddenSlots.contains(slot),
+                                  ),
+                          ),
+                        ValueListenableBuilder<_Floating?>(
+                          valueListenable: _floating,
+                          builder: (context, floating, _) {
+                            if (floating == null) return const Positioned(left: 0, top: 0, child: SizedBox.shrink());
+                            return Positioned.fromRect(
+                              rect: Rect.fromCenter(
+                                center: floating.center,
+                                width: _floatingSide,
+                                height: _floatingSide,
+                              ),
+                              child: IgnorePointer(
+                                child: Transform.rotate(
+                                  angle: floating.turns * 2 * math.pi,
+                                  child: Transform.scale(
+                                    scale: floating.scale,
+                                    child: _FoodPicture(floating.food, lifted: true),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        if (_confettiRun > 0)
+                          Positioned.fill(
+                            child: IgnorePointer(child: _Confetti(key: ValueKey(_confettiRun))),
+                          ),
+                      ],
                     ),
-                    if (_confettiRun > 0)
-                      Positioned.fill(
-                        child: IgnorePointer(child: _Confetti(key: ValueKey(_confettiRun))),
-                      ),
-                  ],
-                ),
-              );
-            },
-          ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -747,9 +758,9 @@ class _RoundButton extends StatelessWidget {
         width: 56,
         height: 56,
         decoration: const BoxDecoration(
-          color: _paper,
+          color: _card,
           shape: BoxShape.circle,
-          boxShadow: [BoxShadow(color: _skyDeep, offset: Offset(0, 4))],
+          boxShadow: [BoxShadow(color: _shadow, blurRadius: 16, offset: Offset(0, 6))],
         ),
         child: Material(
           color: Colors.transparent,
@@ -777,21 +788,21 @@ class _MetDot extends StatelessWidget {
     final BoxDecoration decoration;
     if (justMet) {
       decoration = BoxDecoration(
-        color: monsterFill(color),
+        color: monsterPaint(color),
         shape: BoxShape.circle,
+        border: Border.all(color: _outline, width: 1.5),
         boxShadow: const [BoxShadow(color: _paper, spreadRadius: 3)],
       );
     } else if (met) {
       decoration = BoxDecoration(
-        color: monsterFill(color),
+        color: monsterPaint(color),
         shape: BoxShape.circle,
-        border: Border.all(color: const Color(0x2E000000), width: 1.5),
+        border: Border.all(color: _outline, width: 1.5),
       );
     } else {
       decoration = BoxDecoration(
-        color: _paper,
         shape: BoxShape.circle,
-        border: Border.all(color: _skyDeep, width: 3),
+        border: Border.all(color: _stitch, width: 2),
       );
     }
     return AnimatedScale(
@@ -869,7 +880,7 @@ class _TrayFoodState extends State<_TrayFood> with SingleTickerProviderStateMixi
               duration: const Duration(milliseconds: 350),
               curve: Curves.ease,
               builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
-              child: SvgPicture.string(foodSvg(widget.food)),
+              child: _FoodPicture(widget.food),
             ),
           ),
         ),
@@ -890,7 +901,7 @@ class _Confetti extends StatefulWidget {
 class _ConfettiPiece {
   _ConfettiPiece(math.Random random, int index)
       : left = random.nextDouble(),
-        color = monsterFill(MonsterColor.values[index % MonsterColor.values.length]),
+        color = monsterPaint(MonsterColor.values[index % MonsterColor.values.length]),
         seconds = 1.6 + random.nextDouble() * 1.4,
         delay = random.nextDouble() * .5;
 
@@ -956,6 +967,43 @@ class _ConfettiState extends State<_Confetti> with SingleTickerProviderStateMixi
           },
         );
       },
+    );
+  }
+}
+
+/// A treat's picture with a soft warm shadow under it; a [lifted] treat
+/// (under a finger or flying) casts a bigger one, further down.
+class _FoodPicture extends StatelessWidget {
+  const _FoodPicture(this.food, {this.lifted = false});
+
+  final MonsterFood food;
+  final bool lifted;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget picture() => Image.asset(
+          foodAsset(food),
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.medium,
+          excludeFromSemantics: true,
+        );
+    final blur = lifted ? 5.0 : 2.5;
+    return Stack(
+      fit: StackFit.expand,
+      clipBehavior: Clip.none,
+      children: [
+        Transform.translate(
+          offset: Offset(0, lifted ? 14 : 5),
+          child: ImageFiltered(
+            imageFilter: ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+            child: ColorFiltered(
+              colorFilter: ColorFilter.mode(Color(lifted ? 0x47543410 : 0x38543410), BlendMode.srcIn),
+              child: picture(),
+            ),
+          ),
+        ),
+        picture(),
+      ],
     );
   }
 }

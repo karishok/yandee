@@ -6,9 +6,11 @@ import 'package:yandee/audio/monster_voice.dart';
 import 'package:yandee/domain/monsters/monster_color.dart';
 import 'package:yandee/domain/monsters/monster_phrases.dart';
 import 'package:yandee/domain/monsters/monsters_game.dart';
+import 'package:yandee/presentation/monsters/monster_art.dart';
 import 'package:yandee/presentation/monsters/monster_figure.dart';
 import 'package:yandee/presentation/screens/monsters_screen.dart';
 
+import '../../support/asset_image_finder.dart';
 import '../../support/fake_monster_voice.dart';
 
 /// The game on screen, with handles on what a test needs to poke and check.
@@ -578,5 +580,41 @@ void main() {
 
     expect(h.voice.disposeCalled, isTrue);
     // The test framework fails this test if a timer is still pending.
+  });
+
+  testWidgets('the game stands in a painted kitchen, with a wooden tray', (tester) async {
+    await _startGame(tester);
+    expect(findAssetImage(monstersBackgroundAsset), findsOneWidget);
+    expect(findAssetImage(monstersTrayAsset), findsOneWidget);
+  });
+
+  testWidgets('each treat in the tray is the picture of that treat', (tester) async {
+    final h = await _startGame(tester);
+    for (var slot = 0; slot < MonstersGame.traySize; slot++) {
+      final picture = find.descendant(
+        of: find.byKey(ValueKey('monster_tray_slot_$slot')),
+        matching: findAssetImage(foodAsset(h.game.tray[slot]!)),
+      );
+      expect(picture, findsWidgets, reason: 'slot $slot');
+    }
+  });
+
+  testWidgets('met colours are dots of the monster paint, the others empty rings', (tester) async {
+    final h = await _startGame(tester);
+    BoxDecoration dot(MonsterColor color) => tester
+        .widget<Container>(find.descendant(
+          of: find.byKey(ValueKey('monsters_met_${color.name}')),
+          matching: find.byType(Container),
+        ))
+        .decoration! as BoxDecoration;
+
+    for (final color in MonsterColor.values) {
+      if (h.game.metColors.contains(color)) {
+        expect(dot(color).color, monsterPaint(color), reason: color.name);
+      } else {
+        expect(dot(color).color, isNull, reason: color.name);
+        expect((dot(color).border! as Border).top.color, const Color(0xFFDCC2A2), reason: color.name);
+      }
+    }
   });
 }
