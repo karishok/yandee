@@ -6,9 +6,11 @@ import 'package:yandee/audio/monster_voice.dart';
 import 'package:yandee/domain/monsters/monster_color.dart';
 import 'package:yandee/domain/monsters/monster_phrases.dart';
 import 'package:yandee/domain/monsters/monsters_game.dart';
+import 'package:yandee/presentation/monsters/monster_art.dart';
 import 'package:yandee/presentation/monsters/monster_figure.dart';
 import 'package:yandee/presentation/screens/monsters_screen.dart';
 
+import '../../support/asset_image_finder.dart';
 import '../../support/fake_monster_voice.dart';
 
 /// The game on screen, with handles on what a test needs to poke and check.
@@ -252,7 +254,7 @@ void main() {
     }
   });
 
-  testWidgets('after a refusal, the next turn waits until «Фу! … — …му!» has been said', (tester) async {
+  testWidgets('after a refusal the child goes on at once: the next touch cuts «Фу! …» short', (tester) async {
     final h = await _startGame(tester);
     final wrongSlot = h.slotFor(1);
     final food = h.game.tray[wrongSlot]!;
@@ -261,23 +263,43 @@ void main() {
     h.voice.holdSpeech(); // the refusal that follows keeps sounding
     await tester.tapAt(h.seatCenter(0));
     await tester.pump();
-    await h.run(const Duration(seconds: 2));
+    // The treat flies to the mouth and back to the tray (about a second).
+    await h.run(const Duration(milliseconds: 1200));
 
     expect(h.voice.said.last, 'Фу! ${MonsterPhrases.foodName(food).text} — ${food.color.dative}!');
     expect(h.figure(0).mouth, MonsterMouth.yuck, reason: 'still grimacing while it speaks');
 
-    // Picking up another treat now does nothing: the voice is not done.
+    // The treat is back, so the next one can be picked up right away: the
+    // refusal stops, the grimace goes, and the new treat is named at once —
+    // the voice never lags behind what is on screen.
     final saidSoFar = h.voice.said.length;
-    await tester.tapAt(h.slotCenter(h.slotFor(2)));
+    final stopsSoFar = h.voice.stopCalls;
+    final nextSlot = h.slotFor(2);
+    await tester.tapAt(h.slotCenter(nextSlot));
     await tester.pump();
-    expect(h.voice.said, hasLength(saidSoFar));
+    expect(h.voice.stopCalls, stopsSoFar + 1);
+    expect(h.voice.said, hasLength(saidSoFar + 1));
+    expect(h.voice.said.last, MonsterPhrases.foodName(h.game.tray[nextSlot]!).text);
+    expect(h.figure(0).mouth, isNot(MonsterMouth.yuck));
+
+    // The refusal ending later changes nothing.
+    h.voice.finishSpeaking();
+    await h.run(const Duration(milliseconds: 300));
+    expect(h.figure(0).mouth, MonsterMouth.open, reason: 'the new treat is in hand');
+  });
+
+  testWidgets('a refusal said to its end lets the grimace go by itself', (tester) async {
+    final h = await _startGame(tester);
+    final wrongSlot = h.slotFor(1);
+    h.voice.holdSpeech();
+    await h.feed(wrongSlot, 0, letItPlay: const Duration(milliseconds: 1200));
+    expect(h.figure(0).mouth, MonsterMouth.yuck);
+    final stopsSoFar = h.voice.stopCalls;
 
     h.voice.finishSpeaking();
     await h.run(const Duration(milliseconds: 300));
     expect(h.figure(0).mouth, MonsterMouth.idle);
-    await tester.tapAt(h.slotCenter(h.slotFor(2)));
-    await tester.pump();
-    expect(h.voice.said, hasLength(saidSoFar + 1), reason: 'now the next treat can be picked up');
+    expect(h.voice.stopCalls, stopsSoFar, reason: 'nothing was cut short');
   });
 
   testWidgets('after eating, the next turn waits until «Ням! …» has been said', (tester) async {
@@ -578,5 +600,41 @@ void main() {
 
     expect(h.voice.disposeCalled, isTrue);
     // The test framework fails this test if a timer is still pending.
+  });
+
+  testWidgets('the game stands in a painted kitchen, with a wooden tray', (tester) async {
+    await _startGame(tester);
+    expect(findAssetImage(monstersBackgroundAsset), findsOneWidget);
+    expect(findAssetImage(monstersTrayAsset), findsOneWidget);
+  });
+
+  testWidgets('each treat in the tray is the picture of that treat', (tester) async {
+    final h = await _startGame(tester);
+    for (var slot = 0; slot < MonstersGame.traySize; slot++) {
+      final picture = find.descendant(
+        of: find.byKey(ValueKey('monster_tray_slot_$slot')),
+        matching: findAssetImage(foodAsset(h.game.tray[slot]!)),
+      );
+      expect(picture, findsWidgets, reason: 'slot $slot');
+    }
+  });
+
+  testWidgets('met colours are dots of the monster paint, the others empty rings', (tester) async {
+    final h = await _startGame(tester);
+    BoxDecoration dot(MonsterColor color) => tester
+        .widget<Container>(find.descendant(
+          of: find.byKey(ValueKey('monsters_met_${color.name}')),
+          matching: find.byType(Container),
+        ))
+        .decoration! as BoxDecoration;
+
+    for (final color in MonsterColor.values) {
+      if (h.game.metColors.contains(color)) {
+        expect(dot(color).color, monsterPaint(color), reason: color.name);
+      } else {
+        expect(dot(color).color, isNull, reason: color.name);
+        expect((dot(color).border! as Border).top.color, const Color(0xFFDCC2A2), reason: color.name);
+      }
+    }
   });
 }

@@ -1,7 +1,6 @@
 import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../domain/monsters/monster_color.dart';
 import '../monsters/monster_art.dart';
@@ -61,7 +60,6 @@ class _RestScreenState extends State<RestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final monster = MonsterLayers.of(MonsterColor.blue);
     return PopScope(
       canPop: false,
       child: Scaffold(
@@ -72,17 +70,13 @@ class _RestScreenState extends State<RestScreen> {
               const Spacer(),
               const Text('Z z z', style: TextStyle(color: Color(0xFFBFD0FF), fontSize: 36, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
-              SizedBox(
+              // The blue monster with its eyes shut, as if asleep.
+              Image.asset(
+                monsterPictureAsset(MonsterColor.blue, MonsterPicture.chomp),
                 width: 200,
                 height: 200,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    SvgPicture.string(monster.body),
-                    SvgPicture.string(monster.squint),
-                    SvgPicture.string(monster.mouthIdle),
-                  ],
-                ),
+                filterQuality: FilterQuality.medium,
+                excludeFromSemantics: true,
               ),
               const SizedBox(height: 24),
               const Text(

@@ -1,33 +1,34 @@
-<title>Цветные игры Yandee</title>
+<meta charset="utf-8">
+<title>Монстрики</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap">
 <style>
-/* Layout: one full-height play screen (start → game), big targets, no scrolling. */
+/* Layout: one full-height play screen (start → game, plus a gallery of every picture), big targets, no scrolling in the game.
+   Style: painted storybook pictures like the scenes — a warm kitchen wall, a wooden tray on the table.
+   One deliberate light look, like the app itself. */
 :root {
   color-scheme: light;
-  --sky: #d9efff;
-  --sky-deep: #b5dcfb;
-  --ink: #23324a;
-  --paper: #ffffff;
-  --muted: #5b6b85;
-  --red: #ec4a3a;    --red-d: #b8301f;    --red-l: #ff8a77;
-  --yellow: #ffc929; --yellow-d: #d99a00; --yellow-l: #ffe27a;
-  --blue: #2f7cf0;   --blue-d: #1b55b5;   --blue-l: #7db0ff;
-  --green: #36b95a;  --green-d: #1f8a3c;  --green-l: #7fe09a;
-  --orange: #ff8a1f; --orange-d: #c95f00; --orange-l: #ffb877;
-  --purple: #9b5de5; --purple-d: #6c35b0; --purple-l: #c9a6f5;
-  --pink: #ff7eb6;   --pink-d: #d14d8a;   --pink-l: #ffb8d6;
-  --brown: #9a6337;  --brown-d: #6b3f1d;  --brown-l: #c99a6e;
-  --lightblue: #6fd0f6; --lightblue-d: #2c9cc8; --lightblue-l: #b8ecff;
-  --white: #fbfbf8;  --white-d: #8e98a4;  --white-l: #ffffff;
-  --black: #34343f;  --black-d: #121219;  --black-l: #5c5c6c;
-  --leaf: #3fae4f; --leaf-d: #23803a; --cone: #e3b46a; --cone-d: #b27f32; --stem: #7a4a1e;
+  --paper: #fff8f0;
+  --card: #fff0e1;
+  --card-strong: #ffe6cd;
+  --stitch: #e3c39c;
+  --line: #f1e1cf;
+  --ink: #2b211a;
+  --muted: #76675a;
+  --accent: #ef7b33;
+  --sun: #ffe39a;
+  --mint: #d3eddd;
+  --sky: #d9eaf7;
+  --dot: #f6e0c8;
+  --shadow: rgba(84, 52, 16, .14);
+  --shadow-strong: rgba(84, 52, 16, .26);
   --display: "Nunito", "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
 }
 html, body { height: 100%; }
 body {
-  background: var(--sky); color: var(--ink); font-family: var(--display);
+  background: url(img/background.webp) center bottom / cover no-repeat, var(--paper); color: var(--ink); font-family: var(--display);
   overflow: hidden; -webkit-tap-highlight-color: transparent;
   user-select: none; -webkit-user-select: none; touch-action: manipulation;
 }
@@ -40,83 +41,106 @@ body {
 .screen { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
 
 /* ---------- start ---------- */
-.home { justify-content: center; align-items: center; gap: 20px; }
-.home h1 { margin: 0; font-size: clamp(30px, 8vw, 44px); font-weight: 900; text-align: center; }
+.home { justify-content: center; align-items: center; gap: 18px; }
+.home h1 { margin: 0; font-size: clamp(32px, 9vw, 46px); font-weight: 900; letter-spacing: -.02em; text-align: center; }
 .start {
-  border: 0; border-radius: 32px; padding: 18px 28px 22px; width: min(320px, 100%);
-  background: var(--paper); color: var(--ink); font: 900 26px/1.1 var(--display);
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  box-shadow: 0 6px 0 var(--sky-deep); cursor: pointer;
+  border: 0; border-radius: 32px; padding: 18px 18px 22px; width: min(320px, 100%);
+  background: var(--card); color: var(--ink); font: 900 26px/1.1 var(--display);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  box-shadow: 0 14px 34px var(--shadow); cursor: pointer;
 }
-.start:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--sky-deep); }
-.start:focus-visible, .round:focus-visible { outline: 4px solid var(--blue); outline-offset: 3px; }
+.start:active { transform: translateY(3px); }
 .start .pair { display: flex; width: 100%; }
-.start .pair svg { flex: 1; min-width: 0; height: auto; }
+.start .pair .fig { flex: 1; min-width: 0; aspect-ratio: 1; }
+.link {
+  border: 0; background: var(--card-strong); color: var(--ink); border-radius: 999px;
+  padding: 10px 20px; font: 800 16px/1.2 var(--display); cursor: pointer;
+  box-shadow: inset 0 0 0 2px var(--stitch);
+}
+.start:focus-visible, .round:focus-visible, .link:focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
 .note { max-width: 44ch; margin: 0; text-align: center; color: var(--muted); font-size: 14px; font-weight: 700; line-height: 1.4; }
 
 /* ---------- top bar ---------- */
-.bar { display: flex; align-items: center; gap: 12px; }
-.bar .spacer { flex: 1; }
+.bar { display: flex; align-items: center; gap: 10px; flex: none; }
 .round {
   width: 56px; height: 56px; border-radius: 50%; border: 0; flex: none;
-  background: var(--paper); color: var(--ink); display: grid; place-items: center; cursor: pointer;
-  box-shadow: 0 4px 0 var(--sky-deep);
+  background: var(--card); color: var(--ink); display: grid; place-items: center; cursor: pointer;
+  box-shadow: 0 6px 16px var(--shadow);
 }
-.round:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--sky-deep); }
+.round:active { transform: translateY(2px); }
 .round svg { width: 28px; height: 28px; }
-.levels { display: flex; gap: 8px; align-items: center; }
-.levels i { width: 14px; height: 14px; border-radius: 50%; background: var(--paper); box-shadow: inset 0 0 0 3px var(--sky-deep); }
-.levels { flex-wrap: wrap; justify-content: center; max-width: 60%; gap: 6px; }
-.levels i { width: 12px; height: 12px; transition: transform .3s; }
-.levels i.done { background: var(--c); box-shadow: inset 0 0 0 1.5px rgba(0,0,0,.18); }
-.levels i.now { background: var(--c); box-shadow: 0 0 0 3px var(--paper); transform: scale(1.35); }
+.met { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 3px; }
+.met svg { width: 22px; height: 22px; transition: transform .3s; }
+.met svg.now { transform: scale(1.4); }
 
-/* ---------- monsters ---------- */
-.monsters { flex: 1; min-height: 0; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; }
-.monster {
-  width: calc(100% / var(--cols)); height: calc(100% / var(--rows));
-  display: grid; place-items: center; cursor: pointer; touch-action: none; box-sizing: border-box; padding: 4px;
+/* ---------- stage: a paper card with soft painted blobs, like the site's hero ---------- */
+.stage {
+  flex: 1; min-height: 0; position: relative;
 }
-.monster svg { width: auto; height: 100%; max-width: 100%; max-height: 100%; overflow: visible; }
-.monster.enter svg { animation: enter .7s cubic-bezier(.3,1.6,.5,1); }
-.monster .m-open, .monster .m-yuck, .monster .m-chomp, .monster .eye-squint,
-.start .m-open, .start .m-yuck, .start .m-chomp, .start .eye-squint { display: none; }
-.monster.open .m-idle, .monster.yuck .m-idle, .monster.chomp .m-idle { display: none; }
-.monster.open .m-open, .monster.yuck .m-yuck, .monster.chomp .m-chomp { display: inline; }
-.monster.yuck .eye-open { display: none; }
-.monster.yuck .eye-squint { display: inline; }
-.monster.chomp svg { animation: chomp .45s ease; }
-.monster.yuck svg { animation: shake .5s ease; }
-.monster.giggle svg { animation: wobble .6s ease; }
-.monster.dance svg { animation: dance .5s ease-in-out infinite alternate; }
-.monster:nth-child(2n).dance svg { animation-delay: .2s; }
-.pupil { transition: transform .15s; }
-.arm { transform-box: view-box; }
-.arm-l { transform-origin: 46px 132px; }
-.arm-r { transform-origin: 154px 132px; }
+.monsters { position: absolute; inset: 6px; display: flex; flex-wrap: wrap; align-content: center; }
+.monster {
+  width: 50%; height: 50%; display: grid; place-items: center; cursor: pointer; touch-action: none;
+  box-sizing: border-box; padding: 4px; container-type: size;
+}
+.fig { position: relative; transform-origin: 50% 91%; transition: transform .3s; }
+.monster .fig { width: min(100cqw, 100cqh); height: min(100cqw, 100cqh); }
+.fig img { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; -webkit-user-drag: none; }
+/* Arms hang at the sides, in front of the fur; they turn at the shoulder. */
+.arm { position: absolute; top: 42%; width: 42%; height: 42%; transform-origin: 50% 10%; }
+.arm-l { left: -4%; rotate: 10deg; }
+.arm-r { left: 62%; rotate: -10deg; }
+.arm-r img { transform: scaleX(-1); }
+.mouth-target { position: absolute; left: 50%; top: 46%; width: 1px; height: 1px; }
+.monster.enter .fig { animation: enter .7s cubic-bezier(.3,1.6,.5,1); }
+.face { display: none; }
+.f-idle { display: block; }
+.open .f-idle, .chomp .f-idle, .yuck .f-idle { display: none; }
+.open .f-open { display: block; }
+.chomp .f-open, .yuck .f-open { display: none; }
+.chomp .f-chomp, .yuck .f-yuck { display: block; }
+.monster.chomp .fig { animation: chomp .45s ease; }
+.monster.yuck .fig { animation: shake .5s ease; }
+.monster.giggle .fig { animation: wobble .6s ease; }
+.monster.dance .fig { animation: dance .5s ease-in-out infinite alternate; }
+.monster:nth-child(2n).dance .fig { animation-delay: .2s; }
 .monster.clap .arm-l { animation: clap-l .9s ease-in-out; }
 .monster.clap .arm-r { animation: clap-r .9s ease-in-out; }
 .monster.dance .arm-l { animation: clap-l .9s ease-in-out infinite; }
 .monster.dance .arm-r { animation: clap-r .9s ease-in-out infinite; }
-.monster.wave .arm-r { animation: wave 1s ease-in-out; }
-.monster.leave svg { animation: leave .7s ease-in forwards; }
-.monster svg { transition: transform .3s; }
+.monster.wave .arm-r { animation: wave 1.1s ease-in-out; }
+.monster.leave .fig { animation: leave .7s ease-in forwards; }
 
+/* ---------- tray: the painted wooden tray on the table ---------- */
 .tray {
-  flex: none; height: clamp(84px, 16vh, 120px);
-  background: var(--paper); border-radius: 28px;
-  display: flex; align-items: center; justify-content: space-around; padding-inline: 8px;
-  box-shadow: inset 0 -6px 0 var(--sky-deep);
+  flex: none; height: clamp(96px, 17vh, 132px);
+  background: url(img/tray.webp) center 80% / 100% 70% no-repeat;
+  display: flex; align-items: center; justify-content: space-around; padding: 0 18px 8px;
 }
-.food { width: 22%; max-width: 92px; aspect-ratio: 1; display: grid; place-items: center; cursor: grab; touch-action: none; transition: transform .2s, opacity .2s; }
-.food svg { width: 100%; height: 100%; }
-.food.selected { transform: translateY(-10px) scale(1.15); animation: bob .6s ease-in-out infinite alternate; }
+.food { width: 21%; max-width: 92px; aspect-ratio: 1; display: grid; place-items: center; cursor: grab; touch-action: none; transition: transform .2s, opacity .2s; }
+.food img, .floating img { width: 100%; height: 100%; pointer-events: none; -webkit-user-drag: none; filter: drop-shadow(0 5px 5px rgba(84,52,16,.22)); }
+.food.selected { animation: bob .6s ease-in-out infinite alternate; }
 .food.gone { opacity: 0; pointer-events: none; }
-.food.pop { animation: pop .35s ease; }
-.floating { position: fixed; z-index: 50; pointer-events: none; width: 80px; height: 80px; margin: -40px 0 0 -40px; left: 0; top: 0; }
-.floating svg { width: 100%; height: 100%; }
+.food.pop { animation: pop .4s cubic-bezier(.3,1.6,.5,1); }
+.floating { position: fixed; z-index: 50; pointer-events: none; width: 84px; height: 84px; margin: -42px 0 0 -42px; left: 0; top: 0; }
+.floating img { filter: drop-shadow(0 14px 10px var(--shadow-strong)); }
 
-.confetti { position: fixed; top: -20px; width: 12px; height: 18px; border-radius: 3px; z-index: 60; pointer-events: none; animation: fall linear forwards; }
+.confetti { position: fixed; top: -24px; width: 14px; height: 18px; border-radius: 4px; z-index: 60; pointer-events: none; }
+.confetti.dot { width: 14px; height: 14px; border-radius: 50%; }
+
+/* ---------- gallery ---------- */
+.gallery { overflow-y: auto; padding-bottom: 24px; -webkit-overflow-scrolling: touch; }
+.gallery h2 { margin: 6px 0 0; font-size: 22px; font-weight: 900; }
+.gallery p { margin: 0; color: var(--muted); font-size: 14px; font-weight: 700; }
+.g-monsters { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+.g-monsters button { border: 0; background: var(--card); border-radius: 22px; padding: 8px 6px 6px; cursor: pointer; font: 800 13px/1.2 var(--display); color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 2px; box-shadow: 0 6px 16px var(--shadow); }
+.g-monsters .fig { width: 100%; aspect-ratio: 1; }
+.g-color { background: var(--card); border-radius: 22px; padding: 10px 12px 12px; box-shadow: 0 6px 16px var(--shadow); }
+.g-color h3 { margin: 0 0 6px; font-size: 16px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+.g-color h3 svg { width: 20px; height: 20px; }
+.g-foods { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.g-foods figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12px; font-weight: 800; color: var(--muted); text-align: center; }
+.g-foods img { width: 100%; max-width: 72px; height: auto; filter: drop-shadow(0 4px 4px rgba(84,52,16,.2)); }
+
 @keyframes chomp { 0%{transform:scale(1)} 30%{transform:scale(1.12,.9)} 60%{transform:scale(.95,1.08)} 100%{transform:scale(1)} }
 @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px) rotate(-3deg)} 40%{transform:translateX(8px) rotate(3deg)} 60%{transform:translateX(-6px)} 80%{transform:translateX(5px)} }
 @keyframes wobble { 0%,100%{transform:rotate(0)} 25%{transform:rotate(-6deg)} 75%{transform:rotate(6deg)} }
@@ -124,11 +148,11 @@ body {
 @keyframes enter { from{transform:scale(0) rotate(-20deg)} to{transform:scale(1) rotate(0)} }
 @keyframes bob { from{transform:translateY(-6px) scale(1.15)} to{transform:translateY(-14px) scale(1.15)} }
 @keyframes pop { from{transform:scale(.3)} to{transform:scale(1)} }
-@keyframes clap-l { 0%,100%{transform:rotate(0)} 25%,65%{transform:rotate(-100deg)} 45%{transform:rotate(-70deg)} }
-@keyframes clap-r { 0%,100%{transform:rotate(0)} 25%,65%{transform:rotate(100deg)} 45%{transform:rotate(70deg)} }
-@keyframes wave { 0%,100%{transform:rotate(0)} 20%,60%{transform:rotate(-150deg)} 40%,80%{transform:rotate(-120deg)} }
+/* Mittens slide together in front of the belly and back, twice. */
+@keyframes clap-l { 0%,100%{transform:rotate(0)} 22%,62%{transform:rotate(-72deg)} 42%,82%{transform:rotate(-54deg)} }
+@keyframes clap-r { 0%,100%{transform:rotate(0)} 22%,62%{transform:rotate(72deg)} 42%,82%{transform:rotate(54deg)} }
+@keyframes wave { 0%,100%{transform:rotate(0)} 20%,60%{transform:rotate(-150deg)} 40%,80%{transform:rotate(-118deg)} }
 @keyframes leave { 0%{transform:scale(1)} 30%{transform:translateY(-14px) scale(1.05)} 100%{transform:translateY(40px) scale(0) rotate(25deg); opacity:0} }
-@keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
@@ -138,31 +162,121 @@ body {
 
 <script>
 'use strict';
-/* Colors with every word form the voice needs: adjective by gender (m/f/n) and "to the … one" (dat). */
-const COLORS = {
-  red:       { m: 'красный',    f: 'красная',    n: 'красное',    dat: 'красному',    v: 0 },
-  blue:      { m: 'синий',      f: 'синяя',      n: 'синее',      dat: 'синему',      v: 2 },
-  yellow:    { m: 'жёлтый',     f: 'жёлтая',     n: 'жёлтое',     dat: 'жёлтому',     v: 1 },
-  green:     { m: 'зелёный',    f: 'зелёная',    n: 'зелёное',    dat: 'зелёному',    v: 3 },
-  orange:    { m: 'оранжевый',  f: 'оранжевая',  n: 'оранжевое',  dat: 'оранжевому',  v: 1 },
-  purple:    { m: 'фиолетовый', f: 'фиолетовая', n: 'фиолетовое', dat: 'фиолетовому', v: 0 },
-  pink:      { m: 'розовый',    f: 'розовая',    n: 'розовое',    dat: 'розовому',    v: 3 },
-  brown:     { m: 'коричневый', f: 'коричневая', n: 'коричневое', dat: 'коричневому', v: 2 },
-  lightblue: { m: 'голубой',    f: 'голубая',    n: 'голубое',    dat: 'голубому',    v: 0 },
-  white:     { m: 'белый',      f: 'белая',      n: 'белое',      dat: 'белому',      v: 1 },
-  black:     { m: 'чёрный',     f: 'чёрная',     n: 'чёрное',     dat: 'чёрному',     v: 3, ink: '#ffffff' },
+/* ================= colours ================= */
+// Toy paint, warm like the scenes (the same paint as "Фигурки").
+const PAINT = {
+  red: '#e2553f', blue: '#3f8fd8', yellow: '#f6c447', green: '#5daa4f', orange: '#f08a3a', purple: '#9a6cc9',
+  pink: '#ef8fb0', brown: '#a8703f', lightblue: '#7cc6e8', white: '#f7f1e6', black: '#3d3530',
 };
-for (const k in COLORS) Object.assign(COLORS[k], { c: `var(--${k})`, d: `var(--${k}-d)`, l: `var(--${k}-l)` });
-// Always 4 monsters. Start with the 4 basic colors; each full monster leaves
-// and the next, harder color from this list takes its place.
+const LEAF = '#6aa84f', STEM = '#8a5a33', CONE = '#e0b06a', HORN = '#f3dfc0', STICK = '#f6ecd8';
+const INK = '#2b211a', MOUTH = '#6b2a2a', TONGUE = '#ef7f86', EYE = '#fffdf7';
+
+function mix(a, b, t) {
+  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  const ch = s => Math.round(((pa >> s) & 255) * (1 - t) + ((pb >> s) & 255) * t).toString(16).padStart(2, '0');
+  return '#' + ch(16) + ch(8) + ch(0);
+}
+// A painted toy: light from above, a darker edge below, a warm dark outline.
+function shades(hex) {
+  const lift = hex === PAINT.black ? .2 : .38;
+  const side = mix(hex, '#3b2410', .32);
+  return { fill: hex, light: mix(hex, '#fff8ec', lift), side, low: mix(hex, side, .45), line: mix(hex, '#3b2410', hex === PAINT.black ? .45 : .62) };
+}
+
+// Each picture gets its own gradient ids (ids are shared by the whole page).
+let uid = 0;
+function painter() {
+  const id = 'p' + (uid++), defs = [], grads = {};
+  const grad = hex => {
+    if (!grads[hex]) {
+      const k = shades(hex), gid = `${id}g${Object.keys(grads).length}`;
+      defs.push(`<linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${k.light}"/><stop offset=".55" stop-color="${hex}"/><stop offset="1" stop-color="${k.low}"/></linearGradient>`);
+      grads[hex] = gid;
+    }
+    return `url(#${grads[hex]})`;
+  };
+  return {
+    id,
+    grad,
+    paint: (hex, w = 4) => `fill="${grad(hex)}" stroke="${shades(hex).line}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`,
+    line: hex => shades(hex).line,
+    shine: (cx, cy, rx, ry, rot = 0, op = 1) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="url(#${id}sh)" opacity="${op}"${rot ? ` transform="rotate(${rot} ${cx} ${cy})"` : ''}/>`,
+    defs: (extra = '') => `<defs>${defs.join('')}<radialGradient id="${id}sh"><stop offset="0" stop-color="#fffdf6" stop-opacity=".9"/><stop offset="1" stop-color="#fffdf6" stop-opacity="0"/></radialGradient>${extra}</defs>`,
+  };
+}
+
+/* Colours with every word form the voice needs: adjective by gender (m/f/n) and "to the … one" (dat). */
+const COLORS = {
+  red:       { m: 'красный',    f: 'красная',    n: 'красное',    dat: 'красному',    look: 0 },
+  blue:      { m: 'синий',      f: 'синяя',      n: 'синее',      dat: 'синему',      look: 2 },
+  yellow:    { m: 'жёлтый',     f: 'жёлтая',     n: 'жёлтое',     dat: 'жёлтому',     look: 1 },
+  green:     { m: 'зелёный',    f: 'зелёная',    n: 'зелёное',    dat: 'зелёному',    look: 3 },
+  orange:    { m: 'оранжевый',  f: 'оранжевая',  n: 'оранжевое',  dat: 'оранжевому',  look: 1 },
+  purple:    { m: 'фиолетовый', f: 'фиолетовая', n: 'фиолетовое', dat: 'фиолетовому', look: 0 },
+  pink:      { m: 'розовый',    f: 'розовая',    n: 'розовое',    dat: 'розовому',    look: 3 },
+  brown:     { m: 'коричневый', f: 'коричневая', n: 'коричневое', dat: 'коричневому', look: 2 },
+  lightblue: { m: 'голубой',    f: 'голубая',    n: 'голубое',    dat: 'голубому',    look: 0 },
+  white:     { m: 'белый',      f: 'белая',      n: 'белое',      dat: 'белому',      look: 1 },
+  black:     { m: 'чёрный',     f: 'чёрная',     n: 'чёрное',     dat: 'чёрному',     look: 3 },
+};
 const ORDER = ['red', 'blue', 'yellow', 'green', 'orange', 'purple', 'pink', 'brown', 'lightblue', 'white', 'black'];
 const HUNGER = 2;
-
 const cap = s => s[0].toUpperCase() + s.slice(1);
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const wait = ms => new Promise(r => setTimeout(r, ms));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+
+/* ================= monsters ================= */
+// Painted pictures (made in ChatGPT): four faces per monster and one arm, mirrored for the other side.
+const FACES = ['idle', 'open', 'chomp', 'yuck'];
+function monsterSVG(key) {
+  const src = s => `img/${key}_${s}.webp`;
+  return `<div class="fig">` +
+    FACES.map(s => `<img class="face f-${s}" src="${src(s)}" alt="" draggable="false">`).join('') +
+    `<div class="arm arm-l"><img src="${src('arm')}" alt="" draggable="false"></div>` +
+    `<div class="arm arm-r"><img src="${src('arm')}" alt="" draggable="false"></div>` +
+    `<i class="mouth-target"></i></div>`;
+}
+// Load every picture up front, so a face never blinks while it changes.
+for (const k of ['red', 'blue', 'yellow', 'green', 'orange', 'purple', 'pink', 'brown', 'lightblue', 'white', 'black'])
+  for (const s of [...FACES, 'arm']) new Image().src = `img/${k}_${s}.webp`;
+
+/* ================= food ================= */
+
+// [picture, noun, gender] per colour — the same menu as the app.
+const FOODS = {
+  red: [['strawberry', 'клубника', 'f'], ['tomato', 'помидор', 'm'], ['apple', 'яблоко', 'n'], ['cherry', 'вишня', 'f']],
+  blue: [['blueberry', 'черника', 'f'], ['plum', 'слива', 'f'], ['candy', 'конфета', 'f']],
+  yellow: [['banana', 'банан', 'm'], ['cheese', 'сыр', 'm'], ['lemon', 'лимон', 'm'], ['corn', 'кукуруза', 'f']],
+  green: [['cucumber', 'огурец', 'm'], ['pear', 'груша', 'f'], ['peas', 'горошек', 'm'], ['broccoli', 'брокколи', 'f']],
+  orange: [['orangeFruit', 'апельсин', 'm'], ['carrot', 'морковка', 'f'], ['pumpkin', 'тыква', 'f'], ['mandarin', 'мандарин', 'm']],
+  purple: [['grapes', 'виноград', 'm'], ['eggplant', 'баклажан', 'm'], ['lollipop', 'леденец', 'm']],
+  pink: [['donut', 'пончик', 'm'], ['marshmallow', 'зефир', 'm'], ['cottonCandy', 'сахарная вата', 'f'], ['iceCream', 'мороженое', 'n']],
+  brown: [['chocolate', 'шоколадка', 'f'], ['cookie', 'печенье', 'n'], ['nut', 'орех', 'm'], ['mushroom', 'гриб', 'm']],
+  lightblue: [['bogBlueberry', 'голубика', 'f'], ['fish', 'рыбка', 'f'], ['iceCube', 'льдинка', 'f'], ['water', 'вода', 'f']],
+  white: [['egg', 'яйцо', 'n'], ['milk', 'молоко', 'n'], ['rice', 'рис', 'm'], ['garlic', 'чеснок', 'm']],
+  black: [['blackberry', 'ежевика', 'f'], ['olive', 'оливка', 'f'], ['bread', 'хлеб', 'm'], ['currant', 'смородина', 'f']],
+};
+const foodsOf = color => FOODS[color].map(([kind, name, g]) => ({ kind, name, g, color }));
+const fileId = kind => kind.replace(/[A-Z]/g, c => '_' + c.toLowerCase());
+function foodSVG(f) { return `<img src="img/${f.color}_${fileId(f.kind)}.webp" alt="" draggable="false">`; }
+const foodName = f => `${cap(COLORS[f.color][f.g])} ${f.name}`;
+
+// A met colour in the top bar: a painted dot; a dashed ring before it is met.
+function dotSVG(key, met, now) {
+  const p = painter(), k = shades(PAINT[key]);
+  const body = met ? `<circle cx="14" cy="14" r="9" ${p.paint(PAINT[key], 2.5)}/>` + p.shine(11, 10, 4, 3)
+                   : `<circle cx="14" cy="14" r="8" fill="none" stroke="#dcc2a2" stroke-width="2.5" stroke-dasharray="3 3"/>`;
+  return `<svg viewBox="0 0 28 28" class="${now ? 'now' : ''}" aria-hidden="true">${p.defs()}${body}</svg>`;
+}
+
+const ICON = {
+  back: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>`,
+  again: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v5h5"/></svg>`,
+};
 
 /* ================= voice & sound ================= */
+// Like the app: a line is never cut off; of the lines asked for meanwhile, only the latest is said next.
 let ruVoice = null;
 function pickVoice() {
   try {
@@ -171,15 +285,32 @@ function pickVoice() {
   } catch (_) {}
 }
 try { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; } catch (_) {}
+let speaking = false, waiting = null;
 function say(text) {
+  return new Promise(done => {
+    if (speaking) { if (waiting) waiting.done(); waiting = { text, done }; return; }
+    speak(text, done);
+  });
+}
+function speak(text, done) {
+  speaking = true;
+  let finished = false;
+  const finish = () => {
+    if (finished) return; finished = true; speaking = false; done();
+    if (waiting) { const w = waiting; waiting = null; speak(w.text, w.done); }
+  };
   try {
-    speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'ru-RU'; if (ruVoice) u.voice = ruVoice;
     u.rate = 0.92; u.pitch = 1.25;
+    u.onend = finish; u.onerror = finish;
     speechSynthesis.speak(u);
-  } catch (_) {}
+  } catch (_) { finish(); return; }
+  setTimeout(finish, 600 + text.length * 110);
 }
+function hush() { waiting = null; try { speechSynthesis.cancel(); } catch (_) {} speaking = false; }
+const heard = (promise, ms = 4000) => Promise.race([promise, wait(ms)]);
+
 let ac = null;
 function audio() {
   if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) { return null; } }
@@ -207,111 +338,29 @@ const sfx = {
   clap(times = 2) { for (let i = 0; i < times; i++) noise(.09, .2 + i * .36, .55, 1800, 'highpass'); },
   yuck() { tone(220, .35, { type: 'triangle', to: 110, vol: .2 }); tone(180, .3, { type: 'triangle', to: 90, vol: .12, delay: .1 }); },
   boing() { tone(300, .25, { to: 700 }); },
+  leave() { tone(600, .4, { to: 200, vol: .12 }); },
+  pop() { tone(500, .12, { to: 900, vol: .14 }); },
   win() { [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, .3, { type: 'triangle', vol: .14, delay: i * .13 })); },
 };
 
-/* ================= drawings ================= */
-function monsterSVG(key) {
-  const k = COLORS[key], variant = k.v, ink = k.ink || '#1c2335';
-  const eyes = { 0: [[72, 88], [128, 88]], 1: [[100, 84]], 2: [[74, 86], [126, 86]], 3: [[66, 92], [100, 76], [134, 92]] }[variant];
-  const er = variant === 1 ? 26 : variant === 3 ? 15 : 19;
-  const extras = [
-    `<path d="M58 40 L48 6 L78 30 Z M142 40 L152 6 L122 30 Z" fill="#fff6e8" stroke="${k.d}" stroke-width="4" stroke-linejoin="round"/>`,
-    `<path d="M88 22 Q92 2 100 18 Q106 0 112 22" fill="${k.c}" stroke="${k.d}" stroke-width="4" stroke-linejoin="round"/>`,
-    `<path d="M76 30 Q66 12 58 4 M124 30 Q134 12 142 4" stroke="${k.d}" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="58" cy="4" r="9" fill="${k.l}" stroke="${k.d}" stroke-width="4"/><circle cx="142" cy="4" r="9" fill="${k.l}" stroke="${k.d}" stroke-width="4"/>`,
-    `<circle cx="34" cy="62" r="16" fill="${k.c}" stroke="${k.d}" stroke-width="4"/><circle cx="166" cy="62" r="16" fill="${k.c}" stroke="${k.d}" stroke-width="4"/>`,
-  ][variant];
-  const eyeOpen = eyes.map(([x, y]) => `<g class="eye-open"><circle cx="${x}" cy="${y}" r="${er}" fill="#fff" stroke="${k.d}" stroke-width="4"/><g class="pupil" data-r="${er * .35}"><circle cx="${x}" cy="${y}" r="${er * .5}" fill="#1c2335"/><circle cx="${x - er * .18}" cy="${y - er * .2}" r="${er * .17}" fill="#fff"/></g></g>`).join('');
-  const eyeSquint = eyes.map(([x, y]) => `<path class="eye-squint" d="M${x - er * .7} ${y - er * .3} L${x + er * .4} ${y} L${x - er * .7} ${y + er * .35}" stroke="${ink}" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`).join('');
-  // Arms hang down-outwards; clapping swings both hands to meet in front of the belly.
-  const arm = (side, sx, hx, hy) => `<g class="arm arm-${side}"><path d="M${sx} 132 L${hx} ${hy}" stroke="${k.d}" stroke-width="12" stroke-linecap="round"/><path d="M${sx} 132 L${hx} ${hy}" stroke="${k.c}" stroke-width="6" stroke-linecap="round"/><circle cx="${hx}" cy="${hy}" r="13" fill="${k.l}" stroke="${k.d}" stroke-width="4"/></g>`;
-  return `<svg viewBox="-6 -10 212 212" aria-hidden="true">
-    ${extras}
-    <ellipse cx="66" cy="190" rx="24" ry="10" fill="${k.d}"/><ellipse cx="134" cy="190" rx="24" ry="10" fill="${k.d}"/>
-    <path d="M100 26 C152 26 184 66 184 116 C184 164 148 190 100 190 C52 190 16 164 16 116 C16 66 48 26 100 26Z" fill="${k.c}" stroke="${k.d}" stroke-width="5"/>
-    <ellipse cx="100" cy="152" rx="50" ry="32" fill="${k.l}" opacity=".55"/>
-    <circle cx="54" cy="122" r="9" fill="#ff7aa8" opacity=".55"/><circle cx="146" cy="122" r="9" fill="#ff7aa8" opacity=".55"/>
-    ${eyeOpen}${eyeSquint}
-    <g class="mouth">
-      <path class="m-idle" d="M76 124 Q100 146 124 124" stroke="${ink}" stroke-width="6" fill="none" stroke-linecap="round"/>
-      <g class="m-open"><ellipse cx="100" cy="134" rx="28" ry="24" fill="#5b1730"/><ellipse cx="100" cy="146" rx="16" ry="8" fill="#ff7a92"/><path d="M84 114 l5 9 l5 -9 M106 114 l5 9 l5 -9" fill="#fff"/></g>
-      <path class="m-chomp" d="M68 120 Q100 158 132 120 Z" fill="#5b1730" stroke="${ink}" stroke-width="5" stroke-linejoin="round"/>
-      <g class="m-yuck"><path d="M70 130 q8 -8 15 0 t15 0 t15 0 t15 0" stroke="${ink}" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M96 132 q6 22 16 4" fill="#ff7a92" stroke="#c84a64" stroke-width="3"/></g>
-    </g>
-    ${arm('l', 46, 18, 180)}${arm('r', 154, 182, 180)}
-    <ellipse class="mouth-target" cx="100" cy="132" rx="1" ry="1" fill="none"/>
-  </svg>`;
-}
-
-/* Food: name + grammatical gender (for "красная клубника" / "красный помидор" / "синее мороженое"). */
-const S = 'stroke-width="4" stroke-linejoin="round" stroke-linecap="round"';
-const candy = key => `<path d="M28 50 L6 34 L10 50 L6 66 Z M72 50 L94 34 L90 50 L94 66 Z" fill="var(--${key}-l)" stroke="var(--${key}-d)" stroke-width="3" stroke-linejoin="round"/><circle cx="50" cy="50" r="25" fill="var(--${key})" stroke="var(--${key}-d)" stroke-width="4"/><path d="M36 42 Q44 32 56 34" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" opacity=".7"/>`;
-const lolly = key => `<path d="M50 54 L50 96" stroke="#e9dcc4" stroke-width="7" stroke-linecap="round"/><circle cx="50" cy="36" r="30" fill="var(--${key})" stroke="var(--${key}-d)" stroke-width="4"/><path d="M50 36 m-4 0 a4 4 0 1 1 8 0 a9 9 0 1 1 -17 0 a14 14 0 1 1 27 0 a19 19 0 1 1 -37 0" stroke="var(--${key}-l)" stroke-width="4" fill="none" stroke-linecap="round"/>`;
-const scoop = key => `<path d="M30 50 L50 94 L70 50Z" fill="var(--cone)" stroke="var(--cone-d)" ${S}/><path d="M38 58 L60 74 M44 52 L64 66 M56 52 L40 68" stroke="var(--cone-d)" stroke-width="2.5"/><circle cx="50" cy="38" r="24" fill="var(--${key})" stroke="var(--${key}-d)" stroke-width="4"/><path d="M28 48 q6 8 12 0 q6 8 12 0 q6 8 12 0 q6 8 10 0" fill="var(--${key})" stroke="var(--${key}-d)" stroke-width="4" stroke-linejoin="round"/><circle cx="42" cy="30" r="5" fill="#fff" opacity=".5"/>`;
-const SWEETS = key => [
-  { name: 'конфета', g: 'f', svg: candy(key) },
-  { name: 'леденец', g: 'm', svg: lolly(key) },
-  { name: 'мороженое', g: 'n', svg: scoop(key) },
-];
-const FOODS = {
-  pink: [
-    { name: 'пончик', g: 'm', svg: `<circle cx="50" cy="52" r="38" fill="#e3b46a" stroke="#b27f32" stroke-width="4"/><path d="M50 18 C72 18 86 32 86 48 C80 56 76 50 70 58 C64 66 58 58 50 62 C42 58 36 66 30 58 C24 50 20 56 14 48 C14 32 28 18 50 18Z" fill="var(--pink)" stroke="var(--pink-d)" stroke-width="4" stroke-linejoin="round"/><circle cx="50" cy="50" r="11" fill="var(--sky)" stroke="#b27f32" stroke-width="4"/>${[[30,34,'#fff'],[62,30,'#ffe27a'],[70,44,'#7db0ff'],[36,48,'#7fe09a'],[52,30,'#fff']].map(([x,y,c])=>`<rect x="${x}" y="${y}" width="8" height="3" rx="1.5" fill="${c}" transform="rotate(${x*7} ${x+4} ${y+1})"/>`).join('')}` },
-  ],
-  brown: [
-    { name: 'шоколадка', g: 'f', svg: `<rect x="18" y="14" width="64" height="76" rx="6" fill="var(--brown)" stroke="var(--brown-d)" ${S}/>${[0,1].map(c=>[0,1,2].map(r=>`<rect x="${26+c*26}" y="${22+r*22}" width="20" height="16" rx="3" fill="var(--brown-l)" opacity=".55"/>`).join('')).join('')}<path d="M18 62 L82 50 L82 90 L18 90Z" fill="#e9e2d6" stroke="#b9ad99" stroke-width="3" stroke-linejoin="round"/>` },
-    { name: 'печенье', g: 'n', svg: `<circle cx="50" cy="50" r="38" fill="var(--brown-l)" stroke="var(--brown-d)" ${S}/>${[[36,36],[60,32],[66,56],[42,62],[54,48],[30,54],[56,72]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="5" fill="var(--brown-d)"/>`).join('')}` },
-  ],
-  white: [
-    { name: 'яйцо', g: 'n', svg: `<path d="M50 10 C72 10 86 46 86 62 C86 82 70 94 50 94 C30 94 14 82 14 62 C14 46 28 10 50 10Z" fill="var(--white)" stroke="var(--white-d)" ${S}/><ellipse cx="36" cy="44" rx="6" ry="12" fill="#e8ecef" transform="rotate(20 36 44)"/>` },
-    { name: 'молоко', g: 'n', svg: `<path d="M26 12 H74 L68 92 H32Z" fill="#eef6fb" stroke="var(--white-d)" ${S}/><path d="M29 34 H71 L67 88 H33Z" fill="var(--white)"/><path d="M29 34 q10 -6 21 0 t21 0" stroke="#dfe5ea" stroke-width="3" fill="none"/>` },
-  ],
-  black: [
-    { name: 'ежевика', g: 'f', svg: `${[[38,40],[52,36],[66,42],[34,56],[48,52],[62,56],[42,70],[56,70],[50,84]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="10" fill="var(--black)" stroke="var(--black-d)" stroke-width="3"/><circle cx="${x-3}" cy="${y-3}" r="2.5" fill="#fff" opacity=".45"/>`).join('')}<path d="M40 26 L52 14 L64 26 L52 30Z" fill="var(--leaf)" stroke="var(--leaf-d)" stroke-width="3" stroke-linejoin="round"/>` },
-  ],
-  red: [
-    { name: 'клубника', g: 'f', svg: `<path d="M50 92 C22 72 12 48 22 34 C32 22 44 28 50 32 C56 28 68 22 78 34 C88 48 78 72 50 92Z" fill="var(--red)" stroke="var(--red-d)" ${S}/>${[[38,46],[56,44],[46,60],[64,60],[36,64],[54,76]].map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="2.5" ry="4" fill="#ffe27a"/>`).join('')}<path d="M32 30 L44 24 L50 14 L56 24 L68 30 L56 34 L50 30 L44 34Z" fill="var(--leaf)" stroke="var(--leaf-d)" stroke-width="3" stroke-linejoin="round"/>` },
-    { name: 'помидор', g: 'm', svg: `<circle cx="50" cy="56" r="34" fill="var(--red)" stroke="var(--red-d)" ${S}/><ellipse cx="36" cy="46" rx="6" ry="10" fill="#fff" opacity=".4" transform="rotate(25 36 46)"/><path d="M50 26 L40 18 L46 28 L32 28 L46 32 L42 40 L50 33 L58 40 L54 32 L68 28 L54 28 L60 18Z" fill="var(--leaf)" stroke="var(--leaf-d)" stroke-width="3" stroke-linejoin="round"/>` },
-  ],
-  blue: [
-    { name: 'черника', g: 'f', svg: `${[[36,60],[64,60],[50,38]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="20" fill="var(--blue)" stroke="var(--blue-d)" stroke-width="4"/><path d="M${x-5} ${y-12} l5 4 l5 -4" stroke="var(--blue-d)" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="${x-8}" cy="${y+2}" r="4" fill="#fff" opacity=".45"/>`).join('')}` },
-  ],
-  yellow: [
-    { name: 'банан', g: 'm', svg: `<path d="M14 26 C20 70 58 90 90 70 C93 64 89 61 84 63 C58 74 34 58 28 26 C26 20 16 20 14 26Z" fill="var(--yellow)" stroke="var(--yellow-d)" ${S}/><path d="M14 26 L12 18" stroke="var(--stem)" stroke-width="6" stroke-linecap="round"/><path d="M30 40 C36 58 52 68 72 70" stroke="var(--yellow-d)" stroke-width="3" fill="none" opacity=".6"/>` },
-    { name: 'сыр', g: 'm', svg: `<path d="M10 66 L84 30 L92 40 L92 80 L10 80Z" fill="var(--yellow)" stroke="var(--yellow-d)" ${S}/><path d="M10 66 L92 40" stroke="var(--yellow-d)" stroke-width="3"/><circle cx="40" cy="70" r="6" fill="var(--yellow-d)" opacity=".55"/><circle cx="70" cy="62" r="8" fill="var(--yellow-d)" opacity=".55"/><circle cx="82" cy="74" r="4" fill="var(--yellow-d)" opacity=".55"/><circle cx="58" cy="44" r="4" fill="var(--yellow-d)" opacity=".55"/>` },
-  ],
-  green: [
-    { name: 'огурец', g: 'm', svg: `<rect x="10" y="36" width="80" height="30" rx="15" fill="var(--green)" stroke="var(--green-d)" ${S} transform="rotate(-20 50 51)"/>${[[30,58],[46,50],[62,44],[74,38],[38,64],[56,56]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2.5" fill="var(--green-l)"/>`).join('')}` },
-    { name: 'груша', g: 'f', svg: `<path d="M50 18 C60 18 62 32 63 40 C82 52 84 90 50 92 C16 90 18 52 37 40 C38 32 40 18 50 18Z" fill="var(--green)" stroke="var(--green-d)" ${S}/><path d="M50 18 Q50 10 56 6" stroke="var(--stem)" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="38" cy="62" rx="6" ry="11" fill="#fff" opacity=".35"/>` },
-  ],
-  orange: [
-    { name: 'апельсин', g: 'm', svg: `<circle cx="50" cy="54" r="36" fill="var(--orange)" stroke="var(--orange-d)" ${S}/>${[[38,44],[58,40],[48,60],[66,62],[34,66],[60,78]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2" fill="var(--orange-d)" opacity=".6"/>`).join('')}<path d="M50 18 Q64 6 74 16 Q62 26 50 18Z" fill="var(--leaf)" stroke="var(--leaf-d)" stroke-width="3"/>` },
-    { name: 'морковка', g: 'f', svg: `<path d="M50 94 L30 34 C36 26 64 26 70 34Z" fill="var(--orange)" stroke="var(--orange-d)" ${S}/><path d="M38 46 h10 M44 60 h10 M46 74 h7" stroke="var(--orange-d)" stroke-width="3" stroke-linecap="round"/><path d="M50 30 L38 8 M50 30 L50 4 M50 30 L62 8" stroke="var(--leaf)" stroke-width="7" stroke-linecap="round"/>` },
-  ],
-  purple: [
-    { name: 'виноград', g: 'm', svg: `${[[36,36],[54,36],[72,36],[44,52],[62,52],[52,68],[40,68],[64,68],[52,84]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="11" fill="var(--purple)" stroke="var(--purple-d)" stroke-width="3"/><circle cx="${x-3}" cy="${y-3}" r="3" fill="#fff" opacity=".4"/>`).join('')}<path d="M54 25 Q56 12 66 8" stroke="var(--stem)" stroke-width="5" fill="none" stroke-linecap="round"/>` },
-    { name: 'баклажан', g: 'm', svg: `<path d="M66 26 C88 40 92 76 70 88 C48 98 18 84 14 66 C10 50 30 46 44 40 C54 36 58 22 66 26Z" fill="var(--purple)" stroke="var(--purple-d)" ${S}/><path d="M56 30 L66 16 L76 30 L70 38 L62 36Z" fill="var(--leaf)" stroke="var(--leaf-d)" stroke-width="3" stroke-linejoin="round"/><ellipse cx="36" cy="64" rx="5" ry="12" fill="#fff" opacity=".3" transform="rotate(60 36 64)"/>` },
-  ],
-};
-// Every color can always be fed sweets; most also have real foods of that color.
-const menu = key => [...(FOODS[key] || []), ...(FOODS[key] || []), ...SWEETS(key)];
-const foodSVG = f => `<svg viewBox="0 0 100 100" aria-hidden="true">${f.svg}</svg>`;
-const ICON = {
-  back: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>`,
-  again: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v5h5"/></svg>`,
-};
-
-/* ================= app ================= */
+/* ================= screens ================= */
 const app = document.getElementById('app');
-let cleanup = null;
-function show(fn) { if (cleanup) cleanup(); cleanup = null; try { speechSynthesis.cancel(); } catch (_) {} app.innerHTML = ''; fn(); }
-function confetti(keys) {
-  for (let i = 0; i < 40; i++) {
-    const c = document.createElement('div'); c.className = 'confetti';
+let cleanup = null, session = 0;
+function show(fn) { if (cleanup) cleanup(); cleanup = null; session++; hush(); app.innerHTML = ''; fn(); }
+function restart(el, cls, ms) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); setTimeout(() => el.classList.remove(cls), ms); }
+
+function confetti() {
+  for (let i = 0; i < 44; i++) {
+    const c = document.createElement('i');
+    c.className = 'confetti' + (i % 3 === 0 ? ' dot' : '');
     c.style.left = Math.random() * 100 + 'vw';
-    c.style.background = `var(--${keys[i % keys.length]})`;
-    c.style.animationDuration = (1.6 + Math.random() * 1.4) + 's';
-    c.style.animationDelay = Math.random() * .5 + 's';
-    document.body.append(c); setTimeout(() => c.remove(), 3600);
+    const hex = PAINT[ORDER[i % ORDER.length]];
+    c.style.background = `linear-gradient(${shades(hex).light}, ${hex})`;
+    c.style.boxShadow = `inset 0 0 0 1.5px ${shades(hex).line}`;
+    document.body.append(c);
+    c.animate([{ transform: 'translateY(0) rotate(0)' }, { transform: `translate(${(Math.random() - .5) * 120}px, ${innerHeight + 60}px) rotate(${Math.random() * 720}deg)` }],
+      { duration: 1600 + Math.random() * 1200, delay: Math.random() * 400, easing: 'cubic-bezier(.3,.1,.6,1)', fill: 'forwards' })
+      .finished.then(() => c.remove());
   }
 }
 
@@ -321,85 +370,99 @@ function home() {
     s.innerHTML = `
       <h1>Монстрики</h1>
       <button class="start" id="go"><span class="pair">${monsterSVG('red')}${monsterSVG('blue')}</span><span>Играть</span></button>
-      <p class="note">Пробная версия. Голос пока синтезированный, в приложении будет живая озвучка. Включите звук на телефоне.</p>`;
+      <button class="link" id="all">Все монстрики и еда</button>
+      <p class="note">Пробная версия с новыми картинками. Голос здесь компьютерный, в приложении — твой. Включите звук на телефоне.</p>`;
     app.append(s);
     s.querySelector('#go').onclick = () => { audio(); game(); };
+    s.querySelector('#all').onclick = gallery;
+  });
+}
+
+function gallery() {
+  show(() => {
+    const s = document.createElement('div'); s.className = 'screen gallery';
+    const faces = ['', 'open', 'chomp', 'yuck'];
+    s.innerHTML = `
+      <div class="bar"><button class="round" id="back" aria-label="Назад">${ICON.back}</button><h2>Все рисунки</h2></div>
+      <p>Нажми на монстрика — он покажет другое лицо.</p>
+      <div class="g-monsters">${ORDER.map(k => `<button data-k="${k}" data-f="0">${monsterSVG(k)}<span>${cap(COLORS[k].m)}</span></button>`).join('')}</div>
+      ${ORDER.map(k => `<section class="g-color"><h3>${dotSVG(k, true)}${cap(COLORS[k].m)} ест</h3><div class="g-foods">${foodsOf(k).map(f => `<figure>${foodSVG(f)}<figcaption>${f.name}</figcaption></figure>`).join('')}</div></section>`).join('')}`;
+    app.append(s);
+    s.querySelector('#back').onclick = home;
+    s.querySelectorAll('.g-monsters button').forEach(b => b.onclick = () => {
+      b.dataset.f = (+b.dataset.f + 1) % faces.length;
+      faces.forEach(f => f && b.classList.remove(f));
+      if (faces[b.dataset.f]) b.classList.add(faces[b.dataset.f]);
+    });
   });
 }
 
 function game() {
   show(() => {
-    let next = 4;                       // index in ORDER of the next newcomer
+    const my = session;
+    const alive = () => my === session;
+    let next = 4, firstMeetings = 0;
     const met = new Set(ORDER.slice(0, 4));
+    const lastEaten = {};
     const s = document.createElement('div'); s.className = 'screen';
-    const bar = document.createElement('div'); bar.className = 'bar';
-    bar.innerHTML = `<button class="round" id="back" aria-label="Назад">${ICON.back}</button><span class="spacer"></span>
-      <div class="levels" id="met"></div><span class="spacer"></span>
-      <button class="round" id="again" aria-label="Сначала">${ICON.again}</button>`;
-    bar.querySelector('#back').onclick = home;
-    bar.querySelector('#again').onclick = game;
-    const metEl = bar.querySelector('#met');
+    s.innerHTML = `
+      <div class="bar"><button class="round" id="back" aria-label="Назад">${ICON.back}</button>
+        <div class="met" id="met"></div>
+        <button class="round" id="again" aria-label="Сначала">${ICON.again}</button></div>
+      <div class="stage"><div class="monsters" id="grid"></div></div>
+      <div class="tray" id="tray"></div>`;
+    app.append(s);
+    s.querySelector('#back').onclick = home;
+    s.querySelector('#again').onclick = game;
+    const metEl = s.querySelector('#met'), grid = s.querySelector('#grid'), tray = s.querySelector('#tray');
     function drawMet(fresh) {
-      metEl.innerHTML = ORDER.map(k => `<i class="${k === fresh ? 'now' : met.has(k) ? 'done' : ''}" style="--c:var(--${k})"></i>`).join('');
+      metEl.innerHTML = ORDER.map(k => dotSVG(k, met.has(k), k === fresh)).join('');
       metEl.setAttribute('aria-label', `Знакомых цветов: ${met.size} из ${ORDER.length}`);
+      if (fresh) setTimeout(() => metEl.querySelector('.now')?.classList.remove('now'), 1400);
     }
     drawMet();
 
-    const grid = document.createElement('div'); grid.className = 'monsters';
-    grid.style.setProperty('--cols', 2); grid.style.setProperty('--rows', 2);
-    const tray = document.createElement('div'); tray.className = 'tray';
-    s.append(bar, grid, tray); app.append(s);
-
-    function makeMonster(key) {
-      const m = document.createElement('div'); m.className = 'monster';
-      setMonster(m, key); return m;
-    }
     function setMonster(m, key) {
       m.dataset.color = key; m.eaten = 0;
       m.innerHTML = monsterSVG(key); m.setAttribute('aria-label', `${cap(COLORS[key].m)} монстрик`);
     }
-    for (const key of shuffle(ORDER.slice(0, 4))) grid.append(makeMonster(key));
+    for (const key of shuffle(ORDER.slice(0, 4))) { const m = document.createElement('div'); m.className = 'monster'; setMonster(m, key); grid.append(m); }
     const monsterEls = () => [...grid.children];
     const onScreen = () => monsterEls().map(m => m.dataset.color);
+    const fig = m => m.querySelector('.fig');
 
-    // Tray: four foods; each refill picks the on-screen color with the fewest foods waiting.
+    // Tray: four treats; each refill feeds the on-screen colour with the fewest treats waiting,
+    // never a treat already in the tray and never the one of that colour just eaten.
     let selected = null, busy = false;
     const slots = [];
-    for (let i = 0; i < 4; i++) { const c = document.createElement('div'); c.className = 'food'; tray.append(c); slots.push(c); }
+    for (let i = 0; i < 4; i++) { const c = document.createElement('div'); c.className = 'food'; tray.append(c); slots.push(c); c.food = null; }
+    function foodFor(color) {
+      const inTray = slots.map(sl => sl.food).filter(Boolean).map(f => f.kind);
+      const all = foodsOf(color);
+      const fresh = all.filter(f => !inTray.includes(f.kind) && f.kind !== lastEaten[color]);
+      return pick(fresh.length ? fresh : all.filter(f => !inTray.includes(f.kind)).length ? all.filter(f => !inTray.includes(f.kind)) : all);
+    }
     function pickFood() {
-      const waiting = k => slots.filter(sl => sl.food && sl.food.color === k && !sl.classList.contains('gone')).length;
-      const colors = shuffle(onScreen()).sort((a, b) => waiting(a) - waiting(b));
-      const key = colors[0], options = menu(key);
-      return { ...options[Math.floor(Math.random() * options.length)], color: key };
+      const waitingFor = k => slots.filter(sl => sl.food && sl.food.color === k).length;
+      const colors = shuffle(onScreen()).sort((a, b) => waitingFor(a) - waitingFor(b));
+      return foodFor(colors[0]);
     }
-    function fill(slot, f = pickFood()) {
-      slot.food = f;
+    function fill(slot, f) {
+      slot.food = null; slot.food = f || pickFood();
       slot.className = 'food'; void slot.offsetWidth; slot.classList.add('pop');
-      slot.innerHTML = foodSVG(f);
-      slot.setAttribute('aria-label', `${cap(COLORS[f.color][f.g])} ${f.name}`);
+      slot.innerHTML = foodSVG(slot.food);
+      slot.setAttribute('aria-label', foodName(slot.food));
     }
-    slots.forEach(sl => { sl.food = null; });
     slots.forEach(sl => fill(sl));
-    const phrase = f => `${cap(COLORS[f.color][f.g])} ${f.name}`;
 
     function setMouths(open) { monsterEls().forEach(m => m.classList.toggle('open', open)); }
-    function look(x, y) {
-      monsterEls().forEach(m => {
-        const r = m.querySelector('svg').getBoundingClientRect();
-        m.querySelectorAll('.pupil').forEach(p => {
-          if (x == null) { p.style.transform = ''; return; }
-          const dx = x - (r.left + r.width / 2), dy = y - (r.top + r.height / 2), len = Math.hypot(dx, dy) || 1, k = +p.dataset.r || 6;
-          p.style.transform = `translate(${dx / len * k}px, ${dy / len * k}px)`;
-        });
-      });
-    }
+    function look() {} // the eyes are part of the picture now
     function select(slot) {
       slots.forEach(c => c.classList.remove('selected'));
       selected = slot;
-      if (slot) { slot.classList.add('selected'); setMouths(true); sfx.boing(); say(phrase(slot.food)); const r = slot.getBoundingClientRect(); look(r.left + r.width / 2, r.top); }
+      if (slot) { slot.classList.add('selected'); setMouths(true); sfx.boing(); say(foodName(slot.food)); const r = slot.getBoundingClientRect(); look(r.left + r.width / 2, r.top); }
       else { setMouths(false); look(); }
     }
-    function restart(m, cls, ms) { m.classList.remove(cls); void m.offsetWidth; m.classList.add(cls); setTimeout(() => m.classList.remove(cls), ms); }
 
     async function fly(fromRect, toEl, f) {
       const el = document.createElement('div'); el.className = 'floating'; el.innerHTML = foodSVG(f);
@@ -414,34 +477,41 @@ function game() {
       return el;
     }
 
-    // A full monster waves goodbye and leaves; the next color takes its place.
-    async function swap(m) {
+    // Wiggle while the monster is still talking, so the picture never runs ahead of the voice.
+    async function wiggleUntil(speech, m) {
+      let done = false; heard(speech).then(() => { done = true; });
+      while (!done && alive()) { restart(m, 'giggle', 650); await wait(600); }
+    }
+
+    // A full monster thanks, waves and leaves; the next colour takes its seat.
+    async function swap(m, yum) {
+      await wiggleUntil(yum, m); if (!alive()) return;
+      fig(m).style.transform = '';
+      const bye = say('Спасибо! Пока-пока!');
+      restart(m, 'wave', 1150);
+      await wait(1100); if (!alive()) return;
+      m.classList.add('leave'); sfx.leave();
+      await Promise.all([wait(700), heard(bye, 2500)]); if (!alive()) return;
       const old = m.dataset.color;
-      say('Спасибо! Пока-пока!');
-      restart(m, 'wave', 1050);
-      await wait(1100);
-      m.classList.add('leave'); tone(600, .4, { to: 200, vol: .12 });
-      await wait(700);
-      const free = ORDER.filter(k => !onScreen().includes(k));
       let key;
       if (next < ORDER.length) key = ORDER[next++];
-      else key = free.filter(k => k !== old)[Math.floor(Math.random() * (free.length - 1))] || free[0];
+      else key = pick(ORDER.filter(k => !onScreen().includes(k)));
       const fresh = !met.has(key);
       met.add(key);
+      if (fresh) firstMeetings++;
       m.classList.remove('leave');
       setMonster(m, key);
-      restart(m, 'enter', 750);
+      restart(m, 'enter', 750); sfx.pop();
       drawMet(fresh ? key : null);
-      // Foods only the departed monster could eat now feed the newcomer.
-      slots.forEach(sl => { if (sl.food && sl.food.color === old) fill(sl, (() => { const o = menu(key); return { ...o[Math.floor(Math.random() * o.length)], color: key }; })()); });
-      await wait(450);
+      slots.forEach(sl => { if (sl.food && sl.food.color === old) fill(sl, foodFor(key)); });
+      const hello = say(fresh && firstMeetings % 2 === 1 ? `Привет! Я новенький! Я ${COLORS[key].m}!` : `Привет! Я ${COLORS[key].m}!`);
+      await wait(450); if (!alive()) return;
       restart(m, 'clap', 950); sfx.clap(2);
-      say(fresh ? `Привет! Я новенький! Я ${COLORS[key].m}!` : `Привет! Я ${COLORS[key].m}!`);
       if (fresh && met.size === ORDER.length) {
-        await wait(1800);
-        monsterEls().forEach(x => x.classList.add('dance')); sfx.win(); sfx.clap(4); confetti(ORDER);
-        say('Ура! Ты знаешь все цвета!');
-        await wait(3000); monsterEls().forEach(x => x.classList.remove('dance'));
+        await heard(hello, 3000); if (!alive()) return;
+        monsterEls().forEach(x => x.classList.add('dance')); sfx.win(); sfx.clap(4); confetti();
+        await heard(say('Ура! Ты знаешь все цвета!'), 3500);
+        await wait(800); monsterEls().forEach(x => x.classList.remove('dance'));
       }
     }
 
@@ -453,33 +523,37 @@ function game() {
       monsterEls().forEach(m => m.classList.remove('open')); monster.classList.add('open');
       const el = await fly(fromRect || slot.getBoundingClientRect(), monster.querySelector('.mouth-target'), f);
       monster.classList.remove('open'); look();
+      if (!alive()) { el.remove(); return; }
       if (f.color === want) {
         el.remove();
         monster.classList.add('chomp'); sfx.chomp();
-        say(`Ням! ${phrase(f)}!`);
-        monster.eaten++;
+        const yum = say(`Ням! ${foodName(f)}`);
+        monster.eaten++; lastEaten[f.color] = f.kind;
+        slot.food = null;
         await wait(500); monster.classList.remove('chomp');
-        monster.querySelector('svg').style.transform = `scale(${1 + monster.eaten * .06})`;
+        fig(monster).style.transform = `scale(${1 + monster.eaten * .06})`;
         restart(monster, 'clap', 950); sfx.clap(2);
-        await wait(1000);
+        await wait(1000); if (!alive()) return;
         fill(slot);
-        if (monster.eaten >= HUNGER) { monster.querySelector('svg').style.transform = ''; await swap(monster); }
+        if (monster.eaten >= HUNGER) await swap(monster, yum);
+        else await wiggleUntil(yum, monster);
       } else {
         monster.classList.add('yuck'); sfx.yuck();
-        say(`Фу! ${phrase(f)} — ${COLORS[f.color].dat}!`);
-        const back = slot.getBoundingClientRect(), m = monster.querySelector('.mouth-target').getBoundingClientRect();
+        const no = say(`Фу! ${foodName(f)} — ${COLORS[f.color].dat}!`);
+        const back = slot.getBoundingClientRect(), mt = monster.querySelector('.mouth-target').getBoundingClientRect();
         await el.animate([
-          { transform: `translate(${m.left}px, ${m.top}px) scale(.5)` },
-          { transform: `translate(${(m.left + back.left) / 2 + 30}px, ${Math.min(m.top, back.top) - 80}px) scale(1.1) rotate(200deg)`, offset: .5 },
+          { transform: `translate(${mt.left}px, ${mt.top}px) scale(.5)` },
+          { transform: `translate(${(mt.left + back.left) / 2 + 30}px, ${Math.min(mt.top, back.top) - 80}px) scale(1.1) rotate(200deg)`, offset: .5 },
           { transform: `translate(${back.left + back.width / 2}px, ${back.top + back.height / 2}px) scale(1) rotate(360deg)` },
         ], { duration: 650, easing: 'ease-in-out', fill: 'forwards' }).finished.catch(() => {});
         el.remove(); slot.classList.remove('gone');
-        await wait(250); monster.classList.remove('yuck');
+        await Promise.all([wait(250), heard(no)]);
+        monster.classList.remove('yuck');
       }
-      busy = false;
+      if (alive()) busy = false;
     }
 
-    // Drag a food onto a monster, or tap a food and then a monster.
+    // Drag a treat onto a monster, or tap a treat and then a monster.
     let drag = null;
     tray.addEventListener('pointerdown', e => {
       const slot = e.target.closest('.food'); if (!slot || !slot.food || slot.classList.contains('gone') || busy) return;
@@ -512,8 +586,8 @@ function game() {
       if (selected) { feed(selected, m); return; }
       restart(m, 'giggle', 650); sfx.boing(); say(`Я ${COLORS[m.dataset.color].m}!`);
     });
-    cleanup = () => document.querySelectorAll('.floating').forEach(f => f.remove());
-    setTimeout(() => say('Покорми монстриков! Красный ест красное, синий — синее.'), 400);
+    cleanup = () => document.querySelectorAll('.floating, .confetti').forEach(f => f.remove());
+    setTimeout(() => { if (alive()) say('Покорми монстриков! Красный ест красное, синий — синее.'); }, 400);
   });
 }
 

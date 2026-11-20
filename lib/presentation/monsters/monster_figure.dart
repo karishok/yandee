@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../domain/monsters/monster_color.dart';
 import 'monster_art.dart';
@@ -26,16 +25,6 @@ enum MonsterMove { chomp, shake, giggle, enter, leave }
 
 enum _ArmMove { clap, wave }
 
-/// Where a hand is, relative to where it rests: shifted by ([dx], [dy])
-/// view-box units and turned by [turn] radians about its own middle.
-class _HandPose {
-  const _HandPose(this.dx, this.dy, this.turn);
-  static const rest = _HandPose(0, 0, 0);
-  final double dx;
-  final double dy;
-  final double turn;
-}
-
 /// One animated monster, drawn into a square.
 ///
 /// What it looks like at rest comes from the widget's fields; movements are
@@ -53,8 +42,8 @@ class MonsterFigure extends StatefulWidget {
   final MonsterColor color;
   final MonsterMouth mouth;
 
-  /// Which way the pupils look, as a direction of length 1; null looks
-  /// straight ahead.
+  /// Which way the monster is looking, as a direction of length 1; it
+  /// leans a little that way. Null looks straight ahead.
   final Offset? lookDirection;
 
   /// The monster's size relative to normal — it swells a little with every
@@ -167,6 +156,24 @@ class MonsterFigureState extends State<MonsterFigure> with TickerProviderStateMi
   }
 
   static const _enterCurve = Cubic(.3, 1.6, .5, 1);
+
+  // The arm, as a share of the figure's square: a square 42% wide, its top
+  // at 42%; the left one starts at 0, the right one at 58% — snug against
+  // the body. It turns about the shoulder, near the top of its square.
+  static const _armSide = .42;
+  static const _armTop = .42;
+  static const _leftArmLeft = 0.0;
+  static const _rightArmLeft = .58;
+  static const _shoulder = FractionalOffset(.5, .1);
+
+  /// At rest the hands hang a little away from the body.
+  static const _armRestDegrees = 10.0;
+
+  /// How far the monster leans toward the treat it is looking at.
+  static const _maxLeanDegrees = 4.0;
+
+  /// The feet: the point the monster leans about.
+  static const _feet = Alignment(0, .82);
   static double _deg(double degrees) => degrees * math.pi / 180;
 
   // The whole-body transform for this frame. Distances in the keyframes are
@@ -207,54 +214,60 @@ class MonsterFigureState extends State<MonsterFigure> with TickerProviderStateMi
     return (transform: transform, opacity: opacity.clamp(0.0, 1.0));
   }
 
-  // Where each hand is for this frame, relative to its resting place at
-  // the monster's side: a shift in view-box units and a turn in radians.
-  ({_HandPose left, _HandPose right}) _handPoses() {
+  // The turn of each arm about its shoulder for this frame, in radians.
+  // The swing adds to the resting turn, as in the prototype.
+  ({double left, double right}) _armAngles() {
     final t = _arms.value;
     switch (_armMove) {
       case _ArmMove.clap:
-        // Both hands slide in front of the belly and meet twice: together
-        // at 25% and 65% of the move, a little apart in between.
-        final together = _track(t, const [0, .25, .45, .65, 1], const [0, 1, .7, 1, 0], Curves.easeInOut);
-        return (
-          left: _HandPose(58 * together, 16 * together, _deg(44 * together)),
-          right: _HandPose(-58 * together, 16 * together, _deg(-44 * together)),
-        );
+        // Both hands come in front of the belly and meet twice.
+        final swing =
+            _track(t, const [0, .22, .42, .62, .82, 1], const [0, -72, -54, -72, -54, 0], Curves.easeInOut);
+        return (left: _deg(_armRestDegrees + swing), right: _deg(-_armRestDegrees - swing));
       case _ArmMove.wave:
-        // The right hand goes up beside the head and wags from side to side.
-        final lifted = _track(t, const [0, .2, .8, 1], const [0, 1, 1, 0], Curves.easeInOut);
-        final wag = _track(t, const [0, .2, .4, .6, .8, 1], const [0, 1, -1, 1, -1, 0], Curves.easeInOut);
-        return (
-          left: _HandPose.rest,
-          right: _HandPose(12 * lifted, -54 * lifted, _deg(38 * lifted + 15 * wag)),
-        );
+        // The right hand goes up beside the head and wags.
+        final lift =
+            _track(t, const [0, .2, .4, .6, .8, 1], const [0, -150, -118, -150, -118, 0], Curves.easeInOut);
+        return (left: _deg(_armRestDegrees), right: _deg(-_armRestDegrees + lift));
     }
   }
 
+  static const _faces = {
+    MonsterMouth.idle: MonsterPicture.idle,
+    MonsterMouth.open: MonsterPicture.open,
+    MonsterMouth.chomp: MonsterPicture.chomp,
+    MonsterMouth.yuck: MonsterPicture.yuck,
+  };
+
   @override
   Widget build(BuildContext context) {
-    final layers = MonsterLayers.of(widget.color);
-    final squinting = widget.mouth == MonsterMouth.yuck;
+    final face = _faces[widget.mouth]!;
+    final look = widget.lookDirection;
+    final lean = look == null ? 0.0 : _deg(_maxLeanDegrees * look.dx);
+
+    Widget picture(MonsterPicture picture) => Image.asset(
+          monsterPictureAsset(widget.color, picture),
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.medium,
+          excludeFromSemantics: true,
+        );
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final side = constraints.biggest.shortestSide;
-        final viewBoxUnit = side / monsterViewBoxSize;
-        final look = widget.lookDirection;
-        final pupilShift =
-            look == null ? Offset.zero : look * (monsterPupilReach(widget.color) * viewBoxUnit);
 
-        Widget layer(String svg, {bool visible = true}) => Offstage(
-              offstage: !visible,
-              child: SvgPicture.string(svg, width: side, height: side),
-            );
-
-        Widget hand(String svg, ({double x, double y}) restingAt, _HandPose pose) => Transform.translate(
-              offset: Offset(pose.dx, pose.dy) * viewBoxUnit,
+        Widget arm({required bool left, required double angle}) => Positioned(
+              left: side * (left ? _leftArmLeft : _rightArmLeft),
+              top: side * _armTop,
+              width: side * _armSide,
+              height: side * _armSide,
               child: Transform.rotate(
-                angle: pose.turn,
-                alignment: FractionalOffset(restingAt.x, restingAt.y),
-                child: layer(svg),
+                key: ValueKey(left ? 'monster_arm_left' : 'monster_arm_right'),
+                angle: angle,
+                alignment: _shoulder,
+                child: left
+                    ? picture(MonsterPicture.arm)
+                    : Transform.flip(flipX: true, child: picture(MonsterPicture.arm)),
               ),
             );
 
@@ -265,40 +278,46 @@ class MonsterFigureState extends State<MonsterFigure> with TickerProviderStateMi
               scale: widget.growth,
               duration: const Duration(milliseconds: 300),
               curve: Curves.ease,
-              child: AnimatedBuilder(
-                animation: Listenable.merge([_move, _arms, _dance]),
-                builder: (context, _) {
-                  final pose = _bodyPose(side / 180);
-                  final hands = _handPoses();
-                  return Opacity(
-                    opacity: pose.opacity,
-                    child: Transform(
-                      transform: pose.transform,
-                      alignment: Alignment.center,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          layer(layers.body),
-                          layer(layers.eyeWhites, visible: !squinting),
-                          TweenAnimationBuilder<Offset>(
-                            tween: Tween(end: pupilShift),
-                            duration: const Duration(milliseconds: 150),
-                            builder: (context, shift, child) =>
-                                Transform.translate(offset: shift, child: child),
-                            child: layer(layers.pupils, visible: !squinting),
-                          ),
-                          layer(layers.squint, visible: squinting),
-                          layer(layers.mouthIdle, visible: widget.mouth == MonsterMouth.idle),
-                          layer(layers.mouthOpen, visible: widget.mouth == MonsterMouth.open),
-                          layer(layers.mouthChomp, visible: widget.mouth == MonsterMouth.chomp),
-                          layer(layers.mouthYuck, visible: widget.mouth == MonsterMouth.yuck),
-                          hand(layers.leftArm, monsterLeftHandAt, hands.left),
-                          hand(layers.rightArm, monsterRightHandAt, hands.right),
-                        ],
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(end: lean),
+                duration: const Duration(milliseconds: 150),
+                builder: (context, angle, child) => Transform.rotate(
+                  key: const ValueKey('monster_lean'),
+                  angle: angle,
+                  alignment: _feet,
+                  child: child,
+                ),
+                child: AnimatedBuilder(
+                  animation: Listenable.merge([_move, _arms, _dance]),
+                  builder: (context, _) {
+                    final pose = _bodyPose(side / 180);
+                    final arms = _armAngles();
+                    return Opacity(
+                      opacity: pose.opacity,
+                      child: Transform(
+                        transform: pose.transform,
+                        alignment: Alignment.center,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            // All four faces stay loaded, so a new face shows
+                            // at once, without a blank frame.
+                            for (final each in _faces.values)
+                              Positioned.fill(
+                                child: Offstage(
+                                  key: ValueKey('monster_face_${each.name}'),
+                                  offstage: each != face,
+                                  child: picture(each),
+                                ),
+                              ),
+                            arm(left: true, angle: arms.left),
+                            arm(left: false, angle: arms.right),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
           ),
