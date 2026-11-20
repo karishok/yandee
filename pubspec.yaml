@@ -34,6 +34,8 @@ flutter:
     # computer voice used until a phrase has been recorded.
     - assets/audio/monsters/
     - assets/audio/monsters_tts/
+    # "Монстрики" pictures, made by tool/prepare_monster_art.py.
+    - assets/monsters/
     - assets/demo_content/home/
     - assets/demo_content/kitchen/
     - assets/demo_content/farm/
