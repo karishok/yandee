@@ -62,8 +62,9 @@ const double _viewBoxTop = -10;
 ({double x, double y}) _fraction(double x, double y) =>
     (x: (x - _viewBoxLeft) / monsterViewBoxSize, y: (y - _viewBoxTop) / monsterViewBoxSize);
 
-/// The middle of the mouth — where food flies to.
-final monsterMouthAt = _fraction(100, 132);
+/// The middle of the mouth in the monster pictures, as a share of the
+/// picture's side — where food flies to.
+const ({double x, double y}) monsterMouthAt = (x: .5, y: .46);
 
 /// Where each hand rests, at the monster's side — the point a hand turns
 /// around when it claps or waves.
