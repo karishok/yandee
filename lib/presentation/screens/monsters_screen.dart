@@ -172,6 +172,11 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
   final List<double> _growth = List.filled(MonstersGame.seatCount, 1);
   Offset? _lookAt;
 
+  // The monster still grimacing while «Фу! …» is being said, and a count
+  // bumped whenever that refusal ends — by itself or cut short.
+  int? _refusingSeat;
+  int _refusalRun = 0;
+
   // The treat whose name is being said because it was just picked up, with
   // the future that ends when the name has been said.
   ({MonsterFood food, Future<void> speech})? _naming;
@@ -225,6 +230,8 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
     _lookAt = null;
     _justMet = null;
     _naming = null;
+    _refusingSeat = null;
+    _refusalRun++;
     for (var slot = 0; slot < _slotVersions.length; slot++) {
       _slotVersions[slot]++;
     }
@@ -265,13 +272,27 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
     final slot = _layout.slotAt(point);
     if (slot != null) {
       if (_game.tray[slot] == null || _hiddenSlots.contains(slot)) return;
+      _cutRefusalShort();
       _touch = _Touch(pointer: event.pointer, start: point, slot: slot);
       return;
     }
     final seat = _layout.seatAt(point);
     if (seat != null) {
+      _cutRefusalShort();
       _touch = _Touch(pointer: event.pointer, start: point, seat: seat);
     }
+  }
+
+  /// The child has moved on while «Фу! …» is still being said: the voice
+  /// stops, so what it says next is about the new touch, and the grimace
+  /// goes with it.
+  void _cutRefusalShort() {
+    final seat = _refusingSeat;
+    if (seat == null) return;
+    _refusingSeat = null;
+    _refusalRun++;
+    _voice.stop();
+    setState(() => _mouths.remove(seat));
   }
 
   void _onPointerMove(PointerMoveEvent event) {
@@ -483,13 +504,18 @@ class _MonstersScreenState extends State<MonstersScreen> with SingleTickerProvid
       if (_stale(session)) return;
       _floating.value = null;
       setState(() => _hiddenSlots.remove(slot));
-      // The grimace stays until «Фу! Синяя черника — синему!» has been said
-      // to its end: only then can the child try again. Letting them go on
-      // sooner had the voice still saying «— синему!» about the last treat
-      // while the next one was already on its way somewhere else.
+      // The treat is back, so the child can go on at once. The grimace
+      // stays while «Фу! Синяя черника — синему!» is being said; a new
+      // touch before it ends cuts it short (see [_cutRefusalShort]), so the
+      // voice never says «— синему!» while the next treat is on its way.
+      final run = ++_refusalRun;
+      _refusingSeat = seat;
+      _busy = false;
       await Future.wait([_pause(250), _heardOut(refusal)]);
-      if (_stale(session)) return;
+      if (_stale(session) || run != _refusalRun) return;
+      _refusingSeat = null;
       setState(() => _mouths.remove(seat));
+      return;
     }
     _busy = false;
   }
