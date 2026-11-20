@@ -12,7 +12,7 @@ class _Harness {
   final opened = <Uri>[];
   var opens = true;
 
-  Widget build({TargetPlatform platform = TargetPlatform.iOS}) => PlayTimerProvider(
+  Widget build({TargetPlatform platform = TargetPlatform.iOS, String? installer}) => PlayTimerProvider(
         timer: timer,
         child: MaterialApp(
           home: ParentsScreen(
@@ -21,6 +21,7 @@ class _Harness {
               return opens;
             },
             readVersion: () async => '1.2.0 (5)',
+            readInstaller: () async => installer,
             platform: platform,
           ),
         ),
@@ -92,6 +93,12 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('parents_rate_tile')));
     await tester.pumpAndSettle();
     expect(android.opened, [ruStoreUri]);
+
+    final play = _Harness();
+    await tester.pumpWidget(play.build(platform: TargetPlatform.android, installer: 'com.android.vending'));
+    await tester.tap(find.byKey(const ValueKey('parents_rate_tile')));
+    await tester.pumpAndSettle();
+    expect(play.opened, [googlePlayUri]);
   });
 
   testWidgets('«О приложении» opens the About screen', (tester) async {

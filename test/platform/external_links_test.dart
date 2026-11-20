@@ -18,6 +18,13 @@ void main() {
     expect(storeReviewUri(TargetPlatform.android).toString(), 'https://www.rustore.ru/catalog/app/com.yandee.yandee');
   });
 
+  test('an Android build installed from Google Play is rated on Google Play', () {
+    expect(storeReviewUri(TargetPlatform.android, installerStore: 'com.android.vending').toString(),
+        'https://play.google.com/store/apps/details?id=com.yandee.yandee');
+    expect(storeReviewUri(TargetPlatform.android, installerStore: 'ru.vk.store'), ruStoreUri);
+    expect(storeReviewUri(TargetPlatform.iOS, installerStore: 'com.android.vending'), appStoreReviewUri);
+  });
+
   test('the terms page is the one on the site', () {
     expect(termsUri.toString(), 'https://yandee-app.ru/terms');
   });

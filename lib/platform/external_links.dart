@@ -8,6 +8,10 @@ const feedbackEmail = 'babaliants@gmail.com';
 final termsUri = Uri.parse('https://yandee-app.ru/terms');
 final appStoreReviewUri = Uri.parse('https://apps.apple.com/app/yandee/id6817918076?action=write-review');
 final ruStoreUri = Uri.parse('https://www.rustore.ru/catalog/app/com.yandee.yandee');
+final googlePlayUri = Uri.parse('https://play.google.com/store/apps/details?id=com.yandee.yandee');
+
+/// What Android reports as the installer of a build that came from Google Play.
+const googlePlayInstaller = 'com.android.vending';
 
 /// A letter to [feedbackEmail] whose subject says which version wrote it.
 /// Spaces are encoded as %20: mail apps show a `+` literally.
@@ -17,15 +21,17 @@ Uri feedbackMailUri(String appVersion) => Uri(
       query: 'subject=${Uri.encodeComponent('Yandee $appVersion')}',
     );
 
-/// The store page to rate the app on: the App Store on Apple devices,
-/// RuStore (where the Android build is published) everywhere else.
-Uri storeReviewUri(TargetPlatform platform) => switch (platform) {
+/// The store page to rate the app on: the App Store on Apple devices; on
+/// Android the store the build came from — Google Play when [installerStore]
+/// says so, RuStore otherwise (it is also where a sideloaded build belongs).
+Uri storeReviewUri(TargetPlatform platform, {String? installerStore}) => switch (platform) {
       TargetPlatform.iOS || TargetPlatform.macOS => appStoreReviewUri,
-      _ => ruStoreUri,
+      _ => installerStore == googlePlayInstaller ? googlePlayUri : ruStoreUri,
     };
 
 typedef LinkOpener = Future<bool> Function(Uri uri);
 typedef AppVersionReader = Future<String> Function();
+typedef InstallerStoreReader = Future<String?> Function();
 
 /// Opens [uri] in the app that handles it (browser, mail, store). Returns
 /// false instead of throwing when nothing could open it.
@@ -41,4 +47,11 @@ Future<bool> openExternalLink(Uri uri) async {
 Future<String> readAppVersion() async {
   final info = await PackageInfo.fromPlatform();
   return '${info.version} (${info.buildNumber})';
+}
+
+/// The store that installed this build, as the system names it
+/// (`com.android.vending` for Google Play); null when it cannot tell.
+Future<String?> readInstallerStore() async {
+  final info = await PackageInfo.fromPlatform();
+  return info.installerStore;
 }

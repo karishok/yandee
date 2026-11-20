@@ -9,10 +9,14 @@ import 'guided_access_screen.dart';
 /// The parents menu, behind the parental gate: the play timer, locking the
 /// device into Yandee, writing to us, rating the app, and About.
 class ParentsScreen extends StatelessWidget {
-  const ParentsScreen({super.key, this.openLink, this.readVersion, this.platform});
+  const ParentsScreen({super.key, this.openLink, this.readVersion, this.readInstaller, this.platform});
 
   final LinkOpener? openLink;
   final AppVersionReader? readVersion;
+
+  /// Which store installed the build: an Android build from Google Play is
+  /// rated there, not on RuStore.
+  final InstallerStoreReader? readInstaller;
 
   /// Which store «Оценить» opens; defaults to the device's platform.
   final TargetPlatform? platform;
@@ -35,7 +39,13 @@ class ParentsScreen extends StatelessWidget {
 
   Future<void> _rate(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
-    final opened = await _openLink(storeReviewUri(platform ?? defaultTargetPlatform));
+    String? installer;
+    try {
+      installer = await (readInstaller ?? readInstallerStore)();
+    } catch (_) {
+      installer = null;
+    }
+    final opened = await _openLink(storeReviewUri(platform ?? defaultTargetPlatform, installerStore: installer));
     if (!opened) {
       messenger.showSnackBar(const SnackBar(content: Text('Не удалось открыть магазин')));
     }
