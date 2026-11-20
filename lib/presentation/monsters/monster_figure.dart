@@ -157,13 +157,13 @@ class MonsterFigureState extends State<MonsterFigure> with TickerProviderStateMi
 
   static const _enterCurve = Cubic(.3, 1.6, .5, 1);
 
-  // The arm, as a share of the figure's square (from the prototype): a
-  // square 42% wide, its top at 42%; the left one starts at -4%, the right
-  // one at 62%. It turns about the shoulder, near the top of its square.
+  // The arm, as a share of the figure's square: a square 42% wide, its top
+  // at 42%; the left one starts at 0, the right one at 58% — snug against
+  // the body. It turns about the shoulder, near the top of its square.
   static const _armSide = .42;
   static const _armTop = .42;
-  static const _leftArmLeft = -.04;
-  static const _rightArmLeft = .62;
+  static const _leftArmLeft = 0.0;
+  static const _rightArmLeft = .58;
   static const _shoulder = FractionalOffset(.5, .1);
 
   /// At rest the hands hang a little away from the body.
